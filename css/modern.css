@@ -1,0 +1,289 @@
+/* Visual layer for the public platform. Kept separate from legacy styles so the
+   original schedule and administration flows remain easy to maintain. */
+body.platform-body {
+  --brand-deep: #0b3b4c;
+  --brand-teal: #167b70;
+  --brand-mint: #9fd9c7;
+  --brand-gold: #e4b74e;
+  background:
+    radial-gradient(circle at 8% 8%, rgba(72, 151, 186, .28), transparent 29rem),
+    radial-gradient(circle at 88% 2%, rgba(118, 196, 165, .24), transparent 31rem),
+    radial-gradient(circle at 85% 80%, rgba(228, 183, 78, .14), transparent 25rem),
+    linear-gradient(145deg, #e9f5f2 0%, #f8f5ed 52%, #eef5f3 100%);
+  background-attachment: fixed;
+}
+
+body.platform-body::before,
+body.platform-body::after {
+  position: fixed;
+  z-index: -1;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 50%;
+  content: "";
+  filter: blur(60px);
+  opacity: .2;
+  pointer-events: none;
+}
+
+body.platform-body::before { top: 14rem; left: -8rem; background: #48a6c8; }
+body.platform-body::after { right: -8rem; bottom: 4rem; background: #69c69d; }
+
+body.platform-body .glass {
+  border: 1px solid rgba(255, 255, 255, .74);
+  background: linear-gradient(145deg, rgba(255,255,255,.68), rgba(255,255,255,.43));
+  box-shadow: 0 22px 70px rgba(13, 52, 66, .13), inset 0 1px 0 rgba(255,255,255,.72);
+  backdrop-filter: blur(24px) saturate(135%);
+  -webkit-backdrop-filter: blur(24px) saturate(135%);
+}
+
+body.platform-body .skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 8px;
+  left: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--brand-deep);
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+  transform: translateY(-160%);
+}
+
+body.platform-body .skip-link:focus { transform: translateY(0); }
+
+body.platform-body .platform-top {
+  border-color: rgba(255,255,255,.82);
+  background: rgba(248, 252, 250, .7);
+}
+
+body.platform-body .platform-brand img {
+  border: 1px solid rgba(255,255,255,.88);
+  background: rgba(255,255,255,.82);
+  box-shadow: 0 12px 30px rgba(13,52,66,.11);
+}
+
+body.platform-body .platform-brand strong { color: var(--brand-deep); letter-spacing: -.02em; }
+
+body.platform-body .platform-nav a,
+body.platform-body .nav-toggle,
+body.platform-body .small-action,
+body.platform-body .view-switch button,
+body.platform-body .month-strip button {
+  border-color: rgba(11,59,76,.08);
+  background: rgba(255,255,255,.52);
+  transition: transform .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+
+body.platform-body .platform-nav a:hover,
+body.platform-body .small-action:hover,
+body.platform-body .view-switch button:hover,
+body.platform-body .month-strip button:hover { transform: translateY(-2px); background: rgba(255,255,255,.86); }
+
+body.platform-body .platform-nav a.active,
+body.platform-body .platform-nav a[aria-current="page"] {
+  background: var(--brand-deep);
+  color: white;
+  box-shadow: 0 9px 24px rgba(11,59,76,.2);
+}
+
+body.platform-body .view-switch button.active,
+body.platform-body .month-strip button.active,
+body.platform-body .decom-months button.active {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--brand-deep), var(--brand-teal));
+  color: white;
+  box-shadow: 0 10px 24px rgba(11,59,76,.18);
+}
+
+body.platform-body .primary-link {
+  border: 0;
+  background: linear-gradient(135deg, var(--brand-deep), var(--brand-teal));
+  box-shadow: 0 14px 30px rgba(11,59,76,.2);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+body.platform-body .primary-link:hover { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(11,59,76,.26); }
+
+body.platform-body .home-hero { min-height: 430px; padding: clamp(22px, 4vw, 48px); overflow: hidden; }
+body.platform-body .hero-copy { position: relative; z-index: 1; }
+body.platform-body .hero-copy h1,
+body.platform-body .page-head h1,
+body.platform-body .detail-hero h1 { color: #102d3b; letter-spacing: -.045em; }
+body.platform-body .hero-image { transform: rotate(1.4deg); }
+
+body.platform-body .type-shortcuts,
+body.platform-body .calendar-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  border-radius: 22px;
+}
+
+body.platform-body .type-shortcuts h2 { margin: 0; font-size: 1.2rem; color: var(--brand-deep); }
+body.platform-body .type-shortcuts .eyebrow { margin-bottom: 3px; }
+body.platform-body .calendar-legend > span { color: var(--muted); font-size: .8rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
+body.platform-body .type-legend { display: flex; flex-wrap: wrap; gap: 8px; }
+
+body.platform-body .type-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid rgba(11,59,76,.08);
+  border-radius: 999px;
+  background: rgba(255,255,255,.62);
+  color: var(--brand-deep);
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+  transition: transform .18s ease, background .18s ease;
+}
+
+body.platform-body .type-chip:hover { transform: translateY(-2px); background: white; }
+body.platform-body .type-chip > span { width: 9px; height: 9px; border-radius: 50%; background: var(--chip-color); box-shadow: 0 0 0 4px color-mix(in srgb, var(--chip-color), transparent 82%); }
+body.platform-body .type-culto { --chip-color: var(--culto); }
+body.platform-body .type-oracion { --chip-color: var(--oracion); }
+body.platform-body .type-vigilia { --chip-color: var(--vigilia); }
+body.platform-body .type-ayuno { --chip-color: var(--ayuno); }
+body.platform-body .type-especial { --chip-color: var(--especial); }
+
+body.platform-body .month-day { position: relative; min-height: 132px; }
+body.platform-body .day-number {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(11,59,76,.07);
+  color: var(--brand-deep);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+body.platform-body .today-day .day-number,
+body.platform-body .year-day.today-day > span:first-child { background: var(--brand-deep); color: white; }
+body.platform-body .event-colors { display: flex; gap: 3px; width: 100%; height: 4px; margin: 5px 0 2px; }
+body.platform-body .event-colors i { flex: 1; min-width: 4px; border-radius: 99px; background: var(--event-color); }
+body.platform-body .event-colors .color-culto { --event-color: var(--culto); }
+body.platform-body .event-colors .color-oracion { --event-color: var(--oracion); }
+body.platform-body .event-colors .color-vigilia { --event-color: var(--vigilia); }
+body.platform-body .event-colors .color-ayuno { --event-color: var(--ayuno); }
+body.platform-body .event-colors .color-especial { --event-color: var(--especial); }
+
+body.platform-body .event-pill { position: relative; padding-left: 10px; border-left: 3px solid var(--pill-color, var(--brand-teal)); }
+body.platform-body .event-type-culto { --pill-color: var(--culto); }
+body.platform-body .event-type-oracion { --pill-color: var(--oracion); }
+body.platform-body .event-type-vigilia { --pill-color: var(--vigilia); }
+body.platform-body .event-type-ayuno { --pill-color: var(--ayuno); }
+body.platform-body .event-type-especial { --pill-color: var(--especial); }
+
+body.platform-body .year-view { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body.platform-body .year-month { padding: 14px; }
+body.platform-body .year-month h3 { color: var(--brand-deep); }
+body.platform-body .year-week,
+body.platform-body .year-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+body.platform-body .year-week { margin-bottom: 4px; color: var(--muted); font-size: .62rem; font-weight: 900; text-align: center; }
+body.platform-body .year-day {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 34px;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #294552;
+  font: inherit;
+  font-size: .72rem;
+  cursor: pointer;
+}
+body.platform-body .year-day:hover { border-color: rgba(11,59,76,.18); background: rgba(255,255,255,.82); }
+body.platform-body .year-day.has-events { background: rgba(255,255,255,.52); font-weight: 900; }
+body.platform-body .year-day > span:first-child { display: grid; place-items: center; width: 22px; height: 20px; border-radius: 7px; }
+body.platform-body .year-day .event-colors { height: 3px; margin: 1px 0 0; }
+
+body.platform-body .event-card-public,
+body.platform-body .mini-card,
+body.platform-body .agenda-item { transition: transform .18s ease, box-shadow .18s ease; }
+body.platform-body .event-card-public:hover,
+body.platform-body .mini-card:hover,
+body.platform-body .agenda-item:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(13,52,66,.12); }
+
+body.platform-body .platform-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 22px;
+}
+body.platform-body .platform-footer span { display: grid; gap: 3px; }
+body.platform-body .platform-footer strong { color: var(--brand-deep); }
+body.platform-body .platform-footer small { color: var(--muted); }
+body.platform-body .platform-footer a { color: var(--brand-deep); font-weight: 900; }
+
+body.platform-body :focus-visible { outline: 3px solid rgba(22,123,112,.38); outline-offset: 3px; }
+
+@media (max-width: 900px) {
+  body.platform-body .year-view { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.platform-body .type-shortcuts,
+  body.platform-body .calendar-legend { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 780px) {
+  body.platform-body .platform-top { align-items: center; }
+  body.platform-body .platform-brand span small { display: none; }
+  body.platform-body .nav-toggle { display: inline-flex; }
+  body.platform-body .platform-nav {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 10px;
+    left: 10px;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px;
+    border: 1px solid rgba(255,255,255,.78);
+    border-radius: 18px;
+    background: rgba(245,250,248,.96);
+    box-shadow: 0 20px 50px rgba(31,55,72,.22);
+    backdrop-filter: blur(22px);
+  }
+  body.platform-body .platform-nav.open { display: flex; }
+  body.platform-body .platform-nav a { justify-content: flex-start; }
+}
+
+@media (max-width: 620px) {
+  body.platform-body .platform-brand span small { display: none; }
+  body.platform-body .home-hero { min-height: auto; padding: 18px; }
+  body.platform-body .hero-image { transform: none; }
+  body.platform-body .type-shortcuts,
+  body.platform-body .calendar-legend { padding: 14px; border-radius: 18px; }
+  body.platform-body .type-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
+  body.platform-body .type-chip { justify-content: flex-start; padding: 0 9px; font-size: .78rem; }
+  body.platform-body .month-day { min-height: 76px; }
+  body.platform-body .day-number { width: 25px; height: 25px; border-radius: 8px; font-size: .78rem; }
+  body.platform-body .year-view { grid-template-columns: 1fr; }
+  body.platform-body .platform-footer { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 360px) {
+  body.platform-body .platform-top { gap: 7px; padding: 8px; }
+  body.platform-body .platform-brand { gap: 7px; }
+  body.platform-body .platform-brand img { width: 44px; height: 44px; padding: 4px; border-radius: 12px; }
+  body.platform-body .platform-brand strong { display: block; max-width: 82px; font-size: .78rem; }
+  body.platform-body .nav-toggle { min-height: 36px; padding: 0 9px; font-size: .78rem; }
+  body.platform-body .type-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.platform-body *, body.platform-body *::before, body.platform-body *::after { scroll-behavior: auto !important; transition: none !important; }
+}

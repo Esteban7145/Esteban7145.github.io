@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isTeamMember() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email in [
+          'decomvilladelrio@gmail.com',
+          'estebanarango1499@gmail.com'
+        ];
+    }
+
+    match /events/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if isTeamMember()
+        && request.resource.size < 25 * 1024 * 1024;
+      allow delete: if isTeamMember();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

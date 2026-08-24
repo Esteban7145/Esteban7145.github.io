@@ -1,0 +1,43 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    function isTeamMember() {
+      return signedIn() && request.auth.token.email in [
+        'decomvilladelrio@gmail.com',
+        'estebanarango1499@gmail.com'
+      ];
+    }
+
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isTeamMember();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isTeamMember();
+    }
+
+    match /reflections/{reflectionId} {
+      allow read: if true;
+      allow write: if isTeamMember();
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isTeamMember();
+    }
+
+    match /decomTurns/{turnId} {
+      allow read, write: if isTeamMember();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
