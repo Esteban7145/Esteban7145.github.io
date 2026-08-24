@@ -23,3 +23,9 @@ vigilias, ayunos y eventos de la congregación.
 
 El proyecto está vinculado a Firebase `cronograma-f28f0`; desplegar Hosting
 conserva el enlace público existente.
+
+Firebase Storage requiere actualizar el proyecto desde el plan gratuito Spark.
+Mientras Storage no esté habilitado, la interfaz bloquea de forma segura las
+cargas de imágenes, videos, audios y PDFs; el resto del panel sigue operativo.
+Cuando se habilite, añade `"storage": { "rules": "storage.rules" }` a
+`firebase.json` y vuelve a desplegar para publicar las reglas incluidas.

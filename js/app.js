@@ -1202,6 +1202,8 @@ const TYPES = {
       const cloud = {
         enabled: false,
         ready: false,
+        storageReady: false,
+        storageError: "",
         error: "",
         user: null,
         app: null,
@@ -1382,6 +1384,7 @@ const TYPES = {
           cloud.enabled = true;
           cloud.ready = true;
           cloud.error = "";
+          cloud.storageReady = await checkStorageAvailability();
 
           authMod.onAuthStateChanged(cloud.auth, user => {
             cloud.user = user;
@@ -1435,6 +1438,22 @@ const TYPES = {
         } catch (error) {
           cloud.error = `No se pudo iniciar Firebase: ${error.message}`;
           renderRoute();
+        }
+      }
+
+      async function checkStorageAvailability() {
+        try {
+          const bucket = encodeURIComponent(FIREBASE_CLOUD.firebaseConfig.storageBucket);
+          const response = await fetch(`https://firebasestorage.googleapis.com/v0/b/${bucket}/o?maxResults=1`);
+          if (response.status === 404) {
+            cloud.storageError = "Las cargas de archivos requieren habilitar Firebase Storage y un plan con facturación.";
+            return false;
+          }
+          cloud.storageError = "";
+          return true;
+        } catch (error) {
+          cloud.storageError = "No se pudo comprobar Firebase Storage. Las cargas quedan desactivadas por seguridad.";
+          return false;
         }
       }
 
@@ -1690,7 +1709,10 @@ const TYPES = {
       }
 
       function cloudNotice() {
-        if (cloud.enabled && cloud.ready) return `<div class="cloud-ok">Firebase conectado. Los cambios se guardan en la nube.</div>`;
+        if (cloud.enabled && cloud.ready) {
+          const storageNotice = cloud.storageReady ? "" : `<div class="cloud-warning"><strong>Archivos desactivados:</strong> ${escapeHtml(cloud.storageError || "Firebase Storage no está habilitado en este proyecto.")}</div>`;
+          return `<div class="cloud-ok">Base de datos conectada. Eventos, anuncios, reflexiones y turnos se guardan en la nube.</div>${storageNotice}`;
+        }
         return `<div class="cloud-warning"><strong>Firebase pendiente:</strong> ${escapeHtml(cloud.error || "Pega la configuracion de Firebase para activar cargas publicas en la nube.")}</div>`;
       }
 
@@ -2414,6 +2436,13 @@ const TYPES = {
         document.getElementById("adminSaveEvent").onclick = savePlatformEvent;
         document.getElementById("adminDeleteEvent").onclick = deletePlatformEvent;
         document.getElementById("adminSaveMaterial").onclick = savePlatformMaterial;
+        if (!cloud.storageReady) {
+          ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2", "adminSaveMaterial"].forEach(id => {
+            const control = document.getElementById(id);
+            if (control) control.disabled = true;
+          });
+          view().querySelectorAll("[data-remove-asset]").forEach(button => button.disabled = true);
+        }
         document.getElementById("saveReflection").onclick = savePlatformReflection;
         document.getElementById("saveAnnouncement2").onclick = savePlatformAnnouncement;
         view().querySelectorAll("[data-remove-asset]").forEach(button => {
@@ -2501,6 +2530,7 @@ const TYPES = {
 
       async function savePlatformMaterial() {
         if (!requireCloudAdmin()) return;
+        if (!cloud.storageReady) return alert("Las cargas de archivos necesitan habilitar Firebase Storage y un plan con facturación.");
         const id = document.getElementById("materialSelect").value;
         const event = platformEventById(id);
         if (!event) return alert("Selecciona primero un evento.");

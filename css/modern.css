@@ -231,6 +231,8 @@ body.platform-body .platform-footer small { color: var(--muted); }
 body.platform-body .platform-footer a { color: var(--brand-deep); font-weight: 900; }
 
 body.platform-body :focus-visible { outline: 3px solid rgba(22,123,112,.38); outline-offset: 3px; }
+body.platform-body button:disabled,
+body.platform-body input:disabled { cursor: not-allowed; opacity: .48; }
 
 @media (max-width: 900px) {
   body.platform-body .year-view { grid-template-columns: repeat(2, minmax(0, 1fr)); }
