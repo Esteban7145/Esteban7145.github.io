@@ -1374,13 +1374,13 @@ const TYPES = {
       shell.className = "platform-shell";
       shell.innerHTML = `
         <div class="site-loader" data-site-loader role="status" aria-live="polite">
-          <div class="site-loader-card"><img src="assets/favicon.png" alt=""><span class="site-loader-mark">IPUC Villa del Río</span><span class="site-loader-line">Preparando la página…</span><span class="site-loader-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+          <div class="site-loader-card"><img src="/assets/favicon.png" alt=""><span class="site-loader-mark">IPUC Villa del Río</span><span class="site-loader-line">Preparando la página…</span><span class="site-loader-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
         </div>
-        <div class="site-video-backdrop" aria-hidden="true"><video autoplay muted loop playsinline preload="metadata"><source src="assets/ipuc-villa-del-rio.mp4" type="video/mp4"></video><span></span></div>
+        <div class="site-video-backdrop" aria-hidden="true"><video autoplay muted loop playsinline preload="metadata"><source src="/assets/ipuc-villa-del-rio.mp4" type="video/mp4"></video><span></span></div>
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
         <header class="platform-top glass">
           <a class="platform-brand" href="/" aria-label="Inicio IPUC Villa del Río">
-            <img src="assets/ipuc-villa-del-rio-brand.png" alt="IPUC Villa del Río · Distrito 4">
+            <img src="/assets/ipuc-villa-del-rio-brand.png" alt="IPUC Villa del Río · Distrito 4">
           </a>
           <button class="nav-toggle" type="button" data-toggle-nav aria-expanded="false" aria-controls="platformNav" aria-label="Abrir menú">Menú</button>
           <nav class="platform-nav" id="platformNav" aria-label="Navegación principal">
