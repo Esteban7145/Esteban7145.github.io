@@ -1363,8 +1363,7 @@ const TYPES = {
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
         <header class="platform-top glass">
           <a class="platform-brand" href="/" aria-label="Inicio IPUC Villa del Río">
-            <img src="assets/logo.png" alt="Logo IPUC Villa del Río">
-            <span><strong>IPUC Villa del Río</strong><small>Información, recursos y vida de iglesia</small></span>
+            <img src="assets/ipuc-villa-del-rio-brand.png" alt="IPUC Villa del Río · Distrito 4">
           </a>
           <button class="nav-toggle" type="button" data-toggle-nav aria-expanded="false" aria-controls="platformNav" aria-label="Abrir menú">Menú</button>
           <nav class="platform-nav" id="platformNav" aria-label="Navegación principal">
@@ -3763,8 +3762,8 @@ const TYPES = {
         .platform-top.is-compact .nav-toggle::before { content: "☰"; font-size: 1.45rem; line-height: 1; }
         .platform-top.is-compact .platform-nav { position: absolute; top: calc(100% + 8px); right: 0; display: none; flex-direction: column; align-items: stretch; width: min(230px, calc(100vw - 28px)); padding: 10px; border: 1px solid rgba(255,255,255,.78); border-radius: 18px; background: rgba(245,250,248,.97); box-shadow: 0 20px 50px rgba(31,55,72,.22); }
         .platform-top.is-compact .platform-nav.open { display: flex; }
-        .platform-brand { display: flex; align-items: center; gap: 12px; min-width: 0; color: var(--ink); text-decoration: none; }
-        .platform-brand img { width: 76px; height: 76px; object-fit: contain; border-radius: 20px; background: rgba(255,255,255,.7); padding: 7px; }
+        .platform-brand { display: flex; align-items: center; flex: 0 1 290px; min-width: 0; color: var(--ink); text-decoration: none; }
+        .platform-brand img { width: 278px; height: 74px; object-fit: contain; border-radius: 16px; background: #fff; padding: 3px; box-shadow: 0 10px 22px rgba(13,52,66,.12); }
         .platform-brand span { display: grid; gap: 3px; min-width: 0; }
         .platform-brand strong { font-size: 1rem; line-height: 1.1; }
         .platform-brand small { color: var(--muted); font-weight: 800; }
@@ -4044,7 +4043,8 @@ const TYPES = {
           .platform-shell { width: calc(100% - 14px); padding-top: 8px; }
           .radio-widget { right: 10px; bottom: 10px; }
           .platform-top { align-items: start; border-radius: 18px; }
-          .platform-brand img { width: 58px; height: 58px; border-radius: 16px; }
+          .platform-brand { flex: 1 1 auto; }
+          .platform-brand img { width: 220px; height: 58px; border-radius: 14px; padding: 2px; }
           .nav-toggle { display: inline-flex; }
           .platform-nav { position: absolute; left: 10px; right: 10px; top: calc(100% + 8px); display: none; flex-direction: column; align-items: stretch; padding: 10px; border-radius: 18px; background: rgba(245,250,248,.96); box-shadow: 0 20px 50px rgba(31,55,72,.22); }
           .platform-nav.open { display: flex; }
