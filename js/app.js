@@ -1916,7 +1916,7 @@ const TYPES = {
                 <details class="upload-group full"><summary>Audio de fondo del sitio</summary><div class="form-grid"><label class="full">Música autorizada<input id="uploadMusic2" type="file" accept="audio/*"></label></div></details>
                 <button class="primary-link full" id="adminSaveMaterial" type="button">Guardar todo el material</button>
                 <div class="full admin-existing-material">${adminMaterialList(selected)}</div>
-                <div class="upload-group full weekly-upload"><strong>Cronograma semanal</strong><p>Sube aquí la imagen o el PDF oficial que resume los cultos de la semana.</p><label>Imagen o PDF de esta semana<input id="uploadWeeklySchedule" type="file" accept="image/*,.pdf,application/pdf"></label><button class="small-action" id="saveWeeklySchedule" type="button">Guardar cronograma semanal</button>${APP_STATE.weeklySchedule ? `<small>Archivo actual: ${escapeHtml(APP_STATE.weeklySchedule.name || "Cronograma semanal")}</small>` : ""}</div>
+                <div class="upload-group full weekly-upload"><strong>Cronograma semanal</strong><p>Sube la imagen oficial que resume los cultos de la semana. Se mostrará directamente en la vista semanal.</p><label>Imagen de esta semana<input id="uploadWeeklySchedule" type="file" accept="image/*"></label><button class="small-action" id="saveWeeklySchedule" type="button">Guardar imagen semanal</button>${APP_STATE.weeklySchedule ? `<small>Archivo actual: ${escapeHtml(APP_STATE.weeklySchedule.name || "Cronograma semanal")}</small>` : ""}</div>
               </div>
             </article>
             </section>
@@ -2066,7 +2066,8 @@ const TYPES = {
         if (!assetSource(asset)) return "";
         const source = assetSource(asset);
         const isPdf = String(asset.type || asset.name || "").toLowerCase().includes("pdf");
-        return `<section class="weekly-schedule-card"><div><p class="eyebrow">Cronograma para compartir</p><h2>Programación semanal</h2><p>Consulta la imagen oficial de esta semana.</p></div>${isPdf ? `<iframe src="${escapeHtml(source)}" title="Cronograma semanal"></iframe>` : `<img src="${escapeHtml(source)}" alt="Cronograma semanal de cultos">`}</section>`;
+        if (isPdf) return `<section class="weekly-schedule-card"><div><p class="eyebrow">Cronograma para compartir</p><h2>Programación semanal</h2><p>El archivo actual es PDF. Sube una imagen desde Administración para mostrarla aquí.</p></div></section>`;
+        return `<section class="weekly-schedule-card"><div><p class="eyebrow">Cronograma para compartir</p><h2>Programación semanal</h2><p>Consulta la imagen oficial de esta semana.</p></div><img src="${escapeHtml(source)}" alt="Cronograma semanal de cultos"></section>`;
       }
 
       function dayView(events) {
@@ -2705,7 +2706,8 @@ const TYPES = {
         if (!requireCloudAdmin()) return;
         if (!cloud.storageReady) return alert("El almacenamiento no está disponible.");
         const file = document.getElementById("uploadWeeklySchedule")?.files[0];
-        if (!file) return alert("Selecciona primero una imagen o PDF.");
+        if (!file) return alert("Selecciona primero una imagen.");
+        if (!file.type.startsWith("image/")) return alert("El cronograma semanal debe subirse como imagen (PNG, JPG o WEBP).");
         const asset = await uploadCloudFile(file, "site", "cronograma-semanal", "Cronograma semanal");
         await saveCloudDoc("settings", "site", { weeklySchedule: asset });
         APP_STATE.weeklySchedule = asset;
@@ -3127,9 +3129,10 @@ const TYPES = {
       style.textContent = `
         .platform-body { position: relative; background: #123348; }
         .platform-shell { position: relative; isolation: isolate; }
-        .site-video-backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: #123348 url("assets/og.png") center / cover no-repeat; }
+        .site-video-backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #123348 url("assets/og.png") center / cover no-repeat; pointer-events: none; }
         .site-video-backdrop video { width: 100%; height: 100%; object-fit: cover; opacity: .38; filter: saturate(.82) contrast(1.04); }
         .site-video-backdrop span { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(7,28,43,.72), rgba(14,71,77,.42) 48%, rgba(6,26,42,.68)); pointer-events: none; }
+        .platform-top, .route-view, .platform-footer { position: relative; z-index: 1; }
         @media (max-width: 620px) { .site-video-backdrop video { opacity: .22; } }
         @media (prefers-reduced-motion: reduce) { .site-video-backdrop video { display: none; } }
         @keyframes platformAtmosphere { from { background-position: 0% 0%; } to { background-position: 100% 70%; } }
