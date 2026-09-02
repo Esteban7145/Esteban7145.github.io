@@ -1952,7 +1952,7 @@ const TYPES = {
               <div class="event-editor-form">
                 <section class="admin-form-section"><p class="eyebrow">Paso 1</p><h3>Información principal</h3><div class="form-grid"><label class="full">Evento a editar<select id="adminSelect"><option value="__new__">+ Crear evento nuevo</option>${adminEvents.map(event => `<option value="${event.id}" ${selected?.id === event.id ? "selected" : ""}>${formatDateShort(event.date)} - ${escapeHtml(event.title)}</option>`).join("")}</select></label><label class="full">Nombre del evento<input id="adminTitle2" value="${escapeHtml(selected?.title || "")}" placeholder="Ej. Culto de oración"></label><label>Fecha<input id="adminDate2" type="date" value="${escapeHtml(selected?.date || dateKey(platform.calendarDate))}"></label><label>Tipo<select id="adminType2">${Object.keys(TYPES).map(type => `<option value="${type}" ${selected?.type === type ? "selected" : ""}>${TYPES[type].label}</option>`).join("")}</select></label></div></section>
                 <section class="admin-form-section"><p class="eyebrow">Paso 2</p><h3>Cuándo, dónde y quién organiza</h3><div class="form-grid"><label>Hora de inicio<input id="adminTime2" value="${escapeHtml(selected?.time || BASE_TIMES.culto)}"></label><label>Estado<select id="adminStatus2">${["Proximo","Pendiente","Realizado","Cancelado"].map(status => `<option ${platformStatus(selected || {}) === status ? "selected" : ""}>${status}</option>`).join("")}</select></label><label>Lugar<input id="adminPlace2" value="${escapeHtml(selected?.place || "IPUC Villa del Rio")}"></label><label>Responsable<input id="adminResponsible2" value="${escapeHtml(selected?.responsible || "")}" placeholder="Nombre del responsable"></label><div class="full"><span class="field-caption">Selecciona el comité</span>${committeePickerMarkup(selected)}</div></div></section>
-                <details class="admin-form-section" open><summary><span><p class="eyebrow">Paso 3</p><h3>Presentación y detalles</h3></span><span class="details-hint">Opcional</span></summary><div class="form-grid"><label>Estilo imagen automática<select id="adminAutoStyle">${["automatico","luz","amanecer","noche","naturaleza","congregacional","sobrio"].map(style => `<option value="${style}" ${selected?.autoStyle === style ? "selected" : ""}>${style}</option>`).join("")}</select></label><label class="checkbox-line"><input id="adminFeatured2" type="checkbox" ${selected?.featured ? "checked" : ""}> Marcar como destacado</label><label class="full">Descripción<textarea id="adminDescription2" placeholder="Cuenta brevemente de qué trata la actividad.">${escapeHtml(selected?.description || "")}</textarea></label><label class="full">Observaciones<textarea id="adminObservations2" placeholder="Información adicional para la iglesia.">${escapeHtml(selected?.observations || "")}</textarea></label><div class="full tag-admin">${TAGS.map(tag => `<label><input type="checkbox" value="${tag}" ${selected?.tags?.includes(tag) ? "checked" : ""}>${tag}</label>`).join("")}</div></div></details>
+                <details class="admin-form-section" open><summary><span><p class="eyebrow">Paso 3</p><h3>Presentación y detalles</h3></span><span class="details-hint">Opcional</span></summary><div class="form-grid"><label class="full file-dropzone event-image-drop">Imagen del evento<input id="adminEventImage" type="file" accept="image/*"><small>Esta imagen aparecerá en el calendario y en la página del evento.</small></label><label>Estilo imagen automática<select id="adminAutoStyle">${["automatico","luz","amanecer","noche","naturaleza","congregacional","sobrio"].map(style => `<option value="${style}" ${selected?.autoStyle === style ? "selected" : ""}>${style}</option>`).join("")}</select></label><label class="checkbox-line"><input id="adminFeatured2" type="checkbox" ${selected?.featured ? "checked" : ""}> Marcar como destacado</label><label class="full">Descripción<textarea id="adminDescription2" placeholder="Cuenta brevemente de qué trata la actividad.">${escapeHtml(selected?.description || "")}</textarea></label><label class="full">Observaciones<textarea id="adminObservations2" placeholder="Información adicional para la iglesia.">${escapeHtml(selected?.observations || "")}</textarea></label><div class="full tag-admin"><span class="field-caption">Categorías para encontrarlo</span>${TAGS.map(tag => `<label><input type="checkbox" value="${tag}" ${selected?.tags?.includes(tag) ? "checked" : ""}>${tag}</label>`).join("")}</div></div></details>
                 <div class="button-row full">
                   <button class="primary-link" id="adminSaveEvent" type="button">Guardar evento</button>
                   <button class="small-action" id="adminDeleteEvent" type="button">Eliminar evento</button>
@@ -2766,6 +2766,11 @@ const TYPES = {
           featured: document.getElementById("adminFeatured2").checked,
           tags: tags.length ? tags : inferTags(title, document.getElementById("adminType2").value)
         };
+        const eventImageFile = document.getElementById("adminEventImage")?.files?.[0];
+        if (eventImageFile) {
+          if (!cloud.storageReady) return alert("Para guardar la imagen del evento debes habilitar el almacenamiento.");
+          payload.image = await uploadCloudFile(eventImageFile, id, "principal", "Imagen del evento");
+        }
         await saveCloudDoc("events", id, payload);
         platform.selectedAdminEvent = id;
         alert("Evento guardado en Firebase.");
@@ -3493,11 +3498,16 @@ const TYPES = {
         .committee-option { display: grid; justify-items: center; gap: 7px; min-height: 112px; padding: 9px 6px; border: 2px solid transparent; border-radius: 16px; background: rgba(255,255,255,.64); color: var(--ink); font: inherit; font-size: .72rem; font-weight: 900; cursor: pointer; transition: .18s ease; }
         .committee-option:hover { transform: translateY(-2px); border-color: rgba(28,139,120,.45); }
         .committee-option.selected { border-color: #1c8b78; background: rgba(224,250,244,.9); box-shadow: 0 8px 18px rgba(18,51,72,.12); }
-        .committee-option img { width: 62px; height: 62px; border-radius: 13px; object-fit: contain; background: white; }
+        .committee-option img { width: 62px; height: 62px; padding: 7px; border-radius: 13px; object-fit: contain; background: linear-gradient(145deg, #123348, #1c8b78); }
         .committee-option span { line-height: 1.1; text-align: center; }
         .checkbox-line { display: flex !important; align-items: center; gap: 8px; text-transform: none !important; color: var(--ink) !important; }
-        .tag-admin { display: flex; flex-wrap: wrap; gap: 8px; }
-        .tag-admin label { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 999px; background: rgba(255,255,255,.55); color: var(--ink); text-transform: none; }
+        .tag-admin { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .tag-admin .field-caption { width: 100%; margin-bottom: 0; }
+        .tag-admin label { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid rgba(83,102,117,.14); border-radius: 999px; background: rgba(255,255,255,.48); color: var(--ink); font-size: .75rem; text-transform: none; cursor: pointer; }
+        .tag-admin label:has(input:checked) { border-color: rgba(28,139,120,.54); background: rgba(28,139,120,.14); color: #185f53; }
+        .tag-admin input { accent-color: #1c8b78; }
+        .event-image-drop { min-height: 145px; }
+        .event-image-drop > small { color: var(--muted); font-size: .72rem; font-weight: 750; text-align: center; text-transform: none; }
         .decom-panel .section-title p:not(.eyebrow) { margin: 6px 0 0; color: var(--muted); }
         .decom-panel { scroll-margin-top: 130px; }
         .decom-toolbar { display: grid; gap: 12px; margin-bottom: 14px; }
