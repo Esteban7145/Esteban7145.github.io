@@ -1357,7 +1357,7 @@ const TYPES = {
         <div class="site-intro-screen" data-site-intro>
           <video autoplay muted playsinline preload="auto" aria-label="Video de bienvenida de IPUC Villa del Río"><source src="/assets/site-intro.mp4" type="video/mp4"></video>
           <span class="site-intro-shade" aria-hidden="true"></span>
-          <div class="site-intro-content"><img src="/assets/logo.png" alt="Logo IPUC Villa del Río"><p class="eyebrow">Bienvenidos a</p><h1>IPUC Villa del Río</h1><p>Información, recursos y vida de iglesia.</p><button type="button" class="site-intro-skip" data-skip-intro>Entrar ahora <span aria-hidden="true">→</span></button></div>
+          <div class="site-intro-content"><span class="site-intro-label">IPUC Villa del Río</span><button type="button" class="site-intro-skip" data-skip-intro>Entrar ahora <span aria-hidden="true">→</span></button></div>
         </div>
         <div class="site-video-backdrop" aria-hidden="true"><video autoplay muted loop playsinline preload="auto"><source src="assets/ipuc-villa-del-rio.mp4" type="video/mp4"></video><span></span></div>
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
