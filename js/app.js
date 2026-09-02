@@ -1789,7 +1789,10 @@ const TYPES = {
       const supabaseStorageAdapter = {
         ref: (_storage, path) => ({ path }),
         async uploadBytes(ref, file, options) {
-          const { data } = await cloud.auth.getSession();
+          const authClient = cloud.app?.auth;
+          if (!authClient?.getSession) throw new Error("No se pudo acceder a la sesión administrativa. Recarga la página e inicia sesión nuevamente.");
+          const { data, error } = await authClient.getSession();
+          if (error) throw error;
           const accessToken = data?.session?.access_token;
           if (!accessToken) throw new Error("La sesión administrativa expiró. Vuelve a iniciar sesión.");
           const endpoint = `${SUPABASE_CONFIG.url}/storage/v1/object/${ref.path.split("/").map(encodeURIComponent).join("/")}`;
