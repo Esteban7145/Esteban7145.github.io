@@ -1549,7 +1549,7 @@ const TYPES = {
       function toSupabaseRow(data) {
         const aliases = { startTime: "start_time", endTime: "end_time", place: "location", organizer: "department", eventId: "related_event_id", startsAt: "starts_at", expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at", createdBy: "created_by", specialEventIds: "special_event_ids", weeklySchedule: "weekly_schedule" };
         const row = {};
-        Object.entries(data || {}).forEach(([key, value]) => { const target = aliases[key] || key; if (target in { id: 1, title: 1, description: 1, date: 1, start_time: 1, end_time: 1, type: 1, status: 1, location: 1, department: 1, responsible: 1, featured: 1, published: 1, tags: 1, observations: 1, media: 1, gallery: 1, attachments: 1, created_at: 1, updated_at: 1, created_by: 1, related_event_id: 1, priority: 1, starts_at: 1, expires_at: 1, time: 1, assigned: 1, support: 1, special_event_ids: 1, music: 1, weekly_schedule: 1 }) row[target] = value; });
+        Object.entries(data || {}).forEach(([key, value]) => { const target = aliases[key] || key; if (target in { id: 1, title: 1, description: 1, date: 1, start_time: 1, end_time: 1, type: 1, status: 1, location: 1, department: 1, responsible: 1, featured: 1, published: 1, tags: 1, observations: 1, media: 1, gallery: 1, invitations: 1, attachments: 1, created_at: 1, updated_at: 1, created_by: 1, related_event_id: 1, priority: 1, starts_at: 1, expires_at: 1, time: 1, assigned: 1, support: 1, special_event_ids: 1, music: 1, weekly_schedule: 1 }) row[target] = value; });
         return row;
       }
 
