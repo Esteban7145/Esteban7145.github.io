@@ -1272,7 +1272,8 @@ const TYPES = {
         calendarView: "mes",
         tag: "todos",
         search: "",
-        selectedAdminEvent: "__new__"
+        selectedAdminEvent: "__new__",
+        adminSection: "eventos"
       };
 
       installPlatformStyles();
@@ -1830,16 +1831,29 @@ const TYPES = {
 
       function renderAdminPage() {
         const selected = platform.selectedAdminEvent === "__new__" ? null : platformEventById(platform.selectedAdminEvent);
+        const adminEvents = platformEventsForYear(today.getFullYear());
+        const activeAdminSection = platform.adminSection || "eventos";
+        const moduleVisibility = name => activeAdminSection === name ? "" : "hidden";
+        const upcoming = adminEvents.filter(event => parseDate(event.date) >= today).sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
         view().innerHTML = `
           <section class="page-head glass">
-            <div><p class="eyebrow">Administracion privada</p><h1>Panel DECOM Villa del Rio</h1><p>Eventos, invitaciones, fotos, videos y PDFs se guardan en Firebase Firestore y Storage para verse publicamente sin redesplegar.</p>${cloudNotice()}</div>
+            <div><p class="eyebrow">Administracion privada</p><h1>Panel de control</h1><p>Administra el cronograma desde un solo lugar. Elige una tarea y completa solo lo necesario.</p>${cloudNotice()}</div>
             <button class="small-action" data-logout type="button">Salir</button>
           </section>
-          <section class="admin-layout">
-            <article class="content-card glass">
+          <section class="admin-summary">
+            <article><strong>${adminEvents.length}</strong><span>Eventos registrados</span></article>
+            <article><strong>${upcoming ? formatDateShort(upcoming.date) : "—"}</strong><span>Próximo evento</span></article>
+            <article><strong>${APP_STATE.announcements?.length || 0}</strong><span>Anuncios publicados</span></article>
+          </section>
+          <nav class="admin-tabs glass" aria-label="Módulos de administración">
+            ${[["eventos", "Eventos", "Crear o editar"], ["material", "Material", "Subir archivos"], ["anuncios", "Anuncios", "Publicar aviso"], ["reflexiones", "Reflexiones", "Mensaje diario"], ["decom", "DECOM", "Turnos internos"]].map(([key, label, hint]) => `<button type="button" class="admin-tab ${activeAdminSection === key ? "active" : ""}" data-admin-section="${key}"><strong>${label}</strong><span>${hint}</span></button>`).join("")}
+          </nav>
+          <section class="admin-layout admin-workspace">
+            <section class="admin-module" data-admin-module="eventos" ${moduleVisibility("eventos")}>
+            <article class="content-card glass admin-card-wide">
               <div class="section-title"><p class="eyebrow">Eventos</p><h2>Crear o editar evento</h2></div>
               <div class="form-grid">
-                <label class="full">Seleccionar evento<select id="adminSelect"><option value="__new__">Crear evento nuevo</option>${platformEventsForYear(today.getFullYear()).map(event => `<option value="${event.id}" ${selected?.id === event.id ? "selected" : ""}>${formatDateShort(event.date)} - ${escapeHtml(event.title)}</option>`).join("")}</select></label>
+                <label class="full">Evento a editar<select id="adminSelect"><option value="__new__">+ Crear evento nuevo</option>${adminEvents.map(event => `<option value="${event.id}" ${selected?.id === event.id ? "selected" : ""}>${formatDateShort(event.date)} - ${escapeHtml(event.title)}</option>`).join("")}</select></label>
                 <label>Nombre<input id="adminTitle2" value="${escapeHtml(selected?.title || "")}"></label>
                 <label>Fecha<input id="adminDate2" type="date" value="${escapeHtml(selected?.date || dateKey(platform.calendarDate))}"></label>
                 <label>Hora inicio<input id="adminTime2" value="${escapeHtml(selected?.time || BASE_TIMES.culto)}"></label>
@@ -1859,24 +1873,23 @@ const TYPES = {
                 </div>
               </div>
             </article>
-            <article class="content-card glass">
+            </section>
+            <section class="admin-module" data-admin-module="material" ${moduleVisibility("material")}>
+            <article class="content-card glass admin-card-wide">
               <div class="section-title"><p class="eyebrow">Material</p><h2>Subir invitaciones y archivos</h2></div>
               <div class="form-grid">
-                <label class="full">Evento activo<select id="materialSelect"><option value="__new__">Selecciona un evento</option>${platformEventsForYear(today.getFullYear()).map(event => `<option value="${event.id}" ${selected?.id === event.id ? "selected" : ""}>${formatDateShort(event.date)} - ${escapeHtml(event.title)}</option>`).join("")}</select></label>
-                <label>Imagen principal<input id="uploadMainImage" type="file" accept="image/*"></label>
-                <label>Invitacion principal<input id="uploadInviteMain" type="file" accept="image/*"></label>
-                <label>Invitacion WhatsApp<input id="uploadInviteWhatsapp" type="file" accept="image/*"></label>
-                <label>Historia redes<input id="uploadInviteStory" type="file" accept="image/*"></label>
-                <label>Banner proyeccion<input id="uploadInviteBanner" type="file" accept="image/*"></label>
-                <label>Video promocional<input id="uploadInviteVideo" type="file" accept="video/*"></label>
-                <label>Fotos galeria<input id="uploadGallery" type="file" accept="image/*,video/*" multiple></label>
-                <label>PDF o archivos<input id="uploadFiles" type="file" multiple></label>
-                <label>Musica de fondo autorizada<input id="uploadMusic2" type="file" accept="audio/*"></label>
-                <button class="primary-link full" id="adminSaveMaterial" type="button">Guardar material</button>
+                <label class="full">1. Elige el evento<select id="materialSelect"><option value="__new__">Selecciona un evento</option>${adminEvents.map(event => `<option value="${event.id}" ${selected?.id === event.id ? "selected" : ""}>${formatDateShort(event.date)} - ${escapeHtml(event.title)}</option>`).join("")}</select></label>
+                <div class="upload-guide full"><strong>2. Agrega solo lo que tengas</strong><span>Puedes seleccionar varios archivos en cada grupo y guardar todo una sola vez.</span></div>
+                <details class="upload-group full" open><summary>Imágenes principales e invitaciones</summary><div class="form-grid"><label>Imagen del evento<input id="uploadMainImage" type="file" accept="image/*"></label><label>Invitación principal<input id="uploadInviteMain" type="file" accept="image/*"></label><label>WhatsApp<input id="uploadInviteWhatsapp" type="file" accept="image/*"></label><label>Historia redes<input id="uploadInviteStory" type="file" accept="image/*"></label><label>Banner proyección<input id="uploadInviteBanner" type="file" accept="image/*"></label></div></details>
+                <details class="upload-group full"><summary>Video, galería y documentos</summary><div class="form-grid"><label>Video promocional<input id="uploadInviteVideo" type="file" accept="video/*"></label><label>Fotos o videos<input id="uploadGallery" type="file" accept="image/*,video/*" multiple></label><label>PDF o archivos<input id="uploadFiles" type="file" multiple></label></div></details>
+                <details class="upload-group full"><summary>Audio de fondo del sitio</summary><div class="form-grid"><label class="full">Música autorizada<input id="uploadMusic2" type="file" accept="audio/*"></label></div></details>
+                <button class="primary-link full" id="adminSaveMaterial" type="button">Guardar todo el material</button>
                 <div class="full admin-existing-material">${adminMaterialList(selected)}</div>
               </div>
             </article>
-            <article class="content-card glass">
+            </section>
+            <section class="admin-module" data-admin-module="reflexiones" ${moduleVisibility("reflexiones")}>
+            <article class="content-card glass admin-card-narrow">
               <div class="section-title"><p class="eyebrow">Reflexiones</p><h2>Crear reflexion diaria</h2></div>
               <div class="form-grid">
                 <label>Fecha<input id="reflectionDate" type="date" value="${dateKey(today)}"></label>
@@ -1886,7 +1899,9 @@ const TYPES = {
                 <button class="primary-link full" id="saveReflection" type="button">Guardar reflexion</button>
               </div>
             </article>
-            <article class="content-card glass">
+            </section>
+            <section class="admin-module" data-admin-module="anuncios" ${moduleVisibility("anuncios")}>
+            <article class="content-card glass admin-card-narrow">
               <div class="section-title"><p class="eyebrow">Anuncios</p><h2>Ultimos anuncios</h2></div>
               <div class="form-grid">
                 <label>Titulo<input id="announceTitle2"></label>
@@ -1895,7 +1910,10 @@ const TYPES = {
                 <button class="primary-link full" id="saveAnnouncement2" type="button">Publicar anuncio</button>
               </div>
             </article>
+            </section>
+            <section class="admin-module" data-admin-module="decom" ${moduleVisibility("decom")}>
             ${renderDecomPanel()}
+            </section>
           </section>
         `;
         bindAdmin();
@@ -2497,6 +2515,12 @@ const TYPES = {
         view().querySelector("[data-logout]").onclick = () => {
           signOutAdmin();
         };
+        view().querySelectorAll("[data-admin-section]").forEach(button => {
+          button.onclick = () => {
+            platform.adminSection = button.dataset.adminSection;
+            renderAdminPage();
+          };
+        });
         document.getElementById("adminSelect").onchange = event => {
           platform.selectedAdminEvent = event.target.value;
           renderAdminPage();
@@ -3067,6 +3091,25 @@ const TYPES = {
         .hero-image, .detail-hero > img, .event-card-public > img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 22px; box-shadow: 0 20px 46px rgba(31,55,72,.18); }
         .today-line { display: inline-flex; margin: 8px 0 14px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.58); color: #405665; font-weight: 900; }
         .split-grid, .agenda-grid, .admin-layout, .detail-grid-page { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+        .admin-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+        .admin-summary article { display: grid; gap: 3px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(255,255,255,.55); box-shadow: 0 10px 24px rgba(31,55,72,.07); }
+        .admin-summary strong { color: #123348; font-size: 1.25rem; font-weight: 950; }
+        .admin-summary span { color: var(--muted); font-size: .78rem; font-weight: 850; }
+        .admin-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding: 8px; margin-bottom: 16px; }
+        .admin-tab { display: grid; gap: 3px; padding: 11px 12px; border: 1px solid transparent; border-radius: 14px; background: transparent; color: #123348; font: inherit; text-align: left; cursor: pointer; }
+        .admin-tab strong { font-size: .9rem; }
+        .admin-tab span { color: var(--muted); font-size: .72rem; }
+        .admin-tab:hover, .admin-tab.active { background: #123348; color: white; box-shadow: 0 10px 22px rgba(18,51,72,.16); }
+        .admin-tab:hover span, .admin-tab.active span { color: rgba(255,255,255,.75); }
+        .admin-module[hidden] { display: none !important; }
+        .admin-module { grid-column: 1 / -1; }
+        .admin-card-wide { max-width: 980px; margin: 0 auto; }
+        .admin-card-narrow { max-width: 760px; margin: 0 auto; }
+        .upload-guide { display: grid; gap: 3px; padding: 12px 14px; border-radius: 14px; background: rgba(28,139,120,.1); color: #185f53; }
+        .upload-guide span { color: #4f6b78; font-size: .82rem; font-weight: 700; text-transform: none; }
+        .upload-group { border: 1px solid rgba(83,102,117,.14); border-radius: 16px; background: rgba(255,255,255,.34); padding: 0 12px 12px; }
+        .upload-group summary { padding: 12px 2px; color: #123348; font-weight: 950; cursor: pointer; }
+        .upload-group .form-grid { padding-top: 2px; }
         .admin-wide { grid-column: 1 / -1; }
         .detail-grid-page .wide { grid-column: 1 / -1; }
         .section-title { margin-bottom: 12px; }
@@ -3210,6 +3253,7 @@ const TYPES = {
         .radio-toggle { min-height: 38px; border: 0; border-radius: 12px; background: #123348; color: #fff; font: inherit; font-weight: 900; cursor: pointer; }
         @media (max-width: 900px) {
           .home-hero, .detail-hero, .split-grid, .agenda-grid, .admin-layout, .login-card, .decom-grid, .decom-board { grid-template-columns: 1fr; }
+          .admin-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
           .decom-editor { position: static; }
           .event-grid, .year-view, .asset-grid-page { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .announcement-page-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -3227,6 +3271,8 @@ const TYPES = {
           .home-hero, .page-head, .content-card, .calendar-page, .view-switch, .month-strip, .filters, .login-card, .detail-hero { padding: 12px; border-radius: 18px; }
           .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { font-size: 1.9rem; line-height: 1.05; }
           .info-list, .form-grid, .event-grid, .asset-grid-page, .year-view { grid-template-columns: 1fr; }
+          .admin-summary { grid-template-columns: 1fr; }
+          .admin-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .announcement-page-grid { grid-template-columns: 1fr; }
           .week-head, .month-grid { gap: 4px; }
           .week-head { font-size: .62rem; }
