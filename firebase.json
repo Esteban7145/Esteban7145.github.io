@@ -45,8 +45,8 @@
         ]
       }
     ],
-    "rewrites": [
-      { "source": "**", "destination": "/index.html" }
+    "redirects": [
+      { "source": "**", "destination": "https://esteban7145.github.io/", "type": 301 }
     ]
   },
   "firestore": {
