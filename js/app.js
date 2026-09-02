@@ -1,6 +1,6 @@
 const TYPES = {
       culto: { label: "Culto", color: "var(--culto)" },
-      oracion: { label: "Oracion", color: "var(--oracion)" },
+      oracion: { label: "Oración", color: "var(--oracion)" },
       vigilia: { label: "Vigilia", color: "var(--vigilia)" },
       ayuno: { label: "Ayuno", color: "var(--ayuno)" },
       especial: { label: "Especial", color: "var(--especial)" }
@@ -170,7 +170,7 @@ const TYPES = {
     ];
 
     const months = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-    const weekdays = ["domingo","lunes","martes","miercoles","jueves","viernes","sabado"];
+    const weekdays = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
     const DAILY_REFLECTIONS = [
       { text: "Unidos en el nombre de Jesus, la iglesia camina con gozo y firmeza.", ref: "Hechos 2:46" },
       { text: "Un Señor, una fe, un bautismo: seguimos adelante en unidad.", ref: "Efesios 4:5" },
@@ -290,7 +290,7 @@ const TYPES = {
     document.getElementById("adminMusic").onchange = async (event) => {
       const file = event.target.files[0];
       if (!file) return;
-      APP_STATE.music = await fileToAsset(file, "Musica ambiente");
+      APP_STATE.music = await fileToAsset(file, "Música ambiente");
       saveState();
       renderMusic();
     };
@@ -486,7 +486,7 @@ const TYPES = {
     }
     function committeePickerMarkup(event) {
       const selected = selectedCommittee(event);
-      return `<div class="committee-picker full" role="radiogroup" aria-label="Comité responsable">${COMMITTEES.map(([key, label, image]) => `<button type="button" class="committee-option ${selected === key ? "selected" : ""}" data-committee="${key}" data-committee-label="${escapeHtml(label)}" aria-pressed="${selected === key}"><img src="${image}" alt=""><span>${escapeHtml(label)}</span></button>`).join("")}</div><input id="adminDepartment2" type="hidden" value="${escapeHtml(COMMITTEES.find(([key]) => key === selected)?.[1] || "IPUC Villa del Río")}">`;
+      return `<div class="committee-picker full" role="radiogroup" aria-label="Comité responsable">${COMMITTEES.map(([key, label, image]) => `<button type="button" class="committee-option ${selected === key ? "selected" : ""}" data-committee="${key}" data-committee-label="${escapeHtml(label)}" aria-pressed="${selected === key}"><img src="${image}" alt="Logo de ${escapeHtml(label)}"><span>${escapeHtml(label)}</span></button>`).join("")}</div><input id="adminDepartment2" type="hidden" value="${escapeHtml(COMMITTEES.find(([key]) => key === selected)?.[1] || "IPUC Villa del Río")}">`;
     }
     function enrichEvent(event) {
       const id = event.id || eventIdFor(event);
@@ -2032,7 +2032,7 @@ const TYPES = {
             </section>
             <section class="admin-module" data-admin-module="reflexiones" ${moduleVisibility("reflexiones")}>
             <article class="content-card glass admin-card-narrow">
-              <div class="section-title"><p class="eyebrow">Reflexiones</p><h2>Crear reflexion diaria</h2></div>
+              <div class="section-title"><p class="eyebrow">Reflexiones</p><h2>Crear reflexión diaria</h2></div>
               <div class="form-grid">
                 <label>Fecha<input id="reflectionDate" type="date" value="${dateKey(today)}"></label>
                 <label>Estilo<select id="reflectionStyle"><option>amanecer</option><option>luz</option><option>noche</option><option>naturaleza</option><option>montanas</option></select></label>
@@ -2046,7 +2046,7 @@ const TYPES = {
             </section>
             <section class="admin-module" data-admin-module="anuncios" ${moduleVisibility("anuncios")}>
             <article class="content-card glass admin-card-narrow">
-              <div class="section-title"><p class="eyebrow">Anuncios</p><h2>Ultimos anuncios</h2></div>
+              <div class="section-title"><p class="eyebrow">Anuncios</p><h2>Últimos anuncios</h2></div>
               <div class="form-grid">
                 <label>Titulo<input id="announceTitle2"></label>
                 <label>Evento relacionado<select id="announceEvent2"><option value="">Sin evento</option>${platformEventsForYear(today.getFullYear()).map(event => `<option value="${event.id}">${formatDateShort(event.date)} - ${escapeHtml(event.title)}</option>`).join("")}</select></label>
@@ -2243,7 +2243,7 @@ const TYPES = {
             <div class="section-title">
               <p class="eyebrow">Privado</p>
               <h2>Cronograma DECOM</h2>
-              <p>Vista interna anual para computador, proyeccion, multimedia y apoyo durante los cultos.</p>
+              <p>Vista interna anual para computador, proyección, multimedia y apoyo durante los cultos.</p>
             </div>
             <div class="decom-toolbar">
               <div class="decom-months">
@@ -2328,7 +2328,7 @@ const TYPES = {
               <h3>${capitalize(weekdays[date.getDay()])} ${date.getDate()} de ${months[date.getMonth()]}</h3>
               <span>${escapeHtml(decomTime(date))} · ${escapeHtml(status)}</span>
             </header>
-            ${special.length ? `<div class="decom-alert"><strong>Actividad especial este dia.</strong><span>Quien pueda asistir y apoyar en la iglesia, por favor confirmar disponibilidad.</span><small>${special.map(event => escapeHtml(event.title)).join(" / ")}</small></div>` : ""}
+            ${special.length ? `<div class="decom-alert"><strong>Actividad especial este día.</strong><span>Quien pueda asistir y apoyar en la iglesia, por favor confirmar disponibilidad.</span><small>${special.map(event => escapeHtml(event.title)).join(" / ")}</small></div>` : ""}
             ${editable ? `
               <div class="decom-form">
                 <label>Responsable
@@ -2358,7 +2358,7 @@ const TYPES = {
               </div>
             `}
             <footer>
-              ${editable ? `<button class="primary-link" type="button" data-save-decom="${key}">Guardar turno</button><button class="small-action" type="button" data-clear-decom="${key}">Eliminar asignacion</button>` : ""}
+              ${editable ? `<button class="primary-link" type="button" data-save-decom="${key}">Guardar turno</button><button class="small-action" type="button" data-clear-decom="${key}">Eliminar asignación</button>` : ""}
               <button class="small-action" type="button" data-ics-decom="${key}">Agregar a mi calendario</button>
               ${assigned ? `<a class="small-action" href="${googleCalendarTurnUrl(date, assigned, support, turn.observations || "")}" target="_blank" rel="noopener">Google Calendar</a>` : ""}
             </footer>
@@ -2388,7 +2388,7 @@ const TYPES = {
               </div>
               <mark>${escapeHtml(status)}</mark>
             </header>
-            ${special.length ? `<div class="decom-alert"><strong>Actividad especial este dia.</strong><span>Quien pueda asistir y apoyar en la iglesia, por favor confirmar disponibilidad.</span><small>${special.map(event => escapeHtml(event.title)).join(" / ")}</small></div>` : ""}
+            ${special.length ? `<div class="decom-alert"><strong>Actividad especial este día.</strong><span>Quien pueda asistir y apoyar en la iglesia, por favor confirmar disponibilidad.</span><small>${special.map(event => escapeHtml(event.title)).join(" / ")}</small></div>` : ""}
             ${editable ? `
               <div class="decom-form">
                 <label>Responsable
@@ -2418,7 +2418,7 @@ const TYPES = {
               </div>
             `}
             <footer>
-              ${editable ? `<button class="primary-link" type="button" data-save-decom="${key}">Guardar turno</button><button class="small-action" type="button" data-clear-decom="${key}">Eliminar asignacion</button>` : ""}
+              ${editable ? `<button class="primary-link" type="button" data-save-decom="${key}">Guardar turno</button><button class="small-action" type="button" data-clear-decom="${key}">Eliminar asignación</button>` : ""}
               <button class="small-action" type="button" data-ics-decom="${key}">Agregar a mi calendario</button>
               ${assigned ? `<a class="small-action" href="${googleCalendarTurnUrl(date, assigned, support, turn.observations || "")}" target="_blank" rel="noopener">Google Calendar</a>` : ""}
             </footer>
@@ -2901,7 +2901,7 @@ const TYPES = {
         for (const file of pendingUploadFiles("uploadFiles")) saved.attachments.push(await uploadCloudFile(file, id, "archivos", "Archivo"));
         const music = pendingUploadFiles("uploadMusic2")[0];
         if (music) {
-          const musicAsset = await uploadCloudFile(music, "site", "musica", "Musica ambiente");
+          const musicAsset = await uploadCloudFile(music, "site", "musica", "Música ambiente");
           await saveCloudDoc("settings", "site", { music: musicAsset });
         }
         await saveCloudDoc("events", id, saved);
@@ -3174,18 +3174,18 @@ const TYPES = {
         const palette = imagePalette(type, style);
         const seed = Array.from(seedText || type).reduce((sum, char) => sum + char.charCodeAt(0), 0);
         const orb = (seed % 40) + 20;
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${palette[0]}"/><stop offset=".55" stop-color="${palette[1]}"/><stop offset="1" stop-color="${palette[2]}"/></linearGradient><filter id="b"><feGaussianBlur stdDeviation="18"/></filter></defs><rect width="1200" height="760" fill="url(#g)"/><circle cx="${220 + orb}" cy="160" r="150" fill="rgba(255,255,255,.18)" filter="url(#b)"/><circle cx="${920 - orb}" cy="230" r="190" fill="rgba(255,255,255,.12)" filter="url(#b)"/><path d="M0 590 C180 500 300 650 470 560 C670 450 820 620 1200 500 L1200 760 L0 760Z" fill="rgba(255,255,255,.22)"/><path d="M90 455 C270 360 430 380 580 468 C760 575 910 430 1110 390" fill="none" stroke="rgba(255,255,255,.34)" stroke-width="10" stroke-linecap="round"/><text x="70" y="665" fill="rgba(255,255,255,.78)" font-family="Segoe UI, Arial" font-size="42" font-weight="800">IPUC Villa del Rio</text></svg>`;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${palette[0]}"/><stop offset=".55" stop-color="${palette[1]}"/><stop offset="1" stop-color="${palette[2]}"/></linearGradient><filter id="b"><feGaussianBlur stdDeviation="18"/></filter></defs><rect width="1200" height="760" fill="url(#g)"/><circle cx="${220 + orb}" cy="160" r="150" fill="rgba(255,255,255,.18)" filter="url(#b)"/><circle cx="${920 - orb}" cy="230" r="190" fill="rgba(255,255,255,.12)" filter="url(#b)"/><path d="M0 590 C180 500 300 650 470 560 C670 450 820 620 1200 500 L1200 760 L0 760Z" fill="rgba(255,255,255,.22)"/><path d="M90 455 C270 360 430 380 580 468 C760 575 910 430 1110 390" fill="none" stroke="rgba(255,255,255,.34)" stroke-width="10" stroke-linecap="round"/><text x="70" y="665" fill="rgba(255,255,255,.78)" font-family="Myriad Pro, Calibri, Arial" font-size="42" font-weight="800">IPUC Villa del Río</text></svg>`;
         return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
       }
 
       function imagePalette(type, style) {
-        if (style === "noche" || type === "vigilia") return ["#111827", "#1e3a5f", "#7c4dff"];
-        if (style === "amanecer" || type === "reflexion") return ["#f6d365", "#9bd7d1", "#3a7ca5"];
-        if (style === "naturaleza" || style === "montanas") return ["#dfeee8", "#65a98f", "#345c72"];
-        if (type === "ayuno") return ["#f8f4e8", "#d9e6d5", "#94b9a2"];
-        if (type === "oracion") return ["#e8f5f1", "#1c8b78", "#123348"];
-        if (type === "especial") return ["#fff1f1", "#e84b5f", "#25364a"];
-        return ["#edf7ff", "#2f80ed", "#123348"];
+        if (style === "noche" || type === "vigilia") return ["#001F57", "#00338D", "#009FDA"];
+        if (style === "amanecer" || type === "reflexion") return ["#F0AB00", "#F7D36B", "#009FDA"];
+        if (style === "naturaleza" || style === "montanas") return ["#BCEAF7", "#6CC7D9", "#00338D"];
+        if (type === "ayuno") return ["#F4FAFC", "#BCEAF7", "#009FDA"];
+        if (type === "oracion") return ["#BCEAF7", "#009FDA", "#00338D"];
+        if (type === "especial") return ["#FFF4D6", "#F0AB00", "#00338D"];
+        return ["#BCEAF7", "#009FDA", "#00338D"];
       }
 
       function invitationAssets(event) {
@@ -3825,6 +3825,40 @@ const TYPES = {
         @media (prefers-reduced-motion: reduce) {
           *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
         }
+        /* Aplicación de la identidad IPUC en la capa dinámica de la plataforma. */
+        body.platform-body { color: #102D3B; font-family: "Myriad Pro", Calibri, "Segoe UI", Arial, sans-serif; }
+        body.platform-body .platform-top,
+        body.platform-body .content-card,
+        body.platform-body .page-head,
+        body.platform-body .calendar-page,
+        body.platform-body .admin-form-section,
+        body.platform-body .decom-panel,
+        body.platform-body .login-card { border-color: rgba(0, 51, 141, .18); }
+        body.platform-body .platform-nav a.active,
+        body.platform-body .platform-nav a[aria-current="page"],
+        body.platform-body .primary-link,
+        body.platform-body .view-switch button.active,
+        body.platform-body .month-strip button.active,
+        body.platform-body .admin-tab:hover,
+        body.platform-body .admin-tab.active,
+        body.platform-body .decom-months button.active { background: linear-gradient(135deg, #00338D, #005B9F); }
+        body.platform-body .home-live-dot,
+        body.platform-body .live-visitors-dot,
+        body.platform-body .radio-widget.is-playing .radio-widget-head i { background: #009FDA; }
+        body.platform-body .radio-mark,
+        body.platform-body .radio-toggle,
+        body.platform-body .music-pill { background: #00338D; }
+        body.platform-body .radio-mark { color: #F0AB00; }
+        body.platform-body .committee-option img { background: linear-gradient(145deg, #00338D, #005B9F); }
+        body.platform-body .committee-option.selected { border-color: #009FDA; background: rgba(188, 234, 247, .72); }
+        body.platform-body .week-list-day.is-today { border-color: rgba(0, 159, 218, .48); box-shadow: inset 5px 0 0 #009FDA; }
+        body.platform-body .today-day { box-shadow: inset 0 0 0 2px rgba(0, 159, 218, .42); }
+        body.platform-body .decom-day.today .decom-day-number,
+        body.platform-body .day-number { color: #00338D; }
+        body.platform-body .decom-day.today .decom-day-number { background: #00338D; color: #fff; }
+        body.platform-body .status-chip,
+        body.platform-body .live-visitors { border-color: rgba(0, 159, 218, .32); background: rgba(188, 234, 247, .64); color: #00338D; }
+        body.platform-body .site-video-backdrop span { background: linear-gradient(135deg, rgba(0, 51, 141, .20), rgba(0, 159, 218, .08) 48%, rgba(0, 25, 67, .24)); }
       `;
       document.head.appendChild(style);
     }

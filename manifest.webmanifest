@@ -4,8 +4,8 @@
   "description": "Agenda anual de cultos y eventos de la IPUC Villa del Río.",
   "start_url": "/#/inicio",
   "display": "standalone",
-  "background_color": "#eef6f2",
-  "theme_color": "#0b3b4c",
+  "background_color": "#F4FAFC",
+  "theme_color": "#00338D",
   "lang": "es-CO",
   "icons": [
     {
