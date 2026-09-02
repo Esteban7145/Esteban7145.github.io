@@ -1548,14 +1548,14 @@ const TYPES = {
       }
 
       function toSupabaseRow(data) {
-        const aliases = { startTime: "start_time", endTime: "end_time", place: "location", organizer: "department", eventId: "related_event_id", startsAt: "starts_at", expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at", createdBy: "created_by", specialEventIds: "special_event_ids", weeklySchedule: "weekly_schedule" };
+        const aliases = { startTime: "start_time", endTime: "end_time", place: "location", organizer: "department", eventId: "related_event_id", startsAt: "starts_at", expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at", createdBy: "created_by", specialEventIds: "special_event_ids", weeklySchedule: "weekly_schedule", autoStyle: "auto_style" };
         const row = {};
-        Object.entries(data || {}).forEach(([key, value]) => { const target = aliases[key] || key; if (target in { id: 1, title: 1, description: 1, date: 1, start_time: 1, end_time: 1, type: 1, status: 1, location: 1, department: 1, responsible: 1, featured: 1, published: 1, tags: 1, observations: 1, media: 1, gallery: 1, invitations: 1, attachments: 1, created_at: 1, updated_at: 1, created_by: 1, related_event_id: 1, priority: 1, starts_at: 1, expires_at: 1, time: 1, assigned: 1, support: 1, special_event_ids: 1, music: 1, weekly_schedule: 1 }) row[target] = value; });
+        Object.entries(data || {}).forEach(([key, value]) => { const target = aliases[key] || key; if (target in { id: 1, title: 1, description: 1, date: 1, start_time: 1, end_time: 1, type: 1, status: 1, location: 1, department: 1, responsible: 1, featured: 1, published: 1, tags: 1, observations: 1, media: 1, gallery: 1, invitations: 1, image: 1, attachments: 1, custom: 1, deleted: 1, auto_style: 1, created_at: 1, updated_at: 1, created_by: 1, related_event_id: 1, priority: 1, starts_at: 1, expires_at: 1, time: 1, assigned: 1, support: 1, special_event_ids: 1, music: 1, weekly_schedule: 1 }) row[target] = value; });
         return row;
       }
 
       function fromSupabaseRow(row) {
-        const aliases = { start_time: "startTime", end_time: "endTime", location: "place", department: "organizer", related_event_id: "eventId", starts_at: "startsAt", expires_at: "expiresAt", created_at: "createdAt", updated_at: "updatedAt", created_by: "createdBy", special_event_ids: "specialEventIds", weekly_schedule: "weeklySchedule" };
+        const aliases = { start_time: "startTime", end_time: "endTime", location: "place", department: "organizer", related_event_id: "eventId", starts_at: "startsAt", expires_at: "expiresAt", created_at: "createdAt", updated_at: "updatedAt", created_by: "createdBy", special_event_ids: "specialEventIds", weekly_schedule: "weeklySchedule", auto_style: "autoStyle" };
         return Object.fromEntries(Object.entries(row || {}).map(([key, value]) => [aliases[key] || key, value]));
       }
 
@@ -3050,7 +3050,8 @@ const TYPES = {
           ...data,
           updatedAt: cloud.dbMod.serverTimestamp()
         });
-        await cloud.dbMod.setDoc(cloud.dbMod.doc(cloud.db, collectionName, id), payload, { merge: true });
+        const result = await cloud.dbMod.setDoc(cloud.dbMod.doc(cloud.db, collectionName, id), payload, { merge: true });
+        if (result?.error) throw result.error;
       }
 
       async function uploadCloudFile(file, eventId, section, label) {
