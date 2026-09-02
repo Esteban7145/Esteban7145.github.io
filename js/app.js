@@ -1277,6 +1277,7 @@ const TYPES = {
       const DECOM_STATUSES = ["Pendiente", "Confirmado", "Cubierto", "Sin asignar", "Cambio solicitado"];
       const RESOURCE_BUCKET_URL = "https://elon-file.s3.us-east-1.amazonaws.com";
       const RESOURCE_ROOT_PREFIX = "Elon/descargas/";
+      const RESOURCE_LOOSE_FILES_PATH = "__documentos_sueltos__";
       const DECOM_MEMBERS = [
         {
           name: "Esteban Arango",
@@ -1529,6 +1530,9 @@ const TYPES = {
 
       function resourceEntriesAtPath(path) {
         const normalizedPath = resourcePathParts(path).join("/");
+        if (normalizedPath === RESOURCE_LOOSE_FILES_PATH) {
+          return { folders: [], files: platform.resourceItems.filter(item => item.folderPath === "").sort((a, b) => a.name.localeCompare(b.name, "es")) };
+        }
         const prefix = normalizedPath ? `${normalizedPath}/` : "";
         const folders = new Map();
         platform.resourceItems.forEach(item => {
@@ -1538,9 +1542,11 @@ const TYPES = {
           const childPath = `${prefix}${child}`;
           folders.set(childPath, { path: childPath, name: child, ...resourceFolderStats(childPath) });
         });
+        const looseFiles = platform.resourceItems.filter(item => item.folderPath === "");
+        if (!normalizedPath && looseFiles.length) folders.set(RESOURCE_LOOSE_FILES_PATH, { path: RESOURCE_LOOSE_FILES_PATH, name: "Documentos sueltos", files: looseFiles.length, subfolders: 0 });
         return {
           folders: [...folders.values()].sort((a, b) => a.name.localeCompare(b.name, "es")),
-          files: platform.resourceItems.filter(item => item.folderPath === normalizedPath).sort((a, b) => a.name.localeCompare(b.name, "es"))
+          files: platform.resourceItems.filter(item => item.folderPath === normalizedPath && normalizedPath !== "").sort((a, b) => a.name.localeCompare(b.name, "es"))
         };
       }
 
