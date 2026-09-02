@@ -1618,6 +1618,17 @@ const TYPES = {
         const homeRadio = view().querySelector("[data-home-radio]");
         if (homeRadio) homeRadio.onclick = () => document.getElementById("radioToggle")?.click();
         bindHomeMotion();
+        bindReflectionAutoplayUnlock();
+      }
+
+      function bindReflectionAutoplayUnlock() {
+        document.addEventListener("click", () => {
+          view().querySelectorAll(".reflection-media video, .reflection-media audio").forEach(media => {
+            media.muted = false;
+            media.play().catch(() => {});
+          });
+          view().querySelectorAll(".youtube-reflection iframe").forEach(frame => frame.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "unMute", args: [] }), "*"));
+        }, { once: true });
       }
 
       function bindHomeMotion() {
@@ -3181,7 +3192,7 @@ const TYPES = {
 
       function youtubeEmbedUrl(url) {
         const match = String(url || "").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
-        return match ? `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&mute=0&rel=0` : "";
+        return match ? `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&mute=1&playsinline=1&enablejsapi=1&rel=0` : "";
       }
 
       function reflectionMediaMarkup(reflection, autoplay = false) {
@@ -3191,7 +3202,7 @@ const TYPES = {
           const source = youtubeEmbedUrl(media.url);
           return source ? `<div class="reflection-media youtube-reflection"><iframe src="${source}" title="Reflexión IPUC" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>` : "";
         }
-        if (isVideo(media)) return `<div class="reflection-media"><video ${autoplay ? "autoplay" : "controls"} controls playsinline preload="metadata" src="${escapeHtml(assetSource(media))}"></video></div>`;
+        if (isVideo(media)) return `<div class="reflection-media"><video ${autoplay ? "autoplay muted" : "controls"} controls playsinline preload="metadata" src="${escapeHtml(assetSource(media))}"></video></div>`;
         if (isAudio(media)) return `<div class="reflection-media audio-reflection"><audio ${autoplay ? "autoplay" : "controls"} controls preload="metadata" src="${escapeHtml(assetSource(media))}"></audio></div>`;
         return "";
       }
