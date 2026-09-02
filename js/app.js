@@ -1282,6 +1282,7 @@ const TYPES = {
       const shell = document.querySelector("main.app");
       shell.className = "platform-shell";
       shell.innerHTML = `
+        <div class="site-video-backdrop" aria-hidden="true"><video autoplay muted loop playsinline preload="metadata" poster="assets/og.png"><source src="assets/ipuc-villa-del-rio.mp4" type="video/mp4"></video><span></span></div>
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
         <header class="platform-top glass">
           <a class="platform-brand" href="/" aria-label="Inicio IPUC Villa del Río">
@@ -3124,7 +3125,14 @@ const TYPES = {
       const style = document.createElement("style");
       style.id = "platformStyles";
       style.textContent = `
-        .platform-body { background: radial-gradient(circle at top left, rgba(47,128,237,.18), transparent 34rem), radial-gradient(circle at top right, rgba(28,139,120,.16), transparent 30rem), linear-gradient(135deg, #eff8f5, #f8efe5); background-size: 120% 120%; animation: platformAtmosphere 18s ease-in-out infinite alternate; }
+        .platform-body { position: relative; background: #123348; }
+        .platform-shell { position: relative; isolation: isolate; }
+        .site-video-backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: #123348 url("assets/og.png") center / cover no-repeat; }
+        .site-video-backdrop video { width: 100%; height: 100%; object-fit: cover; opacity: .38; filter: saturate(.82) contrast(1.04); }
+        .site-video-backdrop span { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(7,28,43,.72), rgba(14,71,77,.42) 48%, rgba(6,26,42,.68)); pointer-events: none; }
+        @media (max-width: 620px) { .site-video-backdrop video { opacity: .22; } }
+        @media (prefers-reduced-motion: reduce) { .site-video-backdrop video { display: none; } }
+        @keyframes platformAtmosphere { from { background-position: 0% 0%; } to { background-position: 100% 70%; } }
         @keyframes platformAtmosphere { from { background-position: 0% 0%; } to { background-position: 100% 70%; } }
         .platform-shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 34px; }
         .platform-top { position: sticky; top: 10px; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px; border-radius: 24px; }
