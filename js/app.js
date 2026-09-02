@@ -220,6 +220,7 @@ const TYPES = {
       }
     ];
     let APP_STATE = loadState();
+    const PENDING_UPLOADS = new Map();
     let activeTags = new Set();
     const today = cleanDate(new Date());
     let active = findOpeningDate(today);
@@ -2677,6 +2678,14 @@ const TYPES = {
             names.className = "file-name-list";
             input.insertAdjacentElement("afterend", names);
           }
+          const draftFiles = PENDING_UPLOADS.get(pendingUploadKey(input.id)) || [];
+          if (draftFiles.length && !input.files?.length) {
+            try {
+              const transfer = new DataTransfer();
+              draftFiles.forEach(file => transfer.items.add(file));
+              input.files = transfer.files;
+            } catch (error) { /* El navegador puede impedir restaurar archivos en algunos dispositivos. */ }
+          }
           ["dragenter", "dragover"].forEach(eventName => zone.addEventListener(eventName, event => {
             event.preventDefault();
             event.stopPropagation();
@@ -2700,11 +2709,32 @@ const TYPES = {
           });
           input.addEventListener("change", () => {
             const files = [...(input.files || [])];
+            if (files.length) PENDING_UPLOADS.set(pendingUploadKey(input.id), files);
             zone.classList.toggle("has-file", Boolean(files.length));
             const names = zone.querySelector(".file-name-list");
             if (names) names.textContent = files.length ? files.map(file => file.name).join(" · ") : "";
           });
+          if (draftFiles.length) {
+            zone.classList.add("has-file");
+            const names = zone.querySelector(".file-name-list");
+            if (names) names.textContent = draftFiles.map(file => file.name).join(" · ");
+          }
         });
+      }
+
+      function pendingUploadKey(inputId) {
+        if (inputId === "adminEventImage") return `event:${platform.selectedAdminEvent || "__new__"}:${inputId}`;
+        const materialId = document.getElementById("materialSelect")?.value || "__new__";
+        return `material:${materialId}:${inputId}`;
+      }
+
+      function pendingUploadFiles(inputId) {
+        const pending = PENDING_UPLOADS.get(pendingUploadKey(inputId));
+        return pending || [...(document.getElementById(inputId)?.files || [])];
+      }
+
+      function clearPendingUpload(inputId) {
+        PENDING_UPLOADS.delete(pendingUploadKey(inputId));
       }
 
       function bindDecomControls() {
@@ -2766,12 +2796,13 @@ const TYPES = {
           featured: document.getElementById("adminFeatured2").checked,
           tags: tags.length ? tags : inferTags(title, document.getElementById("adminType2").value)
         };
-        const eventImageFile = document.getElementById("adminEventImage")?.files?.[0];
+        const eventImageFile = pendingUploadFiles("adminEventImage")[0];
         if (eventImageFile) {
           if (!cloud.storageReady) return alert("Para guardar la imagen del evento debes habilitar el almacenamiento.");
           payload.image = await uploadCloudFile(eventImageFile, id, "principal", "Imagen del evento");
         }
         await saveCloudDoc("events", id, payload);
+        clearPendingUpload("adminEventImage");
         platform.selectedAdminEvent = id;
         alert("Evento guardado en Firebase.");
         renderAdminPage();
@@ -2799,7 +2830,7 @@ const TYPES = {
         saved.invitations = { ...(event.invitations || {}), ...(saved.invitations || {}) };
         saved.gallery = [...(event.gallery || [])];
         saved.attachments = [...(event.attachments || [])];
-        const mainImage = document.getElementById("uploadMainImage").files[0];
+        const mainImage = pendingUploadFiles("uploadMainImage")[0];
         if (mainImage) saved.image = await uploadCloudFile(mainImage, id, "principal", "Imagen principal");
         for (const [key, inputId, label] of [
           ["main", "uploadInviteMain", "Invitacion principal"],
@@ -2808,17 +2839,18 @@ const TYPES = {
           ["banner", "uploadInviteBanner", "Banner proyeccion"],
           ["video", "uploadInviteVideo", "Video promocional"]
         ]) {
-          const file = document.getElementById(inputId).files[0];
+          const file = pendingUploadFiles(inputId)[0];
           if (file) saved.invitations[key] = await uploadCloudFile(file, id, `invitaciones/${key}`, label);
         }
-        for (const file of document.getElementById("uploadGallery").files) saved.gallery.push(await uploadCloudFile(file, id, "galeria", "Galeria"));
-        for (const file of document.getElementById("uploadFiles").files) saved.attachments.push(await uploadCloudFile(file, id, "archivos", "Archivo"));
-        const music = document.getElementById("uploadMusic2").files[0];
+        for (const file of pendingUploadFiles("uploadGallery")) saved.gallery.push(await uploadCloudFile(file, id, "galeria", "Galeria"));
+        for (const file of pendingUploadFiles("uploadFiles")) saved.attachments.push(await uploadCloudFile(file, id, "archivos", "Archivo"));
+        const music = pendingUploadFiles("uploadMusic2")[0];
         if (music) {
           const musicAsset = await uploadCloudFile(music, "site", "musica", "Musica ambiente");
           await saveCloudDoc("settings", "site", { music: musicAsset });
         }
         await saveCloudDoc("events", id, saved);
+        ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2"].forEach(clearPendingUpload);
         setupPlatformMusic();
         alert("Material guardado en Firebase Storage.");
         renderAdminPage();
