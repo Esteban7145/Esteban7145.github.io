@@ -221,6 +221,8 @@ const TYPES = {
     ];
     let APP_STATE = loadState();
     const PENDING_UPLOADS = new Map();
+    let uploadProgressTimer = null;
+    const uploadProgressState = { active: false, label: "", detail: "", percent: 0, tone: "loading" };
     let activeTags = new Set();
     const today = cleanDate(new Date());
     let active = findOpeningDate(today);
@@ -1354,12 +1356,10 @@ const TYPES = {
       const shell = document.querySelector("main.app");
       shell.className = "platform-shell";
       shell.innerHTML = `
-        <div class="site-intro-screen" data-site-intro>
-          <video autoplay muted playsinline preload="auto" aria-label="Video de bienvenida de IPUC Villa del Río"><source src="/assets/site-intro.mp4" type="video/mp4"></video>
-          <span class="site-intro-shade" aria-hidden="true"></span>
-          <div class="site-intro-content"><span class="site-intro-label">IPUC Villa del Río</span><button type="button" class="site-intro-skip" data-skip-intro>Entrar ahora <span aria-hidden="true">→</span></button></div>
+        <div class="site-loader" data-site-loader role="status" aria-live="polite">
+          <div class="site-loader-card"><img src="assets/favicon.png" alt=""><span class="site-loader-mark">IPUC Villa del Río</span><span class="site-loader-line">Preparando la página…</span><span class="site-loader-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
         </div>
-        <div class="site-video-backdrop" aria-hidden="true"><video autoplay muted loop playsinline preload="auto"><source src="assets/ipuc-villa-del-rio.mp4" type="video/mp4"></video><span></span></div>
+        <div class="site-video-backdrop" aria-hidden="true"><video autoplay muted loop playsinline preload="metadata"><source src="assets/ipuc-villa-del-rio.mp4" type="video/mp4"></video><span></span></div>
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
         <header class="platform-top glass">
           <a class="platform-brand" href="/" aria-label="Inicio IPUC Villa del Río">
@@ -1385,6 +1385,7 @@ const TYPES = {
         <div class="media-layer" id="platformMedia" aria-hidden="true"></div>
         <audio id="platformMusic" loop preload="auto"></audio>
         <button class="music-pill" id="musicPill" type="button" hidden>Activar ambiente</button>
+        <div class="upload-progress" id="uploadProgress" hidden role="status" aria-live="polite"><div class="upload-progress-head"><strong data-upload-progress-label>Preparando archivo…</strong><b data-upload-progress-percent>0%</b></div><div class="upload-progress-track"><span data-upload-progress-bar></span></div><small data-upload-progress-detail></small></div>
         <aside class="radio-widget" aria-label="Radio IPUC en vivo">
           <div class="radio-widget-head"><span class="radio-mark">◉</span><span><strong>Radio IPUC</strong><small><i></i> En vivo</small></span></div>
           <button class="radio-toggle" id="radioToggle" type="button">Escuchar ahora</button>
@@ -1434,7 +1435,7 @@ const TYPES = {
         renderRoute();
       });
       if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js").catch(() => {});
-      setupSiteIntro();
+      setupSiteLoader();
       setupPlatformMusic();
       setupRadioIpuc();
       if (location.hash) history.replaceState({}, "", location.hash.replace(/^#\/?/, "/") || "/");
@@ -1787,7 +1788,33 @@ const TYPES = {
 
       const supabaseStorageAdapter = {
         ref: (_storage, path) => ({ path }),
-        async uploadBytes(ref, file, options) { const result = await cloud.storage.from("event-media").upload(ref.path, file, { contentType: options?.contentType, upsert: true }); if (result.error) throw result.error; return result; },
+        async uploadBytes(ref, file, options) {
+          const { data } = await cloud.auth.getSession();
+          const accessToken = data?.session?.access_token;
+          if (!accessToken) throw new Error("La sesión administrativa expiró. Vuelve a iniciar sesión.");
+          const endpoint = `${SUPABASE_CONFIG.url}/storage/v1/object/${ref.path.split("/").map(encodeURIComponent).join("/")}`;
+          return new Promise((resolve, reject) => {
+            const request = new XMLHttpRequest();
+            request.open("POST", endpoint);
+            request.setRequestHeader("Authorization", `Bearer ${accessToken}`);
+            request.setRequestHeader("apikey", SUPABASE_CONFIG.publishableKey);
+            request.setRequestHeader("Content-Type", options?.contentType || file.type || "application/octet-stream");
+            request.setRequestHeader("x-upsert", "true");
+            request.upload.addEventListener("progress", event => {
+              if (event.lengthComputable) options?.onProgress?.(event.loaded, event.total);
+            });
+            request.addEventListener("load", () => {
+              let body = null;
+              try { body = request.responseText ? JSON.parse(request.responseText) : null; } catch (error) { body = null; }
+              if (request.status >= 200 && request.status < 300) return resolve({ data: body });
+              reject(new Error(body?.message || body?.error || `No se pudo subir el archivo (${request.status}).`));
+            });
+            request.addEventListener("error", () => reject(new Error("No se pudo conectar con el almacenamiento. Revisa tu conexión e inténtalo de nuevo.")));
+            request.addEventListener("timeout", () => reject(new Error("La carga tardó demasiado. Revisa tu conexión e inténtalo de nuevo.")));
+            request.timeout = 10 * 60 * 1000;
+            request.send(file);
+          });
+        },
         async getDownloadURL(ref) { const { data } = cloud.storage.from("event-media").getPublicUrl(ref.path); return data.publicUrl; },
         async deleteObject(ref) { return cloud.storage.from("event-media").remove([ref.path]); }
       };
@@ -2081,6 +2108,7 @@ const TYPES = {
         if (image) payload.image = await uploadCloudFile(image, eventId, "principal", "Imagen del evento");
         await saveCloudDoc("events", eventId, payload);
         clearPendingUpload("inlineEventImage");
+        completeUploadProgress("Evento actualizado correctamente.");
         alert("Evento actualizado.");
         renderRoute();
       }
@@ -3108,6 +3136,7 @@ const TYPES = {
         await saveCloudDoc("events", id, payload);
         clearPendingUpload("adminEventImage");
         platform.selectedAdminEvent = id;
+        completeUploadProgress("Evento guardado correctamente.");
         alert("Evento guardado en Firebase.");
         renderAdminPage();
       }
@@ -3156,6 +3185,7 @@ const TYPES = {
         await saveCloudDoc("events", id, saved);
         ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2"].forEach(clearPendingUpload);
         setupPlatformMusic();
+        completeUploadProgress("Todo el material quedó guardado correctamente.");
         alert("Material guardado en Firebase Storage.");
         renderAdminPage();
       }
@@ -3166,15 +3196,20 @@ const TYPES = {
         const file = document.getElementById("uploadWeeklySchedule")?.files[0];
         if (!file) return alert("Selecciona primero una imagen.");
         if (!file.type.startsWith("image/")) return alert("El cronograma semanal debe subirse como imagen (PNG, JPG o WEBP).");
+        setUploadProgressState({ active: true, label: "Preparando la imagen…", detail: "Optimizando el cronograma semanal.", percent: 0, tone: "loading" });
         let optimizedFile;
         try {
           optimizedFile = await optimizeScheduleImage(file);
         } catch (error) {
+          setUploadProgressState({ label: "No se pudo preparar la imagen", detail: error.message || "Inténtalo de nuevo.", percent: 0, tone: "error" });
+          window.clearTimeout(uploadProgressTimer);
+          uploadProgressTimer = window.setTimeout(() => setUploadProgressState({ active: false }), 4500);
           return alert(error.message || "No se pudo preparar la imagen. Usa una imagen más liviana.");
         }
         const asset = await uploadCloudFile(optimizedFile, "site", "cronograma-semanal", "Cronograma semanal");
         await saveCloudDoc("settings", "site", { weeklySchedule: asset });
         APP_STATE.weeklySchedule = asset;
+        completeUploadProgress("Cronograma semanal guardado correctamente.");
         alert("Cronograma semanal guardado.");
         renderAdminPage();
       }
@@ -3294,6 +3329,7 @@ const TYPES = {
           style: document.getElementById("reflectionStyle").value,
           media
         });
+        completeUploadProgress("Reflexión guardada correctamente.");
         alert("Reflexión multimedia guardada.");
         renderAdminPage();
       }
@@ -3320,26 +3356,73 @@ const TYPES = {
           ...data,
           updatedAt: cloud.dbMod.serverTimestamp()
         });
-        const result = await cloud.dbMod.setDoc(cloud.dbMod.doc(cloud.db, collectionName, id), payload, { merge: true });
-        if (result?.error) throw result.error;
+        if (uploadProgressState.active) setUploadProgressState({ label: "Guardando cambios…", detail: "El archivo ya se cargó; estamos guardando la información.", percent: 100, tone: "loading" });
+        try {
+          const result = await cloud.dbMod.setDoc(cloud.dbMod.doc(cloud.db, collectionName, id), payload, { merge: true });
+          if (result?.error) throw result.error;
+        } catch (error) {
+          if (uploadProgressState.active) {
+            setUploadProgressState({ label: "No se pudo guardar la información", detail: error.message || "El archivo puede haberse cargado, pero falta guardar el registro.", percent: 100, tone: "error" });
+            window.clearTimeout(uploadProgressTimer);
+            uploadProgressTimer = window.setTimeout(() => setUploadProgressState({ active: false }), 5000);
+          }
+          throw error;
+        }
       }
 
       async function uploadCloudFile(file, eventId, section, label) {
         const safeName = safeFileName(file.name);
         const path = `events/${eventId}/${section}/${Date.now()}-${safeName}`;
         const fileRef = cloud.storageMod.ref(cloud.storage, path);
-        await cloud.storageMod.uploadBytes(fileRef, file, { contentType: file.type || "application/octet-stream" });
-        const url = await cloud.storageMod.getDownloadURL(fileRef);
-        return {
-          id: `asset-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-          label,
-          name: file.name,
-          type: file.type || "application/octet-stream",
-          size: file.size,
-          uploadedAt: dateKey(new Date()),
-          path,
-          url
-        };
+        setUploadProgressState({ active: true, label: `Subiendo ${file.name}`, detail: `${label} · ${humanFileSize(file.size)}`, percent: 0, tone: "loading" });
+        try {
+          await cloud.storageMod.uploadBytes(fileRef, file, { contentType: file.type || "application/octet-stream", onProgress: updateUploadProgress });
+          setUploadProgressState({ label: "Archivo cargado", detail: `${label} · preparando el enlace público…`, percent: 100, tone: "loading" });
+          const url = await cloud.storageMod.getDownloadURL(fileRef);
+          return {
+            id: `asset-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+            label,
+            name: file.name,
+            type: file.type || "application/octet-stream",
+            size: file.size,
+            uploadedAt: dateKey(new Date()),
+            path,
+            url
+          };
+        } catch (error) {
+          setUploadProgressState({ label: "No se pudo completar la carga", detail: error.message || "Inténtalo de nuevo.", percent: 0, tone: "error" });
+          window.clearTimeout(uploadProgressTimer);
+          uploadProgressTimer = window.setTimeout(() => setUploadProgressState({ active: false }), 4500);
+          throw error;
+        }
+      }
+
+      function setUploadProgressState(next) {
+        Object.assign(uploadProgressState, next);
+        const panel = document.getElementById("uploadProgress");
+        if (!panel) return;
+        panel.hidden = !uploadProgressState.active;
+        panel.classList.toggle("is-error", uploadProgressState.tone === "error");
+        const label = panel.querySelector("[data-upload-progress-label]");
+        const percent = panel.querySelector("[data-upload-progress-percent]");
+        const bar = panel.querySelector("[data-upload-progress-bar]");
+        const detail = panel.querySelector("[data-upload-progress-detail]");
+        if (label) label.textContent = uploadProgressState.label || "Preparando archivo…";
+        if (percent) percent.textContent = `${Math.max(0, Math.min(100, Math.round(uploadProgressState.percent || 0)))}%`;
+        if (bar) bar.style.width = `${Math.max(0, Math.min(100, uploadProgressState.percent || 0))}%`;
+        if (detail) detail.textContent = uploadProgressState.detail || "";
+      }
+
+      function updateUploadProgress(loaded, total) {
+        const percent = total ? (loaded / total) * 100 : 0;
+        setUploadProgressState({ active: true, percent, tone: "loading" });
+      }
+
+      function completeUploadProgress(detail = "Todo quedó guardado correctamente.") {
+        if (!uploadProgressState.active) return;
+        window.clearTimeout(uploadProgressTimer);
+        setUploadProgressState({ active: true, label: "Carga completada", detail, percent: 100, tone: "success" });
+        uploadProgressTimer = window.setTimeout(() => setUploadProgressState({ active: false }), 1800);
       }
 
       function safeFileName(name) {
@@ -3494,24 +3577,15 @@ const TYPES = {
         layer.querySelector("[data-download-media]").onclick = () => downloadAsset(asset);
       }
 
-      function setupSiteIntro() {
-        const intro = document.querySelector("[data-site-intro]");
-        const video = intro?.querySelector("video");
-        if (!intro) return;
+      function setupSiteLoader() {
+        const loader = document.querySelector("[data-site-loader]");
+        if (!loader) return;
         const close = () => {
-          if (intro.classList.contains("is-hidden")) return;
-          intro.classList.add("is-hidden");
-          window.setTimeout(() => intro.remove(), 700);
+          if (loader.classList.contains("is-hidden")) return;
+          loader.classList.add("is-hidden");
+          window.setTimeout(() => loader.remove(), 500);
         };
-        intro.querySelector("[data-skip-intro]")?.addEventListener("click", close);
-        video?.addEventListener("ended", close, { once: true });
-        video?.addEventListener("error", () => window.setTimeout(close, 300), { once: true });
-        window.setTimeout(close, 12000);
-        if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-          close();
-          return;
-        }
-        video?.play().catch(() => {});
+        window.requestAnimationFrame(() => window.setTimeout(close, window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 180 : 650));
       }
 
       function setupPlatformMusic() {
