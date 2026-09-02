@@ -2666,22 +2666,44 @@ const TYPES = {
           const zone = input.closest("label") || input.parentElement;
           if (!zone) return;
           zone.classList.add("file-dropzone");
+          if (!zone.querySelector(".file-drop-copy")) {
+            const copy = document.createElement("span");
+            copy.className = "file-drop-copy";
+            copy.innerHTML = `<strong>Arrastra y suelta aquí</strong><small>o haz clic para buscar en tu dispositivo</small>`;
+            input.insertAdjacentElement("beforebegin", copy);
+          }
+          if (!zone.querySelector(".file-name-list")) {
+            const names = document.createElement("span");
+            names.className = "file-name-list";
+            input.insertAdjacentElement("afterend", names);
+          }
           ["dragenter", "dragover"].forEach(eventName => zone.addEventListener(eventName, event => {
             event.preventDefault();
+            event.stopPropagation();
             zone.classList.add("is-dragging");
           }));
           ["dragleave", "drop"].forEach(eventName => zone.addEventListener(eventName, event => {
             event.preventDefault();
+            event.stopPropagation();
             zone.classList.remove("is-dragging");
           }));
           zone.addEventListener("drop", event => {
             if (input.disabled || !event.dataTransfer?.files?.length) return;
-            const transfer = new DataTransfer();
-            [...event.dataTransfer.files].forEach(file => transfer.items.add(file));
-            input.files = transfer.files;
+            try {
+              const transfer = new DataTransfer();
+              [...event.dataTransfer.files].forEach(file => transfer.items.add(file));
+              input.files = transfer.files;
+            } catch (error) {
+              return alert("No se pudo leer el archivo arrastrado. Intenta hacer clic en la zona para seleccionarlo.");
+            }
             input.dispatchEvent(new Event("change", { bubbles: true }));
           });
-          input.addEventListener("change", () => zone.classList.toggle("has-file", Boolean(input.files?.length)));
+          input.addEventListener("change", () => {
+            const files = [...(input.files || [])];
+            zone.classList.toggle("has-file", Boolean(files.length));
+            const names = zone.querySelector(".file-name-list");
+            if (names) names.textContent = files.length ? files.map(file => file.name).join(" · ") : "";
+          });
         });
       }
 
@@ -3377,10 +3399,16 @@ const TYPES = {
         .upload-group { border: 1px solid rgba(83,102,117,.14); border-radius: 16px; background: rgba(255,255,255,.34); padding: 0 12px 12px; }
         .upload-group summary { padding: 12px 2px; color: #123348; font-weight: 950; cursor: pointer; }
         .upload-group .form-grid { padding-top: 2px; }
-        .file-dropzone { min-height: 84px; padding: 10px; border: 1px dashed rgba(18,51,72,.26); border-radius: 14px; background: rgba(255,255,255,.34); transition: border-color .18s ease, background .18s ease, transform .18s ease; }
-        .file-dropzone input[type="file"] { min-height: 38px; }
+        .file-dropzone { position: relative; display: grid !important; gap: 7px !important; min-height: 116px; padding: 13px; border: 1px dashed rgba(18,51,72,.28); border-radius: 17px; background: rgba(255,255,255,.38); cursor: pointer; transition: border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease; }
+        .file-dropzone:hover { border-color: rgba(28,139,120,.65); background: rgba(255,255,255,.62); }
+        .file-dropzone input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; opacity: 0; cursor: pointer; }
+        .file-drop-copy { display: grid; gap: 3px; place-items: center; min-height: 64px; padding: 7px; border-radius: 12px; color: #123348; text-align: center; pointer-events: none; }
+        .file-drop-copy::before { content: "↥"; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: rgba(28,139,120,.14); color: #1c8b78; font-size: 1.25rem; font-weight: 950; }
+        .file-drop-copy strong { font-size: .82rem; font-weight: 950; text-transform: none; }
+        .file-drop-copy small { color: var(--muted); font-size: .7rem; font-weight: 750; text-transform: none; }
+        .file-name-list { display: block; min-height: 17px; overflow: hidden; color: #185f53; font-size: .72rem; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
         .file-dropzone.is-dragging { border-color: #1c8b78; background: rgba(28,139,120,.13); transform: translateY(-2px); }
-        .file-dropzone.has-file { border-color: rgba(28,139,120,.48); background: rgba(235,249,245,.64); }
+        .file-dropzone.has-file { border-color: rgba(28,139,120,.65); background: rgba(235,249,245,.72); box-shadow: 0 8px 20px rgba(28,139,120,.10); }
         .admin-wide { grid-column: 1 / -1; }
         .detail-grid-page .wide { grid-column: 1 / -1; }
         .section-title { margin-bottom: 12px; }
