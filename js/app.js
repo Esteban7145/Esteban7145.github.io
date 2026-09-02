@@ -190,18 +190,19 @@ const TYPES = {
     ];
     const STORAGE_KEY = "ipuc-villa-del-rio-event-center-v1";
     const TAGS = ["Jovenes", "Damas", "Caballeros", "Escuela Dominical", "Evangelismo", "Infantil", "Musica", "Multimedia", "Pastoral", "Distrital", "Nacional", "Especial"];
+    const COMMITTEE_ASSET = "https://raw.githubusercontent.com/Esteban7145/Esteban7145.github.io/main/assets/";
     const COMMITTEES = [
-      ["ipuc", "IPUC Villa del Río", "assets/committee-ipuc-villa-del-rio.png", ["pastoral", "ipuc"]],
-      ["caballeros", "Caballeros", "assets/committee-caballeros.png", ["caballeros"]],
-      ["damas", "Damas Dorcas", "assets/committee-damas-dorcas.png", ["damas", "dorcas"]],
-      ["decom", "DECOM", "assets/committee-decom.png", ["decom"]],
-      ["evangelismo", "Evangelismo", "assets/committee-evangelismo.png", ["evangelismo"]],
-      ["jovenes", "Jóvenes", "assets/committee-jovenes.png", ["jovenes"]],
-      ["misiones", "Misiones", "assets/committee-misiones.png", ["misiones"]],
-      ["musica", "Música", "assets/committee-musica.png", ["musica"]],
-      ["familias", "Red de familias", "assets/committee-red-de-familias.png", ["familias", "red de familias"]],
-      ["escuela-dominical", "Escuela Dominical", "assets/committee-escuela-dominical.png", ["escuela dominical"]],
-      ["edad-dorada", "Edad Dorada", "assets/committee-edad-dorada.png", ["edad dorada"]]
+      ["ipuc", "IPUC Villa del Río", `${COMMITTEE_ASSET}committee-ipuc-villa-del-rio.png`, ["pastoral", "ipuc"]],
+      ["caballeros", "Caballeros", `${COMMITTEE_ASSET}committee-caballeros.png`, ["caballeros"]],
+      ["damas", "Damas Dorcas", `${COMMITTEE_ASSET}committee-damas-dorcas.png`, ["damas", "dorcas"]],
+      ["decom", "DECOM", `${COMMITTEE_ASSET}committee-decom.png`, ["decom"]],
+      ["evangelismo", "Evangelismo", `${COMMITTEE_ASSET}committee-evangelismo.png`, ["evangelismo"]],
+      ["jovenes", "Jóvenes", `${COMMITTEE_ASSET}committee-jovenes.png`, ["jovenes"]],
+      ["misiones", "Misiones", `${COMMITTEE_ASSET}committee-misiones.png`, ["misiones"]],
+      ["musica", "Música", `${COMMITTEE_ASSET}committee-musica.png`, ["musica"]],
+      ["familias", "Red de familias", `${COMMITTEE_ASSET}committee-red-de-familias.png`, ["familias", "red de familias"]],
+      ["escuela-dominical", "Escuela Dominical", `${COMMITTEE_ASSET}committee-escuela-dominical.png`, ["escuela dominical"]],
+      ["edad-dorada", "Edad Dorada", `${COMMITTEE_ASSET}committee-edad-dorada.png`, ["edad dorada"]]
     ];
     const INVITATION_FIELDS = [
       ["main", "Invitacion principal"],
