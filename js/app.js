@@ -1882,8 +1882,10 @@ const TYPES = {
 
       async function checkSupabaseStorageAvailability() {
         try {
-          const response = await fetch(`${SUPABASE_CONFIG.url}/storage/v1/bucket/${encodeURIComponent(SUPABASE_CONFIG.storageBucket)}`, {
-            headers: { apikey: SUPABASE_CONFIG.publishableKey }
+          const response = await fetch(`${SUPABASE_CONFIG.url}/storage/v1/object/list/${encodeURIComponent(SUPABASE_CONFIG.storageBucket)}`, {
+            method: "POST",
+            headers: { apikey: SUPABASE_CONFIG.publishableKey, "Content-Type": "application/json" },
+            body: JSON.stringify({ prefix: "", limit: 1, offset: 0 })
           });
           const body = await response.json().catch(() => null);
           const description = `${body?.code || ""} ${body?.message || ""} ${body?.error || ""}`.toLowerCase();
