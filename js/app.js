@@ -2744,7 +2744,12 @@ const TYPES = {
         const file = document.getElementById("uploadWeeklySchedule")?.files[0];
         if (!file) return alert("Selecciona primero una imagen.");
         if (!file.type.startsWith("image/")) return alert("El cronograma semanal debe subirse como imagen (PNG, JPG o WEBP).");
-        const optimizedFile = await optimizeScheduleImage(file);
+        let optimizedFile;
+        try {
+          optimizedFile = await optimizeScheduleImage(file);
+        } catch (error) {
+          return alert(error.message || "No se pudo preparar la imagen. Usa una imagen más liviana.");
+        }
         const asset = await uploadCloudFile(optimizedFile, "site", "cronograma-semanal", "Cronograma semanal");
         await saveCloudDoc("settings", "site", { weeklySchedule: asset });
         APP_STATE.weeklySchedule = asset;
@@ -2767,6 +2772,7 @@ const TYPES = {
           if (!blob) return file;
           return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.jpg`, { type: "image/jpeg", lastModified: Date.now() });
         } catch (error) {
+          if (file.size > 12 * 1024 * 1024) throw new Error("La imagen es demasiado pesada. Usa una imagen menor de 12 MB o conviértela a JPG antes de subirla.");
           console.warn("No se pudo optimizar el cronograma; se intentará subir el original", error);
           return file;
         }
