@@ -1,7 +1,7 @@
 {
-  "name": "Cronograma IPUC Villa del Río",
-  "short_name": "Cronograma IPUC",
-  "description": "Agenda anual de cultos y eventos de la IPUC Villa del Río.",
+  "name": "IPUC Villa del Río",
+  "short_name": "IPUC Villa del Río",
+  "description": "Información, recursos, cultos y actividades de la IPUC Villa del Río.",
   "start_url": "/#/inicio",
   "display": "standalone",
   "background_color": "#F4FAFC",

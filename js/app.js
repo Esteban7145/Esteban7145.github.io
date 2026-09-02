@@ -213,8 +213,8 @@ const TYPES = {
     ];
     const DEFAULT_ANNOUNCEMENTS = [
       {
-        title: "Cronograma anual disponible",
-        description: "Ya puedes consultar los cultos, ayunos, vigilias y oraciones del año.",
+        title: "Agenda IPUC disponible",
+        description: "Ya puedes consultar los cultos, ayunos, vigilias, oraciones y actividades del año.",
         date: "2026-06-03",
         eventId: ""
       }
@@ -1326,7 +1326,7 @@ const TYPES = {
         <header class="platform-top glass">
           <a class="platform-brand" href="/" aria-label="Inicio IPUC Villa del Río">
             <img src="assets/logo.png" alt="Logo IPUC Villa del Río">
-            <span><strong>Cronograma IPUC Villa del Río</strong><small>Agenda anual de eventos</small></span>
+            <span><strong>IPUC Villa del Río</strong><small>Información, recursos y vida de iglesia</small></span>
           </a>
           <button class="nav-toggle" type="button" data-toggle-nav aria-expanded="false" aria-controls="platformNav" aria-label="Abrir menú">Menú</button>
           <nav class="platform-nav" id="platformNav" aria-label="Navegación principal">
@@ -1343,7 +1343,7 @@ const TYPES = {
         <section id="routeView" class="route-view" tabindex="-1"></section>
         <footer class="platform-footer glass">
           <span><strong>IPUC Villa del Río</strong><small>Un lugar para mantenernos conectados.</small></span>
-          <a href="/calendario">Ver cronograma</a>
+          <a href="/calendario">Ver calendario</a>
         </footer>
         <div class="media-layer" id="platformMedia" aria-hidden="true"></div>
         <audio id="platformMusic" loop preload="auto"></audio>
@@ -1788,8 +1788,12 @@ const TYPES = {
             </div>
           </section>
           <section class="home-welcome glass">
-            <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta los próximos encuentros, guarda las fechas y mantente al día con la iglesia.</p></div>
-            <div class="home-quick-links"><a href="#/calendario"><strong>Calendario</strong><span>Ver la semana completa →</span></a><a href="#/agenda"><strong>Agenda</strong><span>Próximos encuentros →</span></a><a href="#/ubicacion"><strong>Ubicación</strong><span>Cómo llegar →</span></a></div>
+            <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta actividades, recursos, horarios y novedades de la congregación desde un solo lugar.</p></div>
+            <div class="home-quick-links"><a href="#/calendario"><strong>Calendario</strong><span>Ver la semana completa →</span></a><a href="#/agenda"><strong>Agenda</strong><span>Próximos encuentros →</span></a><a href="#/recursos"><strong>Recursos</strong><span>Material oficial IPUC →</span></a><a href="#/ubicacion"><strong>Ubicación</strong><span>Cómo llegar →</span></a></div>
+          </section>
+          <section class="home-community glass">
+            <div class="home-community-head"><div><p class="eyebrow">Familia IPUC</p><h2>Una iglesia que sirve unida</h2><p>Conoce los comités y ministerios que hacen parte de la vida de IPUC Villa del Río.</p></div><a class="small-action" href="#/eventos">Ver actividades</a></div>
+            <div class="home-committee-grid">${committeeHomeMarkup()}</div>
           </section>
           <section class="type-shortcuts glass" aria-label="Buscar por tipo de evento">
             <div><p class="eyebrow">Accesos rápidos</p><h2>¿Qué evento buscas?</h2></div>
@@ -1807,6 +1811,7 @@ const TYPES = {
           </section>
         `;
         bindTypeShortcuts();
+        bindHomeCommitteeShortcuts();
         const homeRadio = view().querySelector("[data-home-radio]");
         if (homeRadio) homeRadio.onclick = () => {
           if (reflectionIsActive) {
@@ -1838,7 +1843,7 @@ const TYPES = {
       }
 
       function bindHomeMotion() {
-        const sections = view().querySelectorAll(".home-hero, .home-welcome, .type-shortcuts, .split-grid > article");
+        const sections = view().querySelectorAll(".home-hero, .home-welcome, .home-community, .type-shortcuts, .split-grid > article");
         sections.forEach((section, index) => section.style.setProperty("--reveal-delay", `${index * 80}ms`));
         if (!window.IntersectionObserver) {
           sections.forEach(section => section.classList.add("is-visible"));
@@ -2253,6 +2258,19 @@ const TYPES = {
           <button type="button" class="type-chip type-${type}" data-jump-type="${type}">
             <span aria-hidden="true"></span>${escapeHtml(config.label)}
           </button>`).join("")}</div>`;
+      }
+
+      function committeeHomeMarkup() {
+        const tagByCommittee = { caballeros: "Caballeros", damas: "Damas", evangelismo: "Evangelismo", jovenes: "Jovenes", misiones: "Misiones", musica: "Musica", "escuela-dominical": "Escuela Dominical", "edad-dorada": "todos", familias: "todos", decom: "todos", ipuc: "todos" };
+        return COMMITTEES.filter(([key]) => key !== "ipuc").map(([key, label, image]) => `<a class="home-committee-card" href="#/eventos" data-home-committee="${escapeHtml(tagByCommittee[key] || "todos")}"><img src="${image}" alt="Logo de ${escapeHtml(label)}"><span>${escapeHtml(label)}</span><small>Ver actividades →</small></a>`).join("");
+      }
+
+      function bindHomeCommitteeShortcuts() {
+        view().querySelectorAll("[data-home-committee]").forEach(card => {
+          card.onclick = () => {
+            platform.tag = card.dataset.homeCommittee || "todos";
+          };
+        });
       }
 
       function bindTypeShortcuts() {
