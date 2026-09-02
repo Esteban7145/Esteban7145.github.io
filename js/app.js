@@ -1176,6 +1176,7 @@ const TYPES = {
     }
     initIpucPlatform();
     function initIpucPlatform() {
+      let deferredInstallPrompt = null;
       APP_STATE.events = APP_STATE.events || {};
       APP_STATE.announcements = APP_STATE.announcements || DEFAULT_ANNOUNCEMENTS;
       APP_STATE.reflections = APP_STATE.reflections || {};
@@ -1352,6 +1353,16 @@ const TYPES = {
       });
       window.addEventListener("ipuc-state-updated", renderRoute);
       document.addEventListener("click", unlockMusicOnce, { once: true });
+      window.addEventListener("beforeinstallprompt", event => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        renderRoute();
+      });
+      window.addEventListener("appinstalled", () => {
+        deferredInstallPrompt = null;
+        renderRoute();
+      });
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js").catch(() => {});
       setupPlatformMusic();
       setupRadioIpuc();
       if (location.hash) history.replaceState({}, "", location.hash.replace(/^#\/?/, "/") || "/");
@@ -1592,7 +1603,7 @@ const TYPES = {
               <p class="home-lead">${escapeHtml(main ? shortDescription(main) : reflection.media ? "Escucha o mira la reflexión de hoy." : reflection.text + " (" + reflection.ref + ")")}</p>
               ${main ? eventInfoList(main) : `<div class="today-line">${escapeHtml(longPlatformDate(today))}</div>`}
               ${!main ? reflectionMediaMarkup(reflection, true) : ""}
-              <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="radio-home-action" type="button" data-home-radio>▶ Escuchar Radio IPUC</button></div>
+              <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="radio-home-action" type="button" data-home-radio>▶ Escuchar Radio IPUC</button>${deferredInstallPrompt ? `<button class="radio-home-action install-home-action" type="button" data-install-app>＋ Instalar app</button>` : ""}</div>
             </div>
           </section>
           <section class="home-welcome glass">
@@ -1617,6 +1628,13 @@ const TYPES = {
         bindTypeShortcuts();
         const homeRadio = view().querySelector("[data-home-radio]");
         if (homeRadio) homeRadio.onclick = () => document.getElementById("radioToggle")?.click();
+        const installApp = view().querySelector("[data-install-app]");
+        if (installApp) installApp.onclick = async () => {
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+          deferredInstallPrompt = null;
+          renderRoute();
+        };
         bindHomeMotion();
         bindReflectionAutoplayUnlock();
       }
