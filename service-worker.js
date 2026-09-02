@@ -1,4 +1,4 @@
-const CACHE_NAME = "ipuc-villa-del-rio-v14-admin-login-fix";
+const CACHE_NAME = "ipuc-villa-del-rio-v15-comite-logos";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/assets/logo.png"];
 
 self.addEventListener("install", event => {

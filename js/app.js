@@ -2350,7 +2350,7 @@ const TYPES = {
 
       function committeeHomeMarkup() {
         const tagByCommittee = { caballeros: "Caballeros", damas: "Damas", evangelismo: "Evangelismo", jovenes: "Jovenes", misiones: "Misiones", musica: "Musica", "escuela-dominical": "Escuela Dominical", "edad-dorada": "todos", familias: "todos", decom: "todos", ipuc: "todos" };
-        return COMMITTEES.filter(([key]) => key !== "ipuc").map(([key, label, image]) => `<a class="home-committee-card" href="#/eventos" data-home-committee="${escapeHtml(tagByCommittee[key] || "todos")}"><img src="${image}" alt="Logo de ${escapeHtml(label)}"><span>${escapeHtml(label)}</span><small>Ver actividades →</small></a>`).join("");
+        return COMMITTEES.filter(([key]) => key !== "ipuc").map(([key, label, image]) => `<a class="home-committee-card" href="#/eventos" title="Ver actividades de ${escapeHtml(label)}" aria-label="Ver actividades de ${escapeHtml(label)}" data-home-committee="${escapeHtml(tagByCommittee[key] || "todos")}"><img src="${image}" alt="Logo de ${escapeHtml(label)}"></a>`).join("");
       }
 
       function bindHomeCommitteeShortcuts() {
