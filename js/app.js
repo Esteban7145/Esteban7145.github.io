@@ -1441,7 +1441,6 @@ const TYPES = {
         }
       });
       window.addEventListener("ipuc-state-updated", renderRoute);
-      document.addEventListener("click", unlockMusicOnce, { once: true });
       window.addEventListener("beforeinstallprompt", event => {
         event.preventDefault();
         deferredInstallPrompt = event;
@@ -1694,11 +1693,6 @@ const TYPES = {
         return document.getElementById("routeView");
       }
 
-      function firebaseConfigured() {
-        const config = FIREBASE_CLOUD.firebaseConfig || {};
-        return Boolean(config.apiKey && config.authDomain && config.projectId && config.storageBucket && config.appId && FIREBASE_CLOUD.adminEmails?.length);
-      }
-
       async function initializeCloud() {
         try {
           const supabase = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm");
@@ -1713,6 +1707,7 @@ const TYPES = {
           cloud.ready = true;
           cloud.error = "";
           cloud.storageReady = true;
+          cloud.storageError = "";
           setupLiveVisitors();
           supabaseAuthAdapter.onAuthStateChanged(cloud.auth, user => {
             cloud.user = user;
@@ -1750,7 +1745,9 @@ const TYPES = {
 
       const supabaseAuthAdapter = {
         onAuthStateChanged(client, callback) {
-          client.auth.getSession().then(({ data }) => callback(data.session?.user || null));
+          client.auth.getSession()
+            .then(({ data }) => callback(data.session?.user || null))
+            .catch(() => callback(null));
           const { data } = client.auth.onAuthStateChange((_event, session) => callback(session?.user || null));
           return () => data.subscription.unsubscribe();
         },
@@ -1764,14 +1761,23 @@ const TYPES = {
         collection: (_client, name) => name,
         doc: (_client, collectionName, id) => ({ collectionName, id }),
         async setDoc(ref, data) { return cloud.db.from(tableName(ref.collectionName)).upsert({ id: ref.id, ...toSupabaseRow(data) }); },
-        async updateDoc(ref, data) { return cloud.db.from(tableName(ref.collectionName)).update(toSupabaseRow(cleanSupabasePayload(data))).eq("id", ref.id); },
-        async deleteDoc(ref) { return cloud.db.from(tableName(ref.collectionName)).delete().eq("id", ref.id); },
+        async updateDoc(ref, data) {
+          const result = await cloud.db.from(tableName(ref.collectionName)).update(toSupabaseRow(cleanSupabasePayload(data))).eq("id", ref.id);
+          if (result.error) throw result.error;
+          return result;
+        },
+        async deleteDoc(ref) {
+          const result = await cloud.db.from(tableName(ref.collectionName)).delete().eq("id", ref.id);
+          if (result.error) throw result.error;
+          return result;
+        },
         deleteField: () => undefined,
         serverTimestamp: () => new Date().toISOString(),
         onSnapshot(collectionName, callback, onError) {
           let active = true;
+          const table = tableName(collectionName);
           const load = async () => {
-            const query = collectionName === "settings" ? cloud.db.from("settings").select("*").eq("id", "site") : cloud.db.from(tableName(collectionName)).select("*");
+            const query = collectionName === "settings" ? cloud.db.from("settings").select("*").eq("id", "site") : cloud.db.from(table).select("*");
             const { data, error } = await query;
             if (!active) return;
             if (error) return onError(error);
@@ -1779,7 +1785,13 @@ const TYPES = {
             callback({ docs, forEach(fn) { docs.forEach(fn); } });
           };
           load();
-          return () => { active = false; };
+          const channel = cloud.app?.channel?.(`data-${table}`)
+            ?.on("postgres_changes", { event: "*", schema: "public", table }, load)
+            ?.subscribe();
+          return () => {
+            active = false;
+            if (channel && cloud.app?.removeChannel) cloud.app.removeChannel(channel);
+          };
         }
       };
 
@@ -1789,6 +1801,36 @@ const TYPES = {
 
       function tableName(collectionName) {
         return { decomTurns: "decom_turns" }[collectionName] || collectionName;
+      }
+
+      function syncLocalCloudDoc(collectionName, id, data) {
+        const next = { ...(data || {}), id };
+        if (collectionName === "events") APP_STATE.events[id] = { ...(APP_STATE.events[id] || {}), ...next };
+        if (collectionName === "reflections") APP_STATE.reflections[id] = { ...(APP_STATE.reflections[id] || {}), ...next };
+        if (collectionName === "decomTurns") APP_STATE.decomTurns[id] = { ...(APP_STATE.decomTurns[id] || {}), ...next };
+        if (collectionName === "announcements") {
+          const existing = APP_STATE.announcements.findIndex(item => item.id === id);
+          if (existing >= 0) APP_STATE.announcements[existing] = { ...APP_STATE.announcements[existing], ...next };
+          else APP_STATE.announcements.push(next);
+        }
+        if (collectionName === "settings") {
+          if (Object.prototype.hasOwnProperty.call(data || {}, "music")) APP_STATE.music = data.music || null;
+          if (Object.prototype.hasOwnProperty.call(data || {}, "weeklySchedule")) APP_STATE.weeklySchedule = data.weeklySchedule || null;
+        }
+      }
+
+      function cloudActionMessage(error) {
+        const code = `${error?.code || ""} ${error?.message || ""}`.toLowerCase();
+        if (code.includes("bucket not found") || code.includes("nosuchbucket")) {
+          return "Supabase todavía no tiene creado el almacenamiento de archivos. Crea el bucket público «event-media» en Supabase y vuelve a intentarlo.";
+        }
+        if (code.includes("invalid refresh token") || code.includes("refresh token not found")) {
+          return "La sesión administrativa venció. Recarga la página e inicia sesión nuevamente.";
+        }
+        if (code.includes("row-level security") || code.includes("permission denied") || code.includes("not authorized")) {
+          return "Supabase rechazó la operación por permisos. Revisa las políticas de la tabla o inicia sesión con una cuenta administradora.";
+        }
+        return error?.message || "No se pudo completar la acción. Inténtalo de nuevo.";
       }
 
       function toSupabaseRow(data) {
@@ -1839,22 +1881,6 @@ const TYPES = {
         async deleteObject(ref) { return cloud.storage.from(SUPABASE_CONFIG.storageBucket).remove([ref.path]); }
       };
 
-      async function checkStorageAvailability() {
-        try {
-          const bucket = encodeURIComponent(FIREBASE_CLOUD.firebaseConfig.storageBucket);
-          const response = await fetch(`https://firebasestorage.googleapis.com/v0/b/${bucket}/o?maxResults=1`);
-          if (response.status === 404) {
-            cloud.storageError = "Las cargas de archivos requieren habilitar Firebase Storage y un plan con facturación.";
-            return false;
-          }
-          cloud.storageError = "";
-          return true;
-        } catch (error) {
-          cloud.storageError = "No se pudo comprobar Firebase Storage. Las cargas quedan desactivadas por seguridad.";
-          return false;
-        }
-      }
-
       function normalizeCloudDoc(id, data) {
         return {
           id,
@@ -1873,7 +1899,7 @@ const TYPES = {
 
       function requireCloudAdmin() {
         if (!cloud.enabled || !cloud.ready) {
-          alert("Firebase aun no esta configurado. No se guardara nada en local. Configura Firestore, Storage y Auth primero.");
+          alert("Supabase todavía no está disponible. Recarga la página e inténtalo nuevamente.");
           return false;
         }
         if (!isAdmin()) {
@@ -1891,8 +1917,13 @@ const TYPES = {
         const reflection = reflectionForDate(today);
         const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, true) : "";
         reflectionIsActive = Boolean(reflectionMarkup);
-        if (reflectionIsActive) stopRadioIpuc();
-        else startRadioIpuc();
+        if (reflectionIsActive) {
+          stopRadioIpuc();
+          stopPlatformMusic();
+        } else {
+          stopPlatformMusic();
+          startRadioIpuc();
+        }
         const next = platformEventsForYear(today.getFullYear()).filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Realizado").sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
         view().innerHTML = `
           <section class="home-hero glass">
@@ -2109,7 +2140,7 @@ const TYPES = {
       function bindInlineAdminEditor() {
         const editor = view().querySelector(".inline-admin-editor");
         if (!editor) return;
-        editor.querySelector("[data-inline-save]").onclick = saveInlineEvent;
+        editor.querySelector("[data-inline-save]").onclick = runAdminAction(saveInlineEvent);
         editor.querySelector("[data-inline-cancel]").onclick = () => { editor.open = false; };
         bindFileDropzones();
       }
@@ -2210,14 +2241,14 @@ const TYPES = {
           return "Confirma el correo del usuario en Supabase Auth antes de iniciar sesión.";
         }
         if (code.includes("too-many-requests")) {
-          return "Firebase bloqueo temporalmente los intentos. Espera unos minutos y vuelve a intentar.";
+          return "Supabase bloqueó temporalmente los intentos. Espera unos minutos y vuelve a intentar.";
         }
         return "No se pudo iniciar sesión con Supabase Auth. Revisa el usuario administrador y la clave.";
       }
 
       function cloudNotice() {
         if (cloud.enabled && cloud.ready) {
-          const storageNotice = cloud.storageReady ? "" : `<div class="cloud-warning"><strong>Archivos desactivados:</strong> ${escapeHtml(cloud.storageError || "Firebase Storage no está habilitado en este proyecto.")}</div>`;
+          const storageNotice = cloud.storageReady ? "" : `<div class="cloud-warning"><strong>Archivos desactivados:</strong> ${escapeHtml(cloud.storageError || "El almacenamiento de archivos de Supabase todavía no está disponible.")}</div>`;
           return `<div class="cloud-ok">Base de datos conectada. Eventos, anuncios, reflexiones y turnos se guardan en la nube.</div>${storageNotice}`;
         }
         return `<div class="cloud-warning"><strong>Supabase pendiente:</strong> ${escapeHtml(cloud.error || "No se pudo conectar con la nube.")}</div>`;
@@ -2817,7 +2848,7 @@ const TYPES = {
           observations,
           specialEventIds: decomSpecialEvents(date).map(event => event.id)
         });
-        alert("Turno DECOM guardado en Firebase.");
+        alert("Turno DECOM guardado en Supabase.");
       }
 
       async function clearDecomTurn(key) {
@@ -2962,6 +2993,13 @@ const TYPES = {
         return String(value ?? "").replace(/[<>&"']/g, char => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" }[char]));
       }
 
+      function runAdminAction(action) {
+        return (...args) => Promise.resolve(action(...args)).catch(error => {
+          console.warn(error);
+          alert(cloudActionMessage(error));
+        });
+      }
+
       function bindAdmin() {
         view().querySelector("[data-logout]").onclick = () => {
           signOutAdmin();
@@ -2991,12 +3029,12 @@ const TYPES = {
           platform.selectedAdminEvent = event.target.value;
           renderAdminPage();
         };
-        document.getElementById("adminSaveEvent").onclick = savePlatformEvent;
-        document.getElementById("adminDeleteEvent").onclick = deletePlatformEvent;
-        document.getElementById("adminSaveMaterial").onclick = savePlatformMaterial;
-        document.getElementById("saveWeeklySchedule").onclick = saveWeeklySchedule;
+        document.getElementById("adminSaveEvent").onclick = runAdminAction(savePlatformEvent);
+        document.getElementById("adminDeleteEvent").onclick = runAdminAction(deletePlatformEvent);
+        document.getElementById("adminSaveMaterial").onclick = runAdminAction(savePlatformMaterial);
+        document.getElementById("saveWeeklySchedule").onclick = runAdminAction(saveWeeklySchedule);
         const deleteWeeklyButton = document.getElementById("deleteWeeklySchedule");
-        if (deleteWeeklyButton) deleteWeeklyButton.onclick = deleteWeeklySchedule;
+        if (deleteWeeklyButton) deleteWeeklyButton.onclick = runAdminAction(deleteWeeklySchedule);
         if (!cloud.storageReady) {
           ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2", "adminSaveMaterial", "uploadWeeklySchedule", "saveWeeklySchedule"].forEach(id => {
             const control = document.getElementById(id);
@@ -3004,10 +3042,10 @@ const TYPES = {
           });
           view().querySelectorAll("[data-remove-asset]").forEach(button => button.disabled = true);
         }
-        document.getElementById("saveReflection").onclick = savePlatformReflection;
-        document.getElementById("saveAnnouncement2").onclick = savePlatformAnnouncement;
+        document.getElementById("saveReflection").onclick = runAdminAction(savePlatformReflection);
+        document.getElementById("saveAnnouncement2").onclick = runAdminAction(savePlatformAnnouncement);
         view().querySelectorAll("[data-remove-asset]").forEach(button => {
-          button.onclick = () => removePlatformAsset(button.dataset.kind, button.dataset.key || "", Number(button.dataset.index || -1));
+          button.onclick = runAdminAction(() => removePlatformAsset(button.dataset.kind, button.dataset.key || "", Number(button.dataset.index || -1)));
         });
         bindFileDropzones();
         bindDecomControls();
@@ -3104,10 +3142,10 @@ const TYPES = {
           };
         });
         view().querySelectorAll("[data-save-decom]").forEach(button => {
-          button.onclick = () => saveDecomTurn(button.dataset.saveDecom);
+          button.onclick = runAdminAction(() => saveDecomTurn(button.dataset.saveDecom));
         });
         view().querySelectorAll("[data-clear-decom]").forEach(button => {
-          button.onclick = () => clearDecomTurn(button.dataset.clearDecom);
+          button.onclick = runAdminAction(() => clearDecomTurn(button.dataset.clearDecom));
         });
         view().querySelectorAll("[data-ics-decom]").forEach(button => {
           button.onclick = () => downloadDecomIcs(button.dataset.icsDecom);
@@ -3150,14 +3188,14 @@ const TYPES = {
         };
         const eventImageFile = pendingUploadFiles("adminEventImage")[0];
         if (eventImageFile) {
-          if (!cloud.storageReady) return alert("Para guardar la imagen del evento debes habilitar el almacenamiento.");
+          if (!cloud.storageReady) return alert(cloud.storageError || "El almacenamiento de archivos no está disponible.");
           payload.image = await uploadCloudFile(eventImageFile, id, "principal", "Imagen del evento");
         }
         await saveCloudDoc("events", id, payload);
         clearPendingUpload("adminEventImage");
         platform.selectedAdminEvent = id;
         completeUploadProgress("Evento guardado correctamente.");
-        alert("Evento guardado en Firebase.");
+        alert("Evento guardado en Supabase.");
         renderAdminPage();
       }
 
@@ -3175,7 +3213,7 @@ const TYPES = {
 
       async function savePlatformMaterial() {
         if (!requireCloudAdmin()) return;
-        if (!cloud.storageReady) return alert("Las cargas de archivos necesitan habilitar Firebase Storage y un plan con facturación.");
+        if (!cloud.storageReady) return alert(cloud.storageError || "El almacenamiento de archivos no está disponible.");
         const id = document.getElementById("materialSelect").value;
         const event = platformEventById(id);
         if (!event) return alert("Selecciona primero un evento.");
@@ -3206,7 +3244,7 @@ const TYPES = {
         ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2"].forEach(clearPendingUpload);
         setupPlatformMusic();
         completeUploadProgress("Todo el material quedó guardado correctamente.");
-        alert("Material guardado en Firebase Storage.");
+        alert("Material guardado en Supabase Storage.");
         renderAdminPage();
       }
 
@@ -3292,25 +3330,32 @@ const TYPES = {
         const docRef = cloud.dbMod.doc(cloud.db, "events", event.id);
         if (kind === "image") {
           await deleteCloudAsset(event.image);
-          await cloud.dbMod.updateDoc(docRef, { image: cloud.dbMod.deleteField(), updatedAt: cloud.dbMod.serverTimestamp() });
+          await cloud.dbMod.updateDoc(docRef, { image: null, updatedAt: cloud.dbMod.serverTimestamp() });
+          APP_STATE.events[event.id] = { ...(APP_STATE.events[event.id] || {}), image: null };
         }
         if (kind === "invitation") {
           await deleteCloudAsset(event.invitations?.[key]);
-          await cloud.dbMod.updateDoc(docRef, { [`invitations.${key}`]: cloud.dbMod.deleteField(), updatedAt: cloud.dbMod.serverTimestamp() });
+          const invitations = { ...(event.invitations || {}) };
+          delete invitations[key];
+          await cloud.dbMod.updateDoc(docRef, { invitations, updatedAt: cloud.dbMod.serverTimestamp() });
+          APP_STATE.events[event.id] = { ...(APP_STATE.events[event.id] || {}), invitations };
         }
         if (kind === "gallery") {
           const gallery = [...(event.gallery || [])];
           const [asset] = gallery.splice(index, 1);
           await deleteCloudAsset(asset);
           await cloud.dbMod.updateDoc(docRef, { gallery, updatedAt: cloud.dbMod.serverTimestamp() });
+          APP_STATE.events[event.id] = { ...(APP_STATE.events[event.id] || {}), gallery };
         }
         if (kind === "attachment") {
           const attachments = [...(event.attachments || [])];
           const [asset] = attachments.splice(index, 1);
           await deleteCloudAsset(asset);
           await cloud.dbMod.updateDoc(docRef, { attachments, updatedAt: cloud.dbMod.serverTimestamp() });
+          APP_STATE.events[event.id] = { ...(APP_STATE.events[event.id] || {}), attachments };
         }
         alert("Material eliminado.");
+        renderAdminPage();
       }
 
       async function deleteCloudAsset(asset) {
@@ -3367,7 +3412,7 @@ const TYPES = {
           eventId: document.getElementById("announceEvent2").value,
           date: dateKey(today)
         });
-        alert("Anuncio publicado en Firebase.");
+        alert("Anuncio publicado en Supabase.");
         renderAdminPage();
       }
 
@@ -3380,9 +3425,10 @@ const TYPES = {
         try {
           const result = await cloud.dbMod.setDoc(cloud.dbMod.doc(cloud.db, collectionName, id), payload, { merge: true });
           if (result?.error) throw result.error;
+          syncLocalCloudDoc(collectionName, id, payload);
         } catch (error) {
           if (uploadProgressState.active) {
-            setUploadProgressState({ label: "No se pudo guardar la información", detail: error.message || "El archivo puede haberse cargado, pero falta guardar el registro.", percent: 100, tone: "error" });
+            setUploadProgressState({ label: "No se pudo guardar la información", detail: cloudActionMessage(error), percent: 100, tone: "error" });
             window.clearTimeout(uploadProgressTimer);
             uploadProgressTimer = window.setTimeout(() => setUploadProgressState({ active: false }), 5000);
           }
@@ -3410,7 +3456,9 @@ const TYPES = {
             url
           };
         } catch (error) {
-          setUploadProgressState({ label: "No se pudo completar la carga", detail: error.message || "Inténtalo de nuevo.", percent: 0, tone: "error" });
+          cloud.storageReady = false;
+          cloud.storageError = cloudActionMessage(error);
+          setUploadProgressState({ label: "No se pudo completar la carga", detail: cloud.storageError, percent: 0, tone: "error" });
           window.clearTimeout(uploadProgressTimer);
           uploadProgressTimer = window.setTimeout(() => setUploadProgressState({ active: false }), 4500);
           throw error;
@@ -3612,19 +3660,41 @@ const TYPES = {
         const audio = document.getElementById("platformMusic");
         const pill = document.getElementById("musicPill");
         if (!audio || !pill) return;
-        if (!assetSource(APP_STATE.music)) {
+        const source = assetSource(APP_STATE.music);
+        if (!source) {
           pill.hidden = true;
           audio.removeAttribute("src");
           return;
         }
-        audio.src = assetSource(APP_STATE.music);
+        if (audio.src !== source) {
+          audio.src = source;
+          audio.load();
+        }
         audio.volume = 0.35;
-        audio.play().then(() => pill.hidden = true).catch(() => {
-          pill.hidden = false;
-          pill.onclick = () => {
-            audio.play().then(() => pill.hidden = true).catch(() => pill.textContent = "Musica bloqueada");
-          };
+        pill.hidden = false;
+        pill.textContent = audio.paused ? "▶ Escuchar música ambiente" : "⏸ Pausar música ambiente";
+        pill.onclick = () => audio.paused ? startPlatformMusic() : stopPlatformMusic();
+      }
+
+      function startPlatformMusic() {
+        const audio = document.getElementById("platformMusic");
+        if (!audio || !assetSource(APP_STATE.music)) return;
+        if (reflectionIsActive) {
+          stopReflectionMedia();
+          reflectionIsActive = false;
+        }
+        stopRadioIpuc();
+        audio.play().then(setupPlatformMusic).catch(() => {
+          const pill = document.getElementById("musicPill");
+          if (pill) pill.textContent = "La música requiere activar el botón";
         });
+      }
+
+      function stopPlatformMusic() {
+        const audio = document.getElementById("platformMusic");
+        if (!audio) return;
+        audio.pause();
+        setupPlatformMusic();
       }
 
       function setupRadioIpuc() {
@@ -3645,6 +3715,7 @@ const TYPES = {
               stopReflectionMedia();
               reflectionIsActive = false;
             }
+            stopPlatformMusic();
             audio.muted = false;
             audio.play().then(() => setState(true, false)).catch(() => setState(false));
           } else if (audio.muted) {
@@ -3684,6 +3755,7 @@ const TYPES = {
       function startRadioIpuc() {
         const audio = document.getElementById("radioIpucAudio");
         if (!audio || reflectionIsActive || !audio.paused) return;
+        stopPlatformMusic();
         audio.muted = false;
         audio.play().catch(() => {
           audio.muted = true;
@@ -3721,12 +3793,6 @@ const TYPES = {
       function updateLiveVisitors() {
         const count = liveVisitorsChannel ? Object.keys(liveVisitorsChannel.presenceState() || {}).length : 1;
         document.querySelectorAll("[data-online-count]").forEach(node => { node.textContent = String(Math.max(1, count)); });
-      }
-
-      function unlockMusicOnce() {
-        const audio = document.getElementById("platformMusic");
-        const pill = document.getElementById("musicPill");
-        if (assetSource(APP_STATE.music) && audio?.paused) audio.play().then(() => pill.hidden = true).catch(() => {});
       }
 
       function refreshAdminNav() {

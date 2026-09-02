@@ -9,7 +9,7 @@ vigilias, ayunos y eventos de la congregación.
 - Calendario por año, mes, semana y día con colores por tipo de evento.
 - Agenda mensual, búsqueda y filtros.
 - Detalles compartibles por WhatsApp y descarga de calendarios `.ics`.
-- Panel privado con Firebase Authentication, Firestore y Storage.
+- Panel privado con Supabase Auth, base de datos y Storage.
 - Cronograma interno DECOM.
 - Banco de recursos IPUC con búsqueda, navegación por carpetas y descarga desde el repositorio oficial.
 
@@ -17,16 +17,16 @@ vigilias, ayunos y eventos de la congregación.
 
 - `index.html`: estructura y metadatos.
 - `css/`: estilos base y capa visual glassmorphism.
-- `js/app.js`: datos, rutas, calendario, Firebase y administración.
+- `js/app.js`: datos, rutas, calendario, Supabase y administración.
 - `assets/`: logo y vista previa social.
 - `firestore.rules` y `storage.rules`: acceso público de lectura y escritura
   restringida al equipo autorizado.
 
-El proyecto está vinculado a Firebase `cronograma-f28f0`; desplegar Hosting
-conserva el enlace público existente.
+La aplicación pública se despliega en GitHub Pages y conserva el enlace
+existente. Los datos administrativos se conectan al proyecto Supabase
+configurado en `js/app.js`.
 
-Firebase Storage requiere actualizar el proyecto desde el plan gratuito Spark.
-Mientras Storage no esté habilitado, la interfaz bloquea de forma segura las
-cargas de imágenes, videos, audios y PDFs; el resto del panel sigue operativo.
-Cuando se habilite, añade `"storage": { "rules": "storage.rules" }` a
-`firebase.json` y vuelve a desplegar para publicar las reglas incluidas.
+Para cargar imágenes, videos, audios y archivos desde Administración debe
+existir un bucket público llamado `event-media` en Supabase. Si el bucket no
+está disponible, la interfaz bloquea las cargas y muestra el motivo sin perder
+los datos del formulario.
