@@ -1195,9 +1195,13 @@ const TYPES = {
         },
         adminUsername: ADMIN_USER,
         adminEmail: "decomvilladelrio@gmail.com",
-        adminEmails: ["decomvilladelrio@gmail.com", "estebanarango1499@gmail.com"],
-        decomEmails: ["decomvilladelrio@gmail.com", "estebanarango1499@gmail.com"],
+        adminEmails: ["decomvilladelrio@gmail.com", "estebanarango1499@gmail.com", "earangoc@miceas.edu.co"],
+        decomEmails: ["decomvilladelrio@gmail.com", "estebanarango1499@gmail.com", "earangoc@miceas.edu.co"],
         sdkVersion: "12.14.0"
+      };
+      const SUPABASE_CONFIG = {
+        url: "https://qgucwxgwehkualhfnckt.supabase.co",
+        publishableKey: "sb_publishable_ZqqjaA95z6fwMSmQ8Rok9g_Wqhgc0ym"
       };
       const cloud = {
         enabled: false,
@@ -1278,27 +1282,34 @@ const TYPES = {
       shell.innerHTML = `
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
         <header class="platform-top glass">
-          <a class="platform-brand" href="#/inicio" aria-label="Inicio IPUC Villa del Río">
+          <a class="platform-brand" href="/" aria-label="Inicio IPUC Villa del Río">
             <img src="assets/logo.png" alt="Logo IPUC Villa del Río">
             <span><strong>Cronograma IPUC Villa del Río</strong><small>Agenda anual de eventos</small></span>
           </a>
           <button class="nav-toggle" type="button" data-toggle-nav aria-expanded="false" aria-controls="platformNav" aria-label="Abrir menú">Menú</button>
           <nav class="platform-nav" id="platformNav" aria-label="Navegación principal">
-            <a href="#/inicio" data-route-link="inicio">Inicio</a>
-            <a href="#/calendario" data-route-link="calendario">Calendario</a>
-            <a href="#/agenda" data-route-link="agenda">Agenda</a>
-            <a href="#/eventos" data-route-link="eventos">Eventos</a>
-            <a href="#/login" data-login-link>Admin</a>
+            <a href="/" data-route-link="inicio">Inicio</a>
+            <a href="/calendario" data-route-link="calendario">Calendario</a>
+            <a href="/agenda" data-route-link="agenda">Agenda</a>
+            <a href="/anuncios" data-route-link="anuncios">Anuncios</a>
+            <a href="/archivo" data-route-link="archivo">Archivo</a>
+            <a href="/ubicacion" data-route-link="ubicacion">Ubicación</a>
+            <a href="/admin/login" data-login-link>Admin</a>
           </nav>
         </header>
         <section id="routeView" class="route-view" tabindex="-1"></section>
         <footer class="platform-footer glass">
           <span><strong>IPUC Villa del Río</strong><small>Un lugar para mantenernos conectados.</small></span>
-          <a href="#/calendario">Ver cronograma</a>
+          <a href="/calendario">Ver cronograma</a>
         </footer>
         <div class="media-layer" id="platformMedia" aria-hidden="true"></div>
         <audio id="platformMusic" loop preload="auto"></audio>
         <button class="music-pill" id="musicPill" type="button" hidden>Activar ambiente</button>
+        <aside class="radio-widget" aria-label="Radio IPUC en vivo">
+          <div class="radio-widget-head"><span class="radio-mark">◉</span><span><strong>Radio IPUC</strong><small><i></i> En vivo</small></span></div>
+          <button class="radio-toggle" id="radioToggle" type="button">Escuchar ahora</button>
+          <audio id="radioIpucAudio" preload="none" playsinline></audio>
+        </aside>
       `;
 
       document.querySelector("[data-toggle-nav]").onclick = event => {
@@ -1306,10 +1317,26 @@ const TYPES = {
         event.currentTarget.setAttribute("aria-expanded", String(open));
       };
       window.addEventListener("hashchange", renderRoute);
+      window.addEventListener("popstate", renderRoute);
+      document.addEventListener("click", event => {
+        const link = event.target.closest("a[href]");
+        if (!link || link.target || link.origin !== location.origin) return;
+        const href = link.getAttribute("href");
+        if (href?.startsWith("#/")) {
+          event.preventDefault();
+          history.pushState({}, "", href.slice(1) || "/");
+          renderRoute();
+        } else if (href?.startsWith("/")) {
+          event.preventDefault();
+          history.pushState({}, "", href);
+          renderRoute();
+        }
+      });
       window.addEventListener("ipuc-state-updated", renderRoute);
       document.addEventListener("click", unlockMusicOnce, { once: true });
       setupPlatformMusic();
-      if (!location.hash) location.hash = "#/inicio";
+      setupRadioIpuc();
+      if (location.hash) history.replaceState({}, "", location.hash.replace(/^#\/?/, "/") || "/");
       renderRoute();
       initializeCloud();
 
@@ -1323,6 +1350,9 @@ const TYPES = {
         if (route.name === "calendario") return renderCalendarPage();
         if (route.name === "agenda") return renderAgendaPage();
         if (route.name === "eventos") return renderEventsPage();
+        if (route.name === "anuncios") return renderAnnouncementsPage();
+        if (route.name === "archivo") return renderArchivePage();
+        if (route.name === "ubicacion") return renderLocationPage();
         if (route.name === "evento") return renderEventDetail(route.id);
         if (route.name === "admin") {
           if (isAdmin()) return renderAdminPage();
@@ -1333,8 +1363,22 @@ const TYPES = {
         return renderHomePage();
       }
 
+      function renderAnnouncementsPage() {
+        const items = (APP_STATE.announcements || []).filter(item => item.published !== false && (!item.expiresAt || String(item.expiresAt) >= dateKey(today))).slice().reverse();
+        view().innerHTML = `<section class="page-head glass"><div><p class="eyebrow">Comunicaciones</p><h1>Anuncios</h1><p>Información importante y novedades de IPUC Villa del Río.</p></div></section><section class="announcement-page-grid">${items.map(item => `<article class="content-card glass announcement-public"><span class="status-chip">${escapeHtml(item.type || "Información")}</span><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.description || "")}</p><small>${escapeHtml(formatDateShort(item.date || item.startsAt || ""))}</small></article>`).join("") || emptyText("No hay anuncios publicados.")}</section>`;
+      }
+
+      function renderArchivePage() {
+        const items = platformEventsForYear(today.getFullYear()).filter(event => platformStatus(event) === "Realizado" || event.date < dateKey(today)).sort((a, b) => b.date.localeCompare(a.date));
+        view().innerHTML = `<section class="page-head glass"><div><p class="eyebrow">Memoria</p><h1>Archivo de eventos</h1><p>Consulta invitaciones, galerías y documentos de actividades anteriores.</p></div></section><section class="event-grid archive-grid">${items.map(eventCard).join("") || emptyText("Todavía no hay eventos archivados.")}</section>`;
+      }
+
+      function renderLocationPage() {
+        view().innerHTML = `<section class="page-head glass"><div><p class="eyebrow">Encuéntranos</p><h1>IPUC Villa del Río</h1><p>Consulta la ubicación de la congregación y planea tu llegada.</p></div></section><section class="location-card glass"><div class="location-info"><p class="eyebrow">Ubicación</p><h2>Estamos aquí para recibirte</h2><p>Villa del Río · Colombia</p><div class="location-actions"><a class="map-button primary" href="https://www.google.com/maps/dir/?api=1&destination=5.065963,-75.491681" target="_blank" rel="noopener">Cómo llegar</a><a class="map-button" href="https://www.google.com/maps?q=5.065963,-75.491681" target="_blank" rel="noopener">Abrir mapa</a></div></div><iframe class="map-frame" title="Mapa de IPUC Villa del Río" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=5.065963,-75.491681&z=17&output=embed"></iframe></section>`;
+      }
+
       function parseRoute() {
-        const raw = (location.hash || "#/inicio").replace(/^#\/?/, "");
+        const raw = location.pathname.replace(/^\//, "") || (location.hash || "#/inicio").replace(/^#\/?/, "");
         const parts = raw.split("/").filter(Boolean);
         const requestedName = parts[0] || "inicio";
         const name = requestedName === "inicioquiero" ? "inicio" : requestedName;
@@ -1361,85 +1405,113 @@ const TYPES = {
       }
 
       async function initializeCloud() {
-        if (!firebaseConfigured()) {
-          cloud.error = "Firebase no configurado. Pega la configuracion del proyecto en FIREBASE_CLOUD para activar Firestore, Storage y Auth.";
-          renderRoute();
-          return;
-        }
         try {
-          const version = FIREBASE_CLOUD.sdkVersion;
-          const [appMod, authMod, dbMod, storageMod] = await Promise.all([
-            import(`https://www.gstatic.com/firebasejs/${version}/firebase-app.js`),
-            import(`https://www.gstatic.com/firebasejs/${version}/firebase-auth.js`),
-            import(`https://www.gstatic.com/firebasejs/${version}/firebase-firestore.js`),
-            import(`https://www.gstatic.com/firebasejs/${version}/firebase-storage.js`)
-          ]);
-          cloud.app = appMod.initializeApp(FIREBASE_CLOUD.firebaseConfig);
-          cloud.auth = authMod.getAuth(cloud.app);
-          cloud.db = dbMod.getFirestore(cloud.app);
-          cloud.storage = storageMod.getStorage(cloud.app);
-          cloud.authMod = authMod;
-          cloud.dbMod = dbMod;
-          cloud.storageMod = storageMod;
+          const supabase = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm");
+          cloud.app = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.publishableKey);
+          cloud.auth = cloud.app;
+          cloud.db = cloud.app;
+          cloud.storage = cloud.app.storage;
+          cloud.authMod = supabaseAuthAdapter;
+          cloud.dbMod = supabaseDbAdapter;
+          cloud.storageMod = supabaseStorageAdapter;
           cloud.enabled = true;
           cloud.ready = true;
           cloud.error = "";
-          cloud.storageReady = await checkStorageAvailability();
-
-          authMod.onAuthStateChanged(cloud.auth, user => {
+          cloud.storageReady = true;
+          supabaseAuthAdapter.onAuthStateChanged(cloud.auth, user => {
             cloud.user = user;
             setupDecomListener();
             refreshAdminNav();
             const route = parseRoute();
             if (route.name === "admin" || route.name === "login") renderRoute();
           });
-
-          cloud.unsubscribers.push(dbMod.onSnapshot(dbMod.collection(cloud.db, "events"), snapshot => {
-            const events = {};
-            snapshot.forEach(documentSnapshot => {
-              events[documentSnapshot.id] = normalizeCloudDoc(documentSnapshot.id, documentSnapshot.data());
-            });
-            APP_STATE.events = events;
-            renderRoute();
-          }, error => {
-            cloud.error = error.message;
-            renderRoute();
-          }));
-
-          cloud.unsubscribers.push(dbMod.onSnapshot(dbMod.collection(cloud.db, "announcements"), snapshot => {
-            APP_STATE.announcements = snapshot.docs.map(documentSnapshot => normalizeCloudDoc(documentSnapshot.id, documentSnapshot.data())).sort((a, b) => (a.date || "").localeCompare(b.date || ""));
-            renderRoute();
-          }, error => {
-            cloud.error = error.message;
-            renderRoute();
-          }));
-
-          cloud.unsubscribers.push(dbMod.onSnapshot(dbMod.collection(cloud.db, "reflections"), snapshot => {
-            const reflections = {};
-            snapshot.forEach(documentSnapshot => {
-              reflections[documentSnapshot.id] = normalizeCloudDoc(documentSnapshot.id, documentSnapshot.data());
-            });
-            APP_STATE.reflections = reflections;
-            renderRoute();
-          }, error => {
-            cloud.error = error.message;
-            renderRoute();
-          }));
-
-          cloud.unsubscribers.push(dbMod.onSnapshot(dbMod.doc(cloud.db, "settings", "site"), snapshot => {
-            const data = snapshot.exists() ? normalizeCloudDoc(snapshot.id, snapshot.data()) : {};
-            APP_STATE.music = data.music || null;
-            setupPlatformMusic();
-            renderRoute();
-          }, error => {
-            cloud.error = error.message;
-            renderRoute();
-          }));
+          ["events", "announcements", "reflections", "settings"].forEach(collectionName => {
+            cloud.unsubscribers.push(supabaseDbAdapter.onSnapshot(collectionName, snapshot => {
+              if (collectionName === "events") {
+                const events = {};
+                snapshot.forEach(item => { events[item.id] = normalizeCloudDoc(item.id, item.data()); });
+                APP_STATE.events = events;
+              } else if (collectionName === "announcements") {
+                APP_STATE.announcements = snapshot.docs.map(item => normalizeCloudDoc(item.id, item.data())).sort((a, b) => (a.date || a.startsAt || "").localeCompare(b.date || b.startsAt || ""));
+              } else if (collectionName === "reflections") {
+                const reflections = {};
+                snapshot.forEach(item => { reflections[item.id] = normalizeCloudDoc(item.id, item.data()); });
+                APP_STATE.reflections = reflections;
+              } else if (collectionName === "settings") {
+                const data = snapshot.docs.find(item => item.id === "site")?.data() || {};
+                APP_STATE.music = data.music || null;
+                setupPlatformMusic();
+              }
+              renderRoute();
+            }, error => { cloud.error = error.message; renderRoute(); }));
+          });
         } catch (error) {
-          cloud.error = `No se pudo iniciar Firebase: ${error.message}`;
+          cloud.error = `No se pudo iniciar Supabase: ${error.message}`;
           renderRoute();
         }
       }
+
+      const supabaseAuthAdapter = {
+        onAuthStateChanged(client, callback) {
+          client.auth.getSession().then(({ data }) => callback(data.session?.user || null));
+          const { data } = client.auth.onAuthStateChange((_event, session) => callback(session?.user || null));
+          return () => data.subscription.unsubscribe();
+        },
+        async signInWithEmailAndPassword(client, email, password) {
+          return client.auth.signInWithPassword({ email, password });
+        },
+        async signOut(client) { return client.auth.signOut(); }
+      };
+
+      const supabaseDbAdapter = {
+        collection: (_client, name) => name,
+        doc: (_client, collectionName, id) => ({ collectionName, id }),
+        async setDoc(ref, data) { return cloud.db.from(tableName(ref.collectionName)).upsert({ id: ref.id, ...toSupabaseRow(data) }); },
+        async updateDoc(ref, data) { return cloud.db.from(tableName(ref.collectionName)).update(toSupabaseRow(cleanSupabasePayload(data))).eq("id", ref.id); },
+        async deleteDoc(ref) { return cloud.db.from(tableName(ref.collectionName)).delete().eq("id", ref.id); },
+        deleteField: () => undefined,
+        serverTimestamp: () => new Date().toISOString(),
+        onSnapshot(collectionName, callback, onError) {
+          let active = true;
+          const load = async () => {
+            const query = collectionName === "settings" ? cloud.db.from("settings").select("*").eq("id", "site") : cloud.db.from(tableName(collectionName)).select("*");
+            const { data, error } = await query;
+            if (!active) return;
+            if (error) return onError(error);
+            const docs = (data || []).map(row => ({ id: row.id, data: () => fromSupabaseRow(row) }));
+            callback({ docs, forEach(fn) { docs.forEach(fn); } });
+          };
+          load();
+          return () => { active = false; };
+        }
+      };
+
+      function cleanSupabasePayload(data) {
+        return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
+      }
+
+      function tableName(collectionName) {
+        return { decomTurns: "decom_turns" }[collectionName] || collectionName;
+      }
+
+      function toSupabaseRow(data) {
+        const aliases = { startTime: "start_time", endTime: "end_time", place: "location", organizer: "department", eventId: "related_event_id", startsAt: "starts_at", expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at", createdBy: "created_by", specialEventIds: "special_event_ids" };
+        const row = {};
+        Object.entries(data || {}).forEach(([key, value]) => { const target = aliases[key] || key; if (target in { id: 1, title: 1, description: 1, date: 1, start_time: 1, end_time: 1, type: 1, status: 1, location: 1, department: 1, responsible: 1, featured: 1, published: 1, tags: 1, observations: 1, media: 1, gallery: 1, attachments: 1, created_at: 1, updated_at: 1, created_by: 1, related_event_id: 1, priority: 1, starts_at: 1, expires_at: 1, time: 1, assigned: 1, support: 1, special_event_ids: 1, music: 1 }) row[target] = value; });
+        return row;
+      }
+
+      function fromSupabaseRow(row) {
+        const aliases = { start_time: "startTime", end_time: "endTime", location: "place", department: "organizer", related_event_id: "eventId", starts_at: "startsAt", expires_at: "expiresAt", created_at: "createdAt", updated_at: "updatedAt", created_by: "createdBy", special_event_ids: "specialEventIds" };
+        return Object.fromEntries(Object.entries(row || {}).map(([key, value]) => [aliases[key] || key, value]));
+      }
+
+      const supabaseStorageAdapter = {
+        ref: (_storage, path) => ({ path }),
+        async uploadBytes(ref, file, options) { return cloud.storage.from("event-media").upload(ref.path, file, { contentType: options?.contentType, upsert: true }); },
+        async getDownloadURL(ref) { const { data } = cloud.storage.from("event-media").getPublicUrl(ref.path); return data.publicUrl; },
+        async deleteObject(ref) { return cloud.storage.from("event-media").remove([ref.path]); }
+      };
 
       async function checkStorageAvailability() {
         try {
@@ -1480,7 +1552,8 @@ const TYPES = {
         }
         if (!isAdmin()) {
           alert("Debes iniciar sesion como administrador para guardar cambios.");
-          location.hash = "#/login";
+          history.pushState({}, "", "/admin/login");
+          renderRoute();
           return false;
         }
         return true;
@@ -1641,11 +1714,11 @@ const TYPES = {
       function renderLoginPage() {
         view().innerHTML = `
           <section class="login-card glass">
-            <div><p class="eyebrow">Administrador</p><h1>Acceso privado</h1><p>Esta zona es solo para DECOM Villa del Río. El acceso se valida con Firebase Authentication.</p>${cloudNotice()}</div>
+            <div><p class="eyebrow">Área privada</p><h1>Acceso administrador</h1><p>Gestiona eventos, anuncios y archivos con una cuenta autorizada.</p>${cloudNotice()}</div>
             <form id="loginForm" class="form-grid">
-              <label>Usuario<input id="loginUser" autocomplete="username" required></label>
-              <label>Clave<input id="loginPass" type="password" autocomplete="current-password" required></label>
-              <button class="primary-link" type="submit">Entrar</button>
+              <label>Correo electrónico<input id="loginUser" type="email" autocomplete="username" required></label>
+              <label>Contraseña<input id="loginPass" type="password" autocomplete="current-password" required></label>
+              <button class="primary-link" type="submit">Iniciar sesión</button>
               <p class="form-message" id="loginMessage"></p>
             </form>
           </section>
@@ -1667,12 +1740,13 @@ const TYPES = {
           return;
         }
         if (!cloud.enabled || !cloud.ready) {
-          message.textContent = cloud.error || "Firebase no esta configurado todavia.";
+          message.textContent = cloud.error || "Supabase no está configurado todavía.";
           return;
         }
         try {
           await cloud.authMod.signInWithEmailAndPassword(cloud.auth, email, pass);
-          location.hash = "#/admin";
+          history.pushState({}, "", "/admin");
+          renderRoute();
         } catch (error) {
           message.textContent = firebaseAuthMessage(error);
           console.warn(error);
@@ -1693,19 +1767,16 @@ const TYPES = {
 
       function firebaseAuthMessage(error) {
         const code = `${error?.code || ""} ${error?.message || ""}`.toLowerCase();
-        if (code.includes("configuration-not-found")) {
-          return "Firebase Authentication aun no esta activado en este proyecto. Activa Authentication y el proveedor Email/Password en Firebase Console.";
+        if (code.includes("invalid login credentials") || code.includes("invalid-credential") || code.includes("user not found")) {
+          return "Revisa que el usuario exista en Supabase Auth y que la contraseña sea correcta.";
         }
-        if (code.includes("operation-not-allowed")) {
-          return "Activa el proveedor Email/Password en Firebase Authentication.";
-        }
-        if (code.includes("user-not-found") || code.includes("invalid-credential") || code.includes("wrong-password")) {
-          return "Crea o revisa el usuario administrador en Firebase Authentication con la clave indicada.";
+        if (code.includes("email not confirmed")) {
+          return "Confirma el correo del usuario en Supabase Auth antes de iniciar sesión.";
         }
         if (code.includes("too-many-requests")) {
           return "Firebase bloqueo temporalmente los intentos. Espera unos minutos y vuelve a intentar.";
         }
-        return "No se pudo iniciar sesion con Firebase Auth. Revisa Authentication, usuario administrador y clave.";
+        return "No se pudo iniciar sesión con Supabase Auth. Revisa el usuario administrador y la clave.";
       }
 
       function cloudNotice() {
@@ -1713,7 +1784,7 @@ const TYPES = {
           const storageNotice = cloud.storageReady ? "" : `<div class="cloud-warning"><strong>Archivos desactivados:</strong> ${escapeHtml(cloud.storageError || "Firebase Storage no está habilitado en este proyecto.")}</div>`;
           return `<div class="cloud-ok">Base de datos conectada. Eventos, anuncios, reflexiones y turnos se guardan en la nube.</div>${storageNotice}`;
         }
-        return `<div class="cloud-warning"><strong>Firebase pendiente:</strong> ${escapeHtml(cloud.error || "Pega la configuracion de Firebase para activar cargas publicas en la nube.")}</div>`;
+        return `<div class="cloud-warning"><strong>Supabase pendiente:</strong> ${escapeHtml(cloud.error || "No se pudo conectar con la nube.")}</div>`;
       }
 
       function adminEmailAllowed() {
@@ -1753,7 +1824,8 @@ const TYPES = {
         if (cloud.auth && cloud.authMod) {
           await cloud.authMod.signOut(cloud.auth);
         }
-        location.hash = "#/inicio";
+        history.pushState({}, "", "/");
+        renderRoute();
       }
 
       function renderAdminPage() {
@@ -1881,7 +1953,7 @@ const TYPES = {
         view().querySelectorAll("[data-jump-type]").forEach(button => {
           button.onclick = () => {
             const event = closestPlatformEvent(button.dataset.jumpType);
-            if (event) location.hash = `#/evento/${encodeURIComponent(event.id)}`;
+            if (event) { history.pushState({}, "", `/evento/${encodeURIComponent(event.id)}`); renderRoute(); }
           };
         });
       }
@@ -1933,7 +2005,7 @@ const TYPES = {
         for (let i = 0; i < 7; i += 1) {
           const date = new Date(start);
           date.setDate(start.getDate() + i);
-          html += `<article class="week-column"><h3>${capitalize(weekdays[date.getDay()])}<span>${date.getDate()} ${months[date.getMonth()]}</span></h3>${agendaList(eventsForPlatformDate(date))}</article>`;
+          html += `<article class="week-column"><h3>${capitalize(weekdays[date.getDay()])}<span>${date.getDate()} ${months[date.getMonth()]}</span></h3>${agendaList(eventsForPlatformDate(date), true)}</article>`;
         }
         return html + "</div>";
       }
@@ -1968,10 +2040,10 @@ const TYPES = {
         return `<a class="event-pill event-type-${escapeHtml(event.type)}" href="#/evento/${encodeURIComponent(event.id)}"><span>${escapeHtml(event.title)}<small>${escapeHtml(event.time)}</small></span></a>`;
       }
 
-      function agendaList(events) {
+      function agendaList(events, compact = false) {
         if (!events.length) return emptyText("No hay eventos en esta seccion.");
-        return `<div class="agenda-list">${events.sort(sortByDate).map(event => `
-          <article class="agenda-item">
+        return `<div class="agenda-list ${compact ? "agenda-list-compact" : ""}">${events.sort(sortByDate).map(event => `
+          <article class="agenda-item ${compact ? "week-event-item" : ""}">
             <img src="${eventImage(event)}" alt="Imagen de ${escapeHtml(event.title)}">
             <div><strong>${parseDate(event.date).getDate()}</strong><span>${escapeHtml(event.title)}</span><small>${escapeHtml(event.time)} - ${escapeHtml(platformStatus(event))}</small></div>
             <a class="small-action" href="#/evento/${encodeURIComponent(event.id)}">Ver detalles</a>
@@ -2846,6 +2918,38 @@ const TYPES = {
         });
       }
 
+      function setupRadioIpuc() {
+        const audio = document.getElementById("radioIpucAudio");
+        const toggle = document.getElementById("radioToggle");
+        const widget = document.querySelector(".radio-widget");
+        if (!audio || !toggle || !widget) return;
+        audio.src = `https://radio-envivo.ipuc.org.co?nocache=${Date.now()}`;
+        audio.volume = 0.55;
+        audio.muted = true;
+        const setState = (playing, muted = audio.muted) => {
+          widget.classList.toggle("is-playing", playing);
+          toggle.textContent = playing && muted ? "Activar sonido" : playing ? "Pausar radio" : "Escuchar ahora";
+        };
+        toggle.onclick = () => {
+          if (audio.paused) {
+            audio.muted = false;
+            audio.play().then(() => setState(true, false)).catch(() => setState(false));
+          } else if (audio.muted) {
+            audio.muted = false;
+            setState(true, false);
+          } else {
+            audio.pause();
+            setState(false);
+          }
+        };
+        audio.addEventListener("playing", () => setState(true));
+        audio.addEventListener("pause", () => setState(false));
+        audio.play().then(() => setState(true)).catch(() => {
+          setState(false);
+          toggle.textContent = "Escuchar Radio IPUC";
+        });
+      }
+
       function unlockMusicOnce() {
         const audio = document.getElementById("platformMusic");
         const pill = document.getElementById("musicPill");
@@ -2857,16 +2961,16 @@ const TYPES = {
         if (!link) return;
         if (isAdmin()) {
           link.textContent = "Administracion";
-          link.href = "#/admin";
+          link.href = "/admin";
           return;
         }
         if (isDecomMember()) {
           link.textContent = "DECOM";
-          link.href = "#/admin";
+          link.href = "/admin";
           return;
         }
         link.textContent = "Admin";
-        link.href = "#/login";
+        link.href = "/admin/login";
       }
 
       function isAdmin() {
@@ -2995,7 +3099,18 @@ const TYPES = {
         .year-month h3, .week-column h3 { margin: 0 0 10px; }
         .week-view { display: grid; grid-template-columns: repeat(7, minmax(150px, 1fr)); gap: 10px; overflow-x: auto; }
         .week-column h3 span { display: block; color: var(--muted); font-size: .75rem; }
+        .week-column { min-width: 0; overflow: hidden; }
+        .agenda-list-compact { gap: 10px; }
+        .week-event-item { display: grid; grid-template-columns: 1fr; gap: 8px; align-items: start; padding: 9px; overflow: hidden; }
+        .week-event-item img { width: 100%; height: 72px; border-radius: 11px; }
+        .week-event-item div { min-width: 0; }
+        .week-event-item div span, .week-event-item div small { display: block; overflow-wrap: anywhere; word-break: break-word; }
+        .week-event-item div span { line-height: 1.15; }
+        .week-event-item .small-action { width: 100%; min-height: 34px; padding: 0 6px; font-size: .72rem; text-align: center; white-space: normal; }
         .event-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        .announcement-page-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        .announcement-page-grid .announcement-public { align-content: start; min-height: 180px; }
+        .status-chip { justify-self: start; padding: 5px 9px; border-radius: 999px; background: rgba(28,139,120,.12); color: #185f53; font-size: .72rem; font-weight: 900; }
         .event-card-public { display: grid; gap: 12px; padding: 12px; border-radius: 22px; }
         .detail-hero { border-radius: 26px; padding: 18px; }
         .asset-grid-page { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
@@ -3085,14 +3200,24 @@ const TYPES = {
         .media-layer img, .media-layer video, .media-layer iframe { width: 100%; max-height: 70vh; object-fit: contain; border: 0; border-radius: 18px; background: rgba(255,255,255,.7); }
         .media-layer iframe { min-height: 68vh; }
         .music-pill { position: fixed; right: 16px; bottom: 16px; z-index: 12; min-height: 40px; padding: 0 14px; border: 1px solid rgba(255,255,255,.75); border-radius: 999px; background: rgba(18,51,72,.88); color: white; font-weight: 900; cursor: pointer; box-shadow: 0 14px 34px rgba(20,52,71,.22); }
+        .radio-widget { position: fixed; right: 16px; bottom: 16px; z-index: 13; display: grid; gap: 10px; width: min(250px, calc(100vw - 32px)); padding: 13px; border: 1px solid rgba(255,255,255,.72); border-radius: 20px; background: rgba(245,250,248,.92); box-shadow: 0 18px 42px rgba(20,52,71,.2); backdrop-filter: blur(16px); }
+        .radio-widget-head { display: flex; align-items: center; gap: 10px; color: #123348; }
+        .radio-widget-head span:last-child { display: grid; gap: 3px; }
+        .radio-widget-head small { color: #4f6b78; font-weight: 850; }
+        .radio-widget-head i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #9aa8b2; }
+        .radio-widget.is-playing .radio-widget-head i { background: #1c8b78; box-shadow: 0 0 0 4px rgba(28,139,120,.12); }
+        .radio-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 12px; background: #123348; color: #f6d365; font-size: 1.1rem; }
+        .radio-toggle { min-height: 38px; border: 0; border-radius: 12px; background: #123348; color: #fff; font: inherit; font-weight: 900; cursor: pointer; }
         @media (max-width: 900px) {
           .home-hero, .detail-hero, .split-grid, .agenda-grid, .admin-layout, .login-card, .decom-grid, .decom-board { grid-template-columns: 1fr; }
           .decom-editor { position: static; }
           .event-grid, .year-view, .asset-grid-page { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .announcement-page-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .page-head { display: grid; }
         }
         @media (max-width: 620px) {
           .platform-shell { width: calc(100% - 14px); padding-top: 8px; }
+          .radio-widget { right: 10px; bottom: 10px; }
           .platform-top { align-items: start; border-radius: 18px; }
           .platform-brand img { width: 58px; height: 58px; border-radius: 16px; }
           .nav-toggle { display: inline-flex; }
@@ -3102,6 +3227,7 @@ const TYPES = {
           .home-hero, .page-head, .content-card, .calendar-page, .view-switch, .month-strip, .filters, .login-card, .detail-hero { padding: 12px; border-radius: 18px; }
           .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { font-size: 1.9rem; line-height: 1.05; }
           .info-list, .form-grid, .event-grid, .asset-grid-page, .year-view { grid-template-columns: 1fr; }
+          .announcement-page-grid { grid-template-columns: 1fr; }
           .week-head, .month-grid { gap: 4px; }
           .week-head { font-size: .62rem; }
           .month-day { min-height: 70px; padding: 5px; border-radius: 12px; }
