@@ -1282,7 +1282,7 @@ const TYPES = {
       const shell = document.querySelector("main.app");
       shell.className = "platform-shell";
       shell.innerHTML = `
-        <div class="site-video-backdrop" aria-hidden="true"><video autoplay muted loop playsinline preload="metadata" poster="assets/og.png"><source src="assets/ipuc-villa-del-rio.mp4" type="video/mp4"></video><span></span></div>
+        <div class="site-video-backdrop" aria-hidden="true"><video autoplay muted loop playsinline preload="auto"><source src="assets/ipuc-villa-del-rio.mp4" type="video/mp4"></video><span></span></div>
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
         <header class="platform-top glass">
           <a class="platform-brand" href="/" aria-label="Inicio IPUC Villa del Río">
@@ -3129,9 +3129,9 @@ const TYPES = {
       style.textContent = `
         .platform-body { position: relative; background: #123348; }
         .platform-shell { position: relative; isolation: isolate; }
-        .site-video-backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #123348 url("assets/og.png") center / cover no-repeat; pointer-events: none; }
-        .site-video-backdrop video { width: 100%; height: 100%; object-fit: cover; opacity: .38; filter: saturate(.82) contrast(1.04); }
-        .site-video-backdrop span { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(7,28,43,.72), rgba(14,71,77,.42) 48%, rgba(6,26,42,.68)); pointer-events: none; }
+        .site-video-backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #123348; pointer-events: none; }
+        .site-video-backdrop video { width: 100%; height: 100%; object-fit: cover; opacity: .68; filter: saturate(.9) contrast(1.04); }
+        .site-video-backdrop span { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(7,28,43,.38), rgba(14,71,77,.16) 48%, rgba(6,26,42,.38)); pointer-events: none; }
         .platform-top, .route-view, .platform-footer { position: relative; z-index: 1; }
         @media (max-width: 620px) { .site-video-backdrop video { opacity: .22; } }
         @media (prefers-reduced-motion: reduce) { .site-video-backdrop video { display: none; } }
