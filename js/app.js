@@ -1241,6 +1241,11 @@ const TYPES = {
         { text: "La oracion abre caminos cuando el pueblo se reune con fe y perseverancia.", ref: "Hechos 4:31", style: "noche" },
         { text: "Dios fortalece al que espera en El y renueva su animo para servir.", ref: "Isaias 40:31", style: "naturaleza" }
       ];
+      const DEFAULT_REFLECTION_MEDIA = [
+        "https://www.youtube.com/watch?v=fDSnhTQZQeg",
+        "https://www.youtube.com/watch?v=-AHbznYsaIU",
+        "https://www.youtube.com/watch?v=pwX6jP_olR0"
+      ];
       const DECOM_YEAR = 2026;
       const DECOM_MONTHS = months.map((_, index) => index);
       const DECOM_STATUSES = ["Pendiente", "Confirmado", "Cubierto", "Sin asignar", "Cambio solicitado"];
@@ -1584,8 +1589,9 @@ const TYPES = {
               <div class="home-kicker"><span class="home-live-dot"></span><span>IPUC Villa del Río</span><span>•</span><span>${escapeHtml(longPlatformDate(today))}</span></div>
               <p class="eyebrow">${main ? "Lo que vivimos hoy" : "Una palabra para hoy"}</p>
               <h1>${escapeHtml(main ? main.title : "Caminamos juntos en la fe")}</h1>
-              <p class="home-lead">${escapeHtml(main ? shortDescription(main) : reflection.text + " (" + reflection.ref + ")")}</p>
+              <p class="home-lead">${escapeHtml(main ? shortDescription(main) : reflection.media ? "Escucha o mira la reflexión de hoy." : reflection.text + " (" + reflection.ref + ")")}</p>
               ${main ? eventInfoList(main) : `<div class="today-line">${escapeHtml(longPlatformDate(today))}</div>`}
+              ${!main ? reflectionMediaMarkup(reflection, true) : ""}
               <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="radio-home-action" type="button" data-home-radio>▶ Escuchar Radio IPUC</button></div>
             </div>
           </section>
@@ -1935,9 +1941,11 @@ const TYPES = {
               <div class="form-grid">
                 <label>Fecha<input id="reflectionDate" type="date" value="${dateKey(today)}"></label>
                 <label>Estilo<select id="reflectionStyle"><option>amanecer</option><option>luz</option><option>noche</option><option>naturaleza</option><option>montanas</option></select></label>
-                <label class="full">Texto<textarea id="reflectionText"></textarea></label>
-                <label>Referencia<input id="reflectionRef" placeholder="Hechos 2:46"></label>
-                <button class="primary-link full" id="saveReflection" type="button">Guardar reflexion</button>
+                <label>Tipo de reflexión<select id="reflectionMediaType"><option value="youtube">Video de YouTube</option><option value="upload">Audio o video de la iglesia</option></select></label>
+                <label>Enlace de YouTube<input id="reflectionYoutube" type="url" placeholder="https://www.youtube.com/watch?v=..."></label>
+                <label class="full file-dropzone">Audio o video grabado<input id="reflectionMediaFile" type="file" accept="audio/*,video/*"></label>
+                <details class="full upload-group"><summary>Texto opcional de respaldo</summary><div class="form-grid"><label class="full">Texto<textarea id="reflectionText" placeholder="Se mostrará si no hay audio o video."></textarea></label><label>Referencia<input id="reflectionRef" placeholder="Hechos 2:46"></label></div></details>
+                <button class="primary-link full" id="saveReflection" type="button">Guardar reflexión multimedia</button>
               </div>
             </article>
             </section>
@@ -2849,13 +2857,31 @@ const TYPES = {
         if (!requireCloudAdmin()) return;
         const date = document.getElementById("reflectionDate").value;
         const text = document.getElementById("reflectionText").value.trim();
-        if (!date || !text) return alert("Fecha y texto son obligatorios.");
+        const mediaType = document.getElementById("reflectionMediaType").value;
+        const youtube = document.getElementById("reflectionYoutube").value.trim();
+        const mediaFile = document.getElementById("reflectionMediaFile").files[0];
+        if (!date) return alert("La fecha es obligatoria.");
+        if (mediaType === "youtube" && !youtube && !text) return alert("Pega un enlace de YouTube o agrega un texto de respaldo.");
+        if (mediaType === "upload" && !mediaFile && !text) return alert("Selecciona un audio/video o agrega un texto de respaldo.");
+        let media = null;
+        if (mediaType === "youtube" && youtube) {
+          if (!youtubeEmbedUrl(youtube)) return alert("Ese enlace de YouTube no parece válido.");
+          media = { type: "youtube", url: youtube };
+        }
+        if (mediaType === "upload" && mediaFile) {
+          if (!isAudio(mediaFile) && !isVideo(mediaFile)) return alert("Solo se permiten archivos de audio o video.");
+          const previous = APP_STATE.reflections[date]?.media;
+          if (previous?.path) await deleteCloudAsset(previous);
+          media = await uploadCloudFile(mediaFile, date, "reflexiones", "Reflexión multimedia");
+        }
         await saveCloudDoc("reflections", date, {
           text,
           ref: document.getElementById("reflectionRef").value.trim(),
-          style: document.getElementById("reflectionStyle").value
+          style: document.getElementById("reflectionStyle").value,
+          media
         });
-        alert("Reflexion guardada en Firebase.");
+        alert("Reflexión multimedia guardada.");
+        renderAdminPage();
       }
 
       async function savePlatformAnnouncement() {
@@ -3149,7 +3175,25 @@ const TYPES = {
       }
 
       function reflectionForDate(date) {
-        return APP_STATE.reflections[dateKey(date)] || REFLECTIONS[Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000) % REFLECTIONS.length];
+        const index = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000) % REFLECTIONS.length;
+        return APP_STATE.reflections[dateKey(date)] || { ...REFLECTIONS[index], media: { type: "youtube", url: DEFAULT_REFLECTION_MEDIA[index % DEFAULT_REFLECTION_MEDIA.length] } };
+      }
+
+      function youtubeEmbedUrl(url) {
+        const match = String(url || "").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
+        return match ? `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&mute=1&rel=0` : "";
+      }
+
+      function reflectionMediaMarkup(reflection, autoplay = false) {
+        const media = reflection?.media;
+        if (!media) return "";
+        if (media.type === "youtube") {
+          const source = youtubeEmbedUrl(media.url);
+          return source ? `<div class="reflection-media youtube-reflection"><iframe src="${source}" title="Reflexión IPUC" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>` : "";
+        }
+        if (isVideo(media)) return `<div class="reflection-media"><video ${autoplay ? "autoplay muted" : "controls"} playsinline preload="metadata" src="${escapeHtml(assetSource(media))}"></video></div>`;
+        if (isAudio(media)) return `<div class="reflection-media audio-reflection"><audio ${autoplay ? "autoplay" : "controls"} controls preload="metadata" src="${escapeHtml(assetSource(media))}"></audio></div>`;
+        return "";
       }
 
       function eventInfoList(event) {
@@ -3244,6 +3288,9 @@ const TYPES = {
         @keyframes livePulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(28,139,120,.11); } 50% { box-shadow: 0 0 0 9px rgba(28,139,120,0); } }
         .home-lead { max-width: 600px; font-size: 1.03rem; }
         .home-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
+        .reflection-media { width: min(100%, 720px); margin-top: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(7,28,43,.28); box-shadow: 0 14px 30px rgba(13,52,66,.16); }
+        .reflection-media iframe, .reflection-media video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; object-fit: cover; }
+        .reflection-media audio { display: block; width: 100%; min-height: 48px; }
         .radio-home-action { min-height: 44px; padding: 0 15px; border: 1px solid rgba(11,59,76,.12); border-radius: 13px; background: rgba(255,255,255,.7); color: #123348; font: inherit; font-weight: 900; cursor: pointer; transition: transform .18s ease, background .18s ease; }
         .radio-home-action:hover { transform: translateY(-2px); background: white; }
         .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { margin: 0; font-size: clamp(2rem, 4vw, 4.2rem); line-height: .96; }
