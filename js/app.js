@@ -1578,7 +1578,6 @@ const TYPES = {
               ${main ? eventInfoList(main) : `<div class="today-line">${escapeHtml(longPlatformDate(today))}</div>`}
               <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="radio-home-action" type="button" data-home-radio>▶ Escuchar Radio IPUC</button></div>
             </div>
-            <img class="hero-image" src="${main ? eventImage(main) : autoImage("reflexion", reflection.style, reflection.text)}" alt="${escapeHtml(main ? `Imagen de ${main.title}` : "Reflexión del día")}">
           </section>
           <section class="home-welcome glass">
             <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta los próximos encuentros, guarda las fechas y mantente al día con la iglesia.</p></div>
@@ -3151,6 +3150,7 @@ const TYPES = {
         .route-view { display: grid; gap: 16px; margin-top: 16px; }
         .home-hero, .page-head, .content-card, .calendar-page, .view-switch, .month-strip, .filters, .login-card { border-radius: 26px; padding: 18px; }
         .home-hero, .detail-hero { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr); gap: 18px; align-items: center; }
+        .home-hero { grid-template-columns: 1fr; min-height: 390px; }
         .home-hero, .home-welcome, .type-shortcuts, .split-grid > article { opacity: 0; transform: translateY(18px); animation: homeReveal .65s cubic-bezier(.2,.75,.25,1) var(--reveal-delay, 0ms) forwards; }
         .home-hero.is-visible, .home-welcome.is-visible, .type-shortcuts.is-visible, .split-grid > article.is-visible { opacity: 1; transform: translateY(0); }
         @keyframes homeReveal { to { opacity: 1; transform: translateY(0); } }
