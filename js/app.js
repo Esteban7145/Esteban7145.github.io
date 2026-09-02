@@ -2090,10 +2090,10 @@ const TYPES = {
         view().innerHTML = `
           <section class="login-card glass">
             <div><p class="eyebrow">Área privada</p><h1>Acceso administrador</h1><p>Gestiona eventos, anuncios y archivos con una cuenta autorizada.</p>${cloudNotice()}</div>
-            <form id="loginForm" class="form-grid">
+            <form id="loginForm" class="form-grid" novalidate>
               <label>Correo electrónico<input id="loginUser" type="email" autocomplete="username" required></label>
               <label>Contraseña<input id="loginPass" type="password" autocomplete="current-password" required></label>
-              <button class="primary-link" type="submit">Iniciar sesión</button>
+              <button class="primary-link" id="loginSubmit" type="submit">Iniciar sesión</button>
               <p class="form-message" id="loginMessage"></p>
             </form>
           </section>
@@ -2108,10 +2108,15 @@ const TYPES = {
 
       async function signInAdmin(user, pass) {
         const message = document.getElementById("loginMessage");
+        const submit = document.getElementById("loginSubmit");
         message.textContent = "";
+        if (!user || !pass) {
+          message.textContent = "Escribe tu correo y contraseña para continuar.";
+          return;
+        }
         const email = resolveAdminEmail(user);
         if (!email) {
-          message.textContent = "Usuario o clave incorrectos.";
+          message.textContent = "Este correo no está autorizado para el panel de administración.";
           return;
         }
         if (!cloud.enabled || !cloud.ready) {
@@ -2119,12 +2124,21 @@ const TYPES = {
           return;
         }
         try {
-          await cloud.authMod.signInWithEmailAndPassword(cloud.auth, email, pass);
+          submit.disabled = true;
+          submit.textContent = "Verificando…";
+          const result = await cloud.authMod.signInWithEmailAndPassword(cloud.auth, email, pass);
+          if (result?.error) throw result.error;
+          if (!result?.data?.session || !result?.data?.user) throw new Error("No se creó una sesión válida.");
+          cloud.user = result.data.user;
+          setupDecomListener();
+          refreshAdminNav();
           history.pushState({}, "", "/admin");
           renderRoute();
         } catch (error) {
           message.textContent = firebaseAuthMessage(error);
           console.warn(error);
+          submit.disabled = false;
+          submit.textContent = "Iniciar sesión";
         }
       }
 
