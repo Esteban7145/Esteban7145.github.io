@@ -3181,7 +3181,7 @@ const TYPES = {
 
       function youtubeEmbedUrl(url) {
         const match = String(url || "").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
-        return match ? `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&mute=1&rel=0` : "";
+        return match ? `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&mute=0&rel=0` : "";
       }
 
       function reflectionMediaMarkup(reflection, autoplay = false) {
@@ -3191,7 +3191,7 @@ const TYPES = {
           const source = youtubeEmbedUrl(media.url);
           return source ? `<div class="reflection-media youtube-reflection"><iframe src="${source}" title="Reflexión IPUC" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>` : "";
         }
-        if (isVideo(media)) return `<div class="reflection-media"><video ${autoplay ? "autoplay muted" : "controls"} playsinline preload="metadata" src="${escapeHtml(assetSource(media))}"></video></div>`;
+        if (isVideo(media)) return `<div class="reflection-media"><video ${autoplay ? "autoplay" : "controls"} controls playsinline preload="metadata" src="${escapeHtml(assetSource(media))}"></video></div>`;
         if (isAudio(media)) return `<div class="reflection-media audio-reflection"><audio ${autoplay ? "autoplay" : "controls"} controls preload="metadata" src="${escapeHtml(assetSource(media))}"></audio></div>`;
         return "";
       }
@@ -3288,7 +3288,7 @@ const TYPES = {
         @keyframes livePulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(28,139,120,.11); } 50% { box-shadow: 0 0 0 9px rgba(28,139,120,0); } }
         .home-lead { max-width: 600px; font-size: 1.03rem; }
         .home-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
-        .reflection-media { width: min(100%, 720px); margin-top: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(7,28,43,.28); box-shadow: 0 14px 30px rgba(13,52,66,.16); }
+        .reflection-media { width: min(100%, 940px); margin: 20px auto 0; overflow: hidden; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(7,28,43,.28); box-shadow: 0 14px 30px rgba(13,52,66,.16); }
         .reflection-media iframe, .reflection-media video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; object-fit: cover; }
         .reflection-media audio { display: block; width: 100%; min-height: 48px; }
         .radio-home-action { min-height: 44px; padding: 0 15px; border: 1px solid rgba(11,59,76,.12); border-radius: 13px; background: rgba(255,255,255,.7); color: #123348; font: inherit; font-weight: 900; cursor: pointer; transition: transform .18s ease, background .18s ease; }
