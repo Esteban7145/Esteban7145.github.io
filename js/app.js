@@ -1245,6 +1245,8 @@ const TYPES = {
         unsubscribers: [],
         decomUnsubscribe: null
       };
+      let reflectionIsActive = false;
+      let liveVisitorsChannel = null;
       const BASE_TIMES = {
         culto: "7:00 p. m.",
         oracion: "6:00 p. m.",
@@ -1398,6 +1400,12 @@ const TYPES = {
         document.getElementById("platformNav").classList.remove("open");
         document.querySelector("[data-toggle-nav]").setAttribute("aria-expanded", "false");
         const route = parseRoute();
+        if (route.name !== "inicio" && reflectionIsActive) {
+          stopReflectionMedia();
+          reflectionIsActive = false;
+          startRadioIpuc();
+        }
+        trackLiveVisitorPage();
         updateActiveNavigation(route.name);
         if (route.name === "calendario") return renderCalendarPage();
         if (route.name === "agenda") return renderAgendaPage();
@@ -1470,6 +1478,7 @@ const TYPES = {
           cloud.ready = true;
           cloud.error = "";
           cloud.storageReady = true;
+          setupLiveVisitors();
           supabaseAuthAdapter.onAuthStateChanged(cloud.auth, user => {
             cloud.user = user;
             setupDecomListener();
@@ -1616,6 +1625,10 @@ const TYPES = {
         const events = eventsForPlatformDate(today);
         const main = events[0];
         const reflection = reflectionForDate(today);
+        const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, true) : "";
+        reflectionIsActive = Boolean(reflectionMarkup);
+        if (reflectionIsActive) stopRadioIpuc();
+        else startRadioIpuc();
         const next = platformEventsForYear(today.getFullYear()).filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Realizado").sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
         view().innerHTML = `
           <section class="home-hero glass">
@@ -1625,7 +1638,8 @@ const TYPES = {
               <h1>${escapeHtml(main ? main.title : "Caminamos juntos en la fe")}</h1>
               <p class="home-lead">${escapeHtml(main ? shortDescription(main) : reflection.media ? "Escucha o mira la reflexión de hoy." : reflection.text + " (" + reflection.ref + ")")}</p>
               ${main ? eventInfoList(main) : `<div class="today-line">${escapeHtml(longPlatformDate(today))}</div>`}
-              ${!main ? reflectionMediaMarkup(reflection, true) : ""}
+              ${reflectionMarkup}
+              <div class="live-visitors" aria-live="polite"><span class="live-visitors-dot"></span><strong data-online-count>1</strong> personas en la página ahora</div>
               <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="radio-home-action" type="button" data-home-radio>▶ Escuchar Radio IPUC</button>${deferredInstallPrompt ? `<button class="radio-home-action install-home-action" type="button" data-install-app>＋ Instalar app</button>` : ""}</div>
             </div>
           </section>
@@ -1650,7 +1664,13 @@ const TYPES = {
         `;
         bindTypeShortcuts();
         const homeRadio = view().querySelector("[data-home-radio]");
-        if (homeRadio) homeRadio.onclick = () => document.getElementById("radioToggle")?.click();
+        if (homeRadio) homeRadio.onclick = () => {
+          if (reflectionIsActive) {
+            stopReflectionMedia();
+            reflectionIsActive = false;
+          }
+          if (document.getElementById("radioIpucAudio")?.paused) document.getElementById("radioToggle")?.click();
+        };
         const installApp = view().querySelector("[data-install-app]");
         if (installApp) installApp.onclick = async () => {
           deferredInstallPrompt.prompt();
@@ -1660,6 +1680,7 @@ const TYPES = {
         };
         bindHomeMotion();
         bindReflectionAutoplayUnlock();
+        updateLiveVisitors();
       }
 
       function bindReflectionAutoplayUnlock() {
@@ -3257,6 +3278,10 @@ const TYPES = {
         };
         toggle.onclick = () => {
           if (audio.paused) {
+            if (reflectionIsActive) {
+              stopReflectionMedia();
+              reflectionIsActive = false;
+            }
             audio.muted = false;
             audio.play().then(() => setState(true, false)).catch(() => setState(false));
           } else if (audio.muted) {
@@ -3269,6 +3294,10 @@ const TYPES = {
         };
         audio.addEventListener("playing", () => setState(true));
         audio.addEventListener("pause", () => setState(false));
+        if (parseRoute().name === "inicio" && !eventsForPlatformDate(today).length && reflectionMediaMarkup(reflectionForDate(today), true)) {
+          reflectionIsActive = true;
+          return;
+        }
         audio.play().then(() => setState(true, false)).catch(() => {
           audio.muted = true;
           audio.play().then(() => setState(true, true)).catch(() => {
@@ -3276,6 +3305,59 @@ const TYPES = {
             toggle.textContent = "Escuchar Radio IPUC";
           });
         });
+      }
+
+      function stopRadioIpuc() {
+        const audio = document.getElementById("radioIpucAudio");
+        const toggle = document.getElementById("radioToggle");
+        const widget = document.querySelector(".radio-widget");
+        if (!audio) return;
+        audio.pause();
+        audio.muted = true;
+        widget?.classList.remove("is-playing");
+        if (toggle) toggle.textContent = "Escuchar ahora";
+      }
+
+      function startRadioIpuc() {
+        const audio = document.getElementById("radioIpucAudio");
+        if (!audio || reflectionIsActive || !audio.paused) return;
+        audio.muted = false;
+        audio.play().catch(() => {
+          audio.muted = true;
+          audio.play().catch(() => {});
+        });
+      }
+
+      function stopReflectionMedia() {
+        view().querySelectorAll(".reflection-media video, .reflection-media audio").forEach(media => {
+          media.pause();
+          media.muted = true;
+        });
+        view().querySelectorAll(".youtube-reflection iframe").forEach(frame => {
+          frame.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "pauseVideo", args: [] }), "*");
+          frame.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "mute", args: [] }), "*");
+        });
+      }
+
+      function setupLiveVisitors() {
+        if (!cloud.app || liveVisitorsChannel) return;
+        const visitorKey = crypto.randomUUID ? crypto.randomUUID() : `visitor-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        liveVisitorsChannel = cloud.app.channel("ipuc-villa-del-rio-online", { config: { presence: { key: visitorKey } } });
+        liveVisitorsChannel.on("presence", { event: "sync" }, updateLiveVisitors).on("presence", { event: "join" }, updateLiveVisitors).on("presence", { event: "leave" }, updateLiveVisitors).subscribe(async status => {
+          if (status === "SUBSCRIBED") {
+            await liveVisitorsChannel.track({ page: location.pathname, online_at: new Date().toISOString() });
+            updateLiveVisitors();
+          }
+        });
+      }
+
+      function trackLiveVisitorPage() {
+        if (liveVisitorsChannel) liveVisitorsChannel.track({ page: location.pathname, online_at: new Date().toISOString() }).catch(() => {});
+      }
+
+      function updateLiveVisitors() {
+        const count = liveVisitorsChannel ? Object.keys(liveVisitorsChannel.presenceState() || {}).length : 1;
+        document.querySelectorAll("[data-online-count]").forEach(node => { node.textContent = String(Math.max(1, count)); });
       }
 
       function unlockMusicOnce() {
@@ -3430,6 +3512,8 @@ const TYPES = {
         @keyframes homeReveal { to { opacity: 1; transform: translateY(0); } }
         .home-kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 26px; color: #4f6b78; font-size: .78rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
         .home-live-dot { width: 9px; height: 9px; border-radius: 50%; background: #1c8b78; box-shadow: 0 0 0 5px rgba(28,139,120,.12); animation: livePulse 1.8s ease-in-out infinite; }
+        .live-visitors { display: inline-flex; align-items: center; gap: 7px; width: fit-content; margin-top: 16px; padding: 7px 10px; border: 1px solid rgba(28,139,120,.18); border-radius: 999px; background: rgba(235,249,245,.58); color: #185f53; font-size: .73rem; font-weight: 850; text-transform: none; }
+        .live-visitors-dot { width: 8px; height: 8px; border-radius: 50%; background: #1c8b78; box-shadow: 0 0 0 4px rgba(28,139,120,.12); }
         @keyframes livePulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(28,139,120,.11); } 50% { box-shadow: 0 0 0 9px rgba(28,139,120,0); } }
         .home-lead { max-width: 600px; font-size: 1.03rem; }
         .home-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
