@@ -1180,6 +1180,7 @@ const TYPES = {
       APP_STATE.announcements = APP_STATE.announcements || DEFAULT_ANNOUNCEMENTS;
       APP_STATE.reflections = APP_STATE.reflections || {};
       APP_STATE.music = APP_STATE.music || null;
+      APP_STATE.weeklySchedule = APP_STATE.weeklySchedule || null;
       APP_STATE.decomTurns = APP_STATE.decomTurns || {};
 
       const ADMIN_USER = "DECOMVILLADELRIO";
@@ -1441,6 +1442,7 @@ const TYPES = {
               } else if (collectionName === "settings") {
                 const data = snapshot.docs.find(item => item.id === "site")?.data() || {};
                 APP_STATE.music = data.music || null;
+                APP_STATE.weeklySchedule = data.weeklySchedule || null;
                 setupPlatformMusic();
               }
               renderRoute();
@@ -1496,14 +1498,14 @@ const TYPES = {
       }
 
       function toSupabaseRow(data) {
-        const aliases = { startTime: "start_time", endTime: "end_time", place: "location", organizer: "department", eventId: "related_event_id", startsAt: "starts_at", expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at", createdBy: "created_by", specialEventIds: "special_event_ids" };
+        const aliases = { startTime: "start_time", endTime: "end_time", place: "location", organizer: "department", eventId: "related_event_id", startsAt: "starts_at", expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at", createdBy: "created_by", specialEventIds: "special_event_ids", weeklySchedule: "weekly_schedule" };
         const row = {};
-        Object.entries(data || {}).forEach(([key, value]) => { const target = aliases[key] || key; if (target in { id: 1, title: 1, description: 1, date: 1, start_time: 1, end_time: 1, type: 1, status: 1, location: 1, department: 1, responsible: 1, featured: 1, published: 1, tags: 1, observations: 1, media: 1, gallery: 1, attachments: 1, created_at: 1, updated_at: 1, created_by: 1, related_event_id: 1, priority: 1, starts_at: 1, expires_at: 1, time: 1, assigned: 1, support: 1, special_event_ids: 1, music: 1 }) row[target] = value; });
+        Object.entries(data || {}).forEach(([key, value]) => { const target = aliases[key] || key; if (target in { id: 1, title: 1, description: 1, date: 1, start_time: 1, end_time: 1, type: 1, status: 1, location: 1, department: 1, responsible: 1, featured: 1, published: 1, tags: 1, observations: 1, media: 1, gallery: 1, attachments: 1, created_at: 1, updated_at: 1, created_by: 1, related_event_id: 1, priority: 1, starts_at: 1, expires_at: 1, time: 1, assigned: 1, support: 1, special_event_ids: 1, music: 1, weekly_schedule: 1 }) row[target] = value; });
         return row;
       }
 
       function fromSupabaseRow(row) {
-        const aliases = { start_time: "startTime", end_time: "endTime", location: "place", department: "organizer", related_event_id: "eventId", starts_at: "startsAt", expires_at: "expiresAt", created_at: "createdAt", updated_at: "updatedAt", created_by: "createdBy", special_event_ids: "specialEventIds" };
+        const aliases = { start_time: "startTime", end_time: "endTime", location: "place", department: "organizer", related_event_id: "eventId", starts_at: "startsAt", expires_at: "expiresAt", created_at: "createdAt", updated_at: "updatedAt", created_by: "createdBy", special_event_ids: "specialEventIds", weekly_schedule: "weeklySchedule" };
         return Object.fromEntries(Object.entries(row || {}).map(([key, value]) => [aliases[key] || key, value]));
       }
 
@@ -1859,6 +1861,7 @@ const TYPES = {
       function renderAdminPage() {
         const selected = platform.selectedAdminEvent === "__new__" ? null : platformEventById(platform.selectedAdminEvent);
         const adminEvents = platformEventsForYear(today.getFullYear());
+        const pendingEvents = adminEvents.filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Realizado" && platformStatus(event) !== "Cancelado").sort(sortByDate);
         const activeAdminSection = platform.adminSection || "eventos";
         const moduleVisibility = name => activeAdminSection === name ? "" : "hidden";
         const upcoming = adminEvents.filter(event => parseDate(event.date) >= today).sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
@@ -1905,13 +1908,14 @@ const TYPES = {
             <article class="content-card glass admin-card-wide">
               <div class="section-title"><p class="eyebrow">Material</p><h2>Subir invitaciones y archivos</h2></div>
               <div class="form-grid">
-                <label class="full">1. Elige el evento<select id="materialSelect"><option value="__new__">Selecciona un evento</option>${adminEvents.map(event => `<option value="${event.id}" ${selected?.id === event.id ? "selected" : ""}>${formatDateShort(event.date)} - ${escapeHtml(event.title)}</option>`).join("")}</select></label>
+                <label class="full">1. Elige el evento<select id="materialSelect"><option value="__new__">Selecciona un evento pendiente o próximo</option>${pendingEvents.map(event => `<option value="${event.id}" ${selected?.id === event.id ? "selected" : ""}>${formatDateShort(event.date)} - ${escapeHtml(event.title)}</option>`).join("")}</select></label>
                 <div class="upload-guide full"><strong>2. Agrega solo lo que tengas</strong><span>Puedes seleccionar varios archivos en cada grupo y guardar todo una sola vez.</span></div>
                 <details class="upload-group full" open><summary>Imágenes principales e invitaciones</summary><div class="form-grid"><label>Imagen del evento<input id="uploadMainImage" type="file" accept="image/*"></label><label>Invitación principal<input id="uploadInviteMain" type="file" accept="image/*"></label><label>WhatsApp<input id="uploadInviteWhatsapp" type="file" accept="image/*"></label><label>Historia redes<input id="uploadInviteStory" type="file" accept="image/*"></label><label>Banner proyección<input id="uploadInviteBanner" type="file" accept="image/*"></label></div></details>
                 <details class="upload-group full"><summary>Video, galería y documentos</summary><div class="form-grid"><label>Video promocional<input id="uploadInviteVideo" type="file" accept="video/*"></label><label>Fotos o videos<input id="uploadGallery" type="file" accept="image/*,video/*" multiple></label><label>PDF o archivos<input id="uploadFiles" type="file" multiple></label></div></details>
                 <details class="upload-group full"><summary>Audio de fondo del sitio</summary><div class="form-grid"><label class="full">Música autorizada<input id="uploadMusic2" type="file" accept="audio/*"></label></div></details>
                 <button class="primary-link full" id="adminSaveMaterial" type="button">Guardar todo el material</button>
                 <div class="full admin-existing-material">${adminMaterialList(selected)}</div>
+                <div class="upload-group full weekly-upload"><strong>Cronograma semanal</strong><p>Sube aquí la imagen o el PDF oficial que resume los cultos de la semana.</p><label>Imagen o PDF de esta semana<input id="uploadWeeklySchedule" type="file" accept="image/*,.pdf,application/pdf"></label><button class="small-action" id="saveWeeklySchedule" type="button">Guardar cronograma semanal</button>${APP_STATE.weeklySchedule ? `<small>Archivo actual: ${escapeHtml(APP_STATE.weeklySchedule.name || "Cronograma semanal")}</small>` : ""}</div>
               </div>
             </article>
             </section>
@@ -2046,13 +2050,22 @@ const TYPES = {
 
       function weekView() {
         const start = startOfWeek(platform.calendarDate);
-        let html = `<div class="week-view">`;
+        let html = `<div class="week-agenda-list">${weeklyScheduleMarkup()}`;
         for (let i = 0; i < 7; i += 1) {
           const date = new Date(start);
           date.setDate(start.getDate() + i);
-          html += `<article class="week-column"><h3>${capitalize(weekdays[date.getDay()])}<span>${date.getDate()} ${months[date.getMonth()]}</span></h3>${agendaList(eventsForPlatformDate(date), true)}</article>`;
+          const dayEvents = eventsForPlatformDate(date);
+          html += `<article class="week-list-day ${sameDay(date, today) ? "is-today" : ""}"><header><h3>${capitalize(weekdays[date.getDay()])}</h3><span>${date.getDate()} de ${months[date.getMonth()]}</span>${sameDay(date, today) ? `<b>Hoy</b>` : ""}</header><div>${agendaList(dayEvents, true)}</div></article>`;
         }
         return html + "</div>";
+      }
+
+      function weeklyScheduleMarkup() {
+        const asset = APP_STATE.weeklySchedule;
+        if (!assetSource(asset)) return "";
+        const source = assetSource(asset);
+        const isPdf = String(asset.type || asset.name || "").toLowerCase().includes("pdf");
+        return `<section class="weekly-schedule-card"><div><p class="eyebrow">Cronograma para compartir</p><h2>Programación semanal</h2><p>Consulta la imagen oficial de esta semana.</p></div>${isPdf ? `<iframe src="${escapeHtml(source)}" title="Cronograma semanal"></iframe>` : `<img src="${escapeHtml(source)}" alt="Cronograma semanal de cultos">`}</section>`;
       }
 
       function dayView(events) {
@@ -2559,8 +2572,9 @@ const TYPES = {
         document.getElementById("adminSaveEvent").onclick = savePlatformEvent;
         document.getElementById("adminDeleteEvent").onclick = deletePlatformEvent;
         document.getElementById("adminSaveMaterial").onclick = savePlatformMaterial;
+        document.getElementById("saveWeeklySchedule").onclick = saveWeeklySchedule;
         if (!cloud.storageReady) {
-          ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2", "adminSaveMaterial"].forEach(id => {
+          ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2", "adminSaveMaterial", "uploadWeeklySchedule", "saveWeeklySchedule"].forEach(id => {
             const control = document.getElementById(id);
             if (control) control.disabled = true;
           });
@@ -2683,6 +2697,18 @@ const TYPES = {
         await saveCloudDoc("events", id, saved);
         setupPlatformMusic();
         alert("Material guardado en Firebase Storage.");
+        renderAdminPage();
+      }
+
+      async function saveWeeklySchedule() {
+        if (!requireCloudAdmin()) return;
+        if (!cloud.storageReady) return alert("El almacenamiento no está disponible.");
+        const file = document.getElementById("uploadWeeklySchedule")?.files[0];
+        if (!file) return alert("Selecciona primero una imagen o PDF.");
+        const asset = await uploadCloudFile(file, "site", "cronograma-semanal", "Cronograma semanal");
+        await saveCloudDoc("settings", "site", { weeklySchedule: asset });
+        APP_STATE.weeklySchedule = asset;
+        alert("Cronograma semanal guardado.");
         renderAdminPage();
       }
 
@@ -3188,6 +3214,22 @@ const TYPES = {
         .year-month, .week-column, .day-view { padding: 12px; border-radius: 18px; background: rgba(255,255,255,.45); border: 1px solid rgba(255,255,255,.68); }
         .year-month h3, .week-column h3 { margin: 0 0 10px; }
         .week-view { display: grid; grid-template-columns: repeat(7, minmax(150px, 1fr)); gap: 10px; overflow-x: auto; }
+        .week-agenda-list { display: grid; gap: 12px; max-width: 920px; margin: 0 auto; }
+        .week-list-day { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; padding: 14px; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(255,255,255,.46); }
+        .week-list-day.is-today { border-color: rgba(28,139,120,.42); box-shadow: inset 5px 0 0 #1c8b78; background: rgba(235,249,245,.7); }
+        .week-list-day > header { display: grid; align-content: start; gap: 4px; }
+        .week-list-day > header h3 { margin: 0; color: #123348; font-size: 1.15rem; }
+        .week-list-day > header span { color: var(--muted); font-weight: 800; }
+        .week-list-day > header b { justify-self: start; padding: 4px 8px; border-radius: 999px; background: rgba(28,139,120,.13); color: #185f53; font-size: .7rem; }
+        .week-list-day .agenda-list { gap: 8px; }
+        .weekly-schedule-card { display: grid; gap: 12px; padding: 16px; border: 1px solid rgba(255,255,255,.78); border-radius: 20px; background: rgba(255,255,255,.58); }
+        .weekly-schedule-card h2 { color: #123348; }
+        .weekly-schedule-card p:not(.eyebrow) { margin: 5px 0 0; color: var(--muted); }
+        .weekly-schedule-card img, .weekly-schedule-card iframe { display: block; width: 100%; max-height: 620px; min-height: 280px; border: 0; border-radius: 15px; object-fit: contain; background: rgba(18,51,72,.06); }
+        .weekly-schedule-card iframe { height: 620px; }
+        .weekly-upload { display: grid; gap: 9px; }
+        .weekly-upload > strong { color: #123348; font-size: 1rem; }
+        .weekly-upload p, .weekly-upload small { margin: 0; color: var(--muted); font-size: .82rem; font-weight: 700; text-transform: none; }
         .week-column h3 span { display: block; color: var(--muted); font-size: .75rem; }
         .week-column { min-width: 0; overflow: hidden; }
         .agenda-list-compact { gap: 10px; }
@@ -3305,6 +3347,7 @@ const TYPES = {
           .home-welcome { grid-template-columns: 1fr; }
           .admin-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
           .decom-editor { position: static; }
+          .week-list-day { grid-template-columns: 130px minmax(0, 1fr); }
           .event-grid, .year-view, .asset-grid-page { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .announcement-page-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .page-head { display: grid; }
@@ -3324,6 +3367,8 @@ const TYPES = {
           .home-actions a, .radio-home-action { width: 100%; justify-content: center; text-align: center; }
           .home-welcome { padding: 14px; border-radius: 18px; }
           .home-quick-links { grid-template-columns: 1fr; }
+          .week-list-day { grid-template-columns: 1fr; gap: 9px; }
+          .weekly-schedule-card iframe { height: 420px; }
           .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { font-size: 1.9rem; line-height: 1.05; }
           .info-list, .form-grid, .event-grid, .asset-grid-page, .year-view { grid-template-columns: 1fr; }
           .admin-summary { grid-template-columns: 1fr; }
