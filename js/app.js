@@ -1228,7 +1228,8 @@ const TYPES = {
       };
       const SUPABASE_CONFIG = {
         url: "https://qgucwxgwehkualhfnckt.supabase.co",
-        publishableKey: "sb_publishable_ZqqjaA95z6fwMSmQ8Rok9g_Wqhgc0ym"
+        publishableKey: "sb_publishable_ZqqjaA95z6fwMSmQ8Rok9g_Wqhgc0ym",
+        storageBucket: "event-media"
       };
       const cloud = {
         enabled: false,
@@ -1795,7 +1796,7 @@ const TYPES = {
           if (error) throw error;
           const accessToken = data?.session?.access_token;
           if (!accessToken) throw new Error("La sesión administrativa expiró. Vuelve a iniciar sesión.");
-          const endpoint = `${SUPABASE_CONFIG.url}/storage/v1/object/${ref.path.split("/").map(encodeURIComponent).join("/")}`;
+          const endpoint = `${SUPABASE_CONFIG.url}/storage/v1/object/${encodeURIComponent(SUPABASE_CONFIG.storageBucket)}/${ref.path.split("/").map(encodeURIComponent).join("/")}`;
           return new Promise((resolve, reject) => {
             const request = new XMLHttpRequest();
             request.open("POST", endpoint);
@@ -1818,8 +1819,8 @@ const TYPES = {
             request.send(file);
           });
         },
-        async getDownloadURL(ref) { const { data } = cloud.storage.from("event-media").getPublicUrl(ref.path); return data.publicUrl; },
-        async deleteObject(ref) { return cloud.storage.from("event-media").remove([ref.path]); }
+        async getDownloadURL(ref) { const { data } = cloud.storage.from(SUPABASE_CONFIG.storageBucket).getPublicUrl(ref.path); return data.publicUrl; },
+        async deleteObject(ref) { return cloud.storage.from(SUPABASE_CONFIG.storageBucket).remove([ref.path]); }
       };
 
       async function checkStorageAvailability() {
