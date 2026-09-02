@@ -6,6 +6,22 @@ const TYPES = {
       especial: { label: "Especial", color: "var(--especial)" }
     };
 
+    const AUTO_EVENT_DESCRIPTIONS = {
+      culto: "Un tiempo para adorar juntos, escuchar la Palabra y fortalecer nuestra fe. «Yo soy el pan de vida; el que a mí viene, nunca tendrá hambre» — Juan 6:35.",
+      oracion: "Unámonos en oración para buscar la presencia de Dios, interceder y recibir nuevas fuerzas. «Clama a mí, y yo te responderé» — Jeremías 33:3.",
+      ayuno: "Apartemos este tiempo para humillarnos delante de Dios, buscar su dirección y renovar nuestro corazón. «Tu Padre que ve en lo secreto te recompensará» — Mateo 6:18.",
+      vigilia: "Permanezcamos despiertos en la presencia de Dios, adorando, intercediendo y esperando en sus promesas. «Velad y orad» — Mateo 26:41.",
+      especial: "Una ocasión especial para celebrar, servir y crecer como familia de la fe. «¡Mirad cuán bueno y cuán delicioso es habitar los hermanos juntos en armonía!» — Salmos 133:1."
+    };
+
+    function eventDescription(event) {
+      const description = String(event?.description || "").trim();
+      const isGeneric = description.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("actividad programada dentro del cronograma anual");
+      if (description && !isGeneric) return description;
+      const type = String(event?.type || "especial").toLowerCase();
+      return AUTO_EVENT_DESCRIPTIONS[type] || AUTO_EVENT_DESCRIPTIONS.especial;
+    }
+
     const PROGRAMMED_EVENTS = [
       { date: "2026-02-09", type: "oracion", title: "Oracion lunes - Junta local, Damas Dorcas y Jovenes", time: "7:00 p. m." },
       { date: "2026-03-09", type: "oracion", title: "Oracion lunes - Escuela dominical, Caballeros y Alabanza", time: "7:00 p. m." },
@@ -658,7 +674,7 @@ const TYPES = {
         ["Estado", event.status],
         ["Tipo", TYPES[event.type]?.label || event.type],
         ["Etiquetas", event.tags.join(", ") || "Sin etiquetas"],
-        ["Descripcion", event.description || "Sin descripcion registrada.", true],
+        ["Descripcion", eventDescription(event), true],
         ["Observaciones", event.observations || "Sin observaciones adicionales.", true]
       ].forEach(([label, value, full]) => {
         const item = document.createElement("div");
@@ -2063,7 +2079,7 @@ const TYPES = {
             <div>
               <p class="eyebrow">${escapeHtml(platformStatus(event))}</p>
               <h1>${escapeHtml(event.title)}</h1>
-              <p>${escapeHtml(event.description || shortDescription(event))}</p>
+              <p>${escapeHtml(eventDescription(event))}</p>
               ${eventInfoList(event)}
               <div class="detail-actions">
                 <a class="primary-link" href="${whatsappShare(event)}" target="_blank" rel="noopener">Compartir por WhatsApp</a>
@@ -3775,7 +3791,7 @@ const TYPES = {
       }
 
       function shortDescription(event) {
-        return event.description || `Actividad programada por ${event.department || event.organizer || "IPUC Villa del Rio"}.`;
+        return eventDescription(event);
       }
 
       function whatsappShare(event) {

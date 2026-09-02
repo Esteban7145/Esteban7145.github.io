@@ -1,4 +1,4 @@
-const CACHE_NAME = "ipuc-villa-del-rio-v21-storage-bucket-path";
+const CACHE_NAME = "ipuc-villa-del-rio-v22-auto-event-descriptions";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/assets/logo.png", "/assets/favicon.png", "/assets/ipuc-villa-del-rio-brand.png"];
 
 self.addEventListener("install", event => {
