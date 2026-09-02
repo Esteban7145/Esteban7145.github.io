@@ -1319,6 +1319,16 @@ const TYPES = {
         const open = document.getElementById("platformNav").classList.toggle("open");
         event.currentTarget.setAttribute("aria-expanded", String(open));
       };
+      let compactMenu = false;
+      window.addEventListener("scroll", () => {
+        const topbar = document.querySelector(".platform-top");
+        if (!topbar) return;
+        const shouldCompact = window.scrollY > 120;
+        if (shouldCompact !== compactMenu) {
+          compactMenu = shouldCompact;
+          topbar.classList.toggle("is-compact", shouldCompact);
+        }
+      }, { passive: true });
       window.addEventListener("hashchange", renderRoute);
       window.addEventListener("popstate", renderRoute);
       document.addEventListener("click", event => {
@@ -3171,7 +3181,13 @@ const TYPES = {
         @keyframes platformAtmosphere { from { background-position: 0% 0%; } to { background-position: 100% 70%; } }
         @keyframes platformAtmosphere { from { background-position: 0% 0%; } to { background-position: 100% 70%; } }
         .platform-shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 34px; }
-        .platform-top { position: sticky; top: 10px; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px; border-radius: 24px; }
+        .platform-top { position: sticky; top: 10px; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px; border-radius: 24px; transition: width .24s ease, padding .24s ease, border-radius .24s ease, transform .24s ease; }
+        .platform-top.is-compact { position: fixed; top: 12px; right: 16px; width: 54px; height: 54px; padding: 6px; justify-content: center; border-radius: 17px; box-shadow: 0 14px 30px rgba(13,52,66,.25); }
+        .platform-top.is-compact .platform-brand { display: none; }
+        .platform-top.is-compact .nav-toggle { display: inline-flex; width: 42px; height: 42px; padding: 0; border-radius: 13px; font-size: 0; }
+        .platform-top.is-compact .nav-toggle::before { content: "☰"; font-size: 1.45rem; line-height: 1; }
+        .platform-top.is-compact .platform-nav { position: absolute; top: calc(100% + 8px); right: 0; display: none; flex-direction: column; align-items: stretch; width: min(230px, calc(100vw - 28px)); padding: 10px; border: 1px solid rgba(255,255,255,.78); border-radius: 18px; background: rgba(245,250,248,.97); box-shadow: 0 20px 50px rgba(31,55,72,.22); }
+        .platform-top.is-compact .platform-nav.open { display: flex; }
         .platform-brand { display: flex; align-items: center; gap: 12px; min-width: 0; color: var(--ink); text-decoration: none; }
         .platform-brand img { width: 76px; height: 76px; object-fit: contain; border-radius: 20px; background: rgba(255,255,255,.7); padding: 7px; }
         .platform-brand span { display: grid; gap: 3px; min-width: 0; }
