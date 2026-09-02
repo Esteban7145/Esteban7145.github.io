@@ -1502,7 +1502,7 @@ const TYPES = {
           <section class="resource-note glass"><span class="resource-note-icon">✓</span><p><strong>Recursos oficiales IPUC</strong><small>Esta biblioteca consulta el repositorio público oficial y conserva la organización por carpetas. Cada archivo se abre desde su fuente original.</small></p></section>
           <section class="resource-toolbar glass" aria-label="Buscar recursos">
             <label class="resource-search"><span>Buscar en toda la biblioteca</span><input id="resourceSearch" type="search" placeholder="Buscar por nombre o carpeta" value="${escapeHtml(platform.resourceSearch)}"></label>
-            ${platform.resourcesLoaded ? resourceBreadcrumb(path) : ""}
+            ${platform.resourcesLoaded ? `<div class="resource-navigation">${path && !needle ? `<button class="resource-back" type="button" data-resource-path="${escapeHtml(resourceParentPath(path))}"><span aria-hidden="true">←</span> Volver a ${resourceParentPath(path) ? escapeHtml(resourceCategoryLabel(resourcePathParts(resourceParentPath(path)).pop())) : "la biblioteca"}</button>` : ""}${resourceBreadcrumb(path)}</div>` : ""}
           </section>
           <section class="resource-results-head"><div><p class="eyebrow">${needle ? "Resultados" : "Ubicación actual"}</p><h2>${platform.resourcesLoaded ? (needle ? `${searchResults.length} recursos encontrados` : currentLabel) : "Cargando recursos oficiales"}</h2></div>${platform.resourcesLoaded && !needle ? `<span>${folderCount} carpetas · ${fileCount} archivos</span>` : platform.resourcesLoaded && needle ? `<span>Buscando en toda la biblioteca</span>` : ""}</section>
           <section class="resource-grid" id="resourceGrid">${platform.resourcesError ? `<div class="resource-error">No se pudo cargar el banco ahora. <button type="button" class="small-action" data-resource-retry>Reintentar</button></div>` : platform.resourcesLoading ? `<div class="resource-loading"><span></span><span></span><span></span><p>Consultando la biblioteca oficial…</p></div>` : content}</section>
@@ -1566,6 +1566,10 @@ const TYPES = {
 
       function resourcePathParts(path) {
         return String(path || "").split("/").filter(Boolean);
+      }
+
+      function resourceParentPath(path) {
+        return resourcePathParts(path).slice(0, -1).join("/");
       }
 
       function resourceEntriesAtPath(path) {

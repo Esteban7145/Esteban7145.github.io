@@ -1,4 +1,4 @@
-const CACHE_NAME = "ipuc-villa-del-rio-v10-biblioteca-biblica";
+const CACHE_NAME = "ipuc-villa-del-rio-v11-biblioteca-back";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/assets/logo.png"];
 
 self.addEventListener("install", event => {
