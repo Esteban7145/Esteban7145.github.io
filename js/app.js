@@ -3079,7 +3079,7 @@ const TYPES = {
         if (!audio || !toggle || !widget) return;
         audio.src = `https://radio-envivo.ipuc.org.co?nocache=${Date.now()}`;
         audio.volume = 0.55;
-        audio.muted = true;
+        audio.muted = false;
         const setState = (playing, muted = audio.muted) => {
           widget.classList.toggle("is-playing", playing);
           toggle.textContent = playing && muted ? "Activar sonido" : playing ? "Pausar radio" : "Escuchar ahora";
@@ -3098,9 +3098,12 @@ const TYPES = {
         };
         audio.addEventListener("playing", () => setState(true));
         audio.addEventListener("pause", () => setState(false));
-        audio.play().then(() => setState(true)).catch(() => {
-          setState(false);
-          toggle.textContent = "Escuchar Radio IPUC";
+        audio.play().then(() => setState(true, false)).catch(() => {
+          audio.muted = true;
+          audio.play().then(() => setState(true, true)).catch(() => {
+            setState(false);
+            toggle.textContent = "Escuchar Radio IPUC";
+          });
         });
       }
 
@@ -3429,7 +3432,7 @@ const TYPES = {
         .media-layer img, .media-layer video, .media-layer iframe { width: 100%; max-height: 70vh; object-fit: contain; border: 0; border-radius: 18px; background: rgba(255,255,255,.7); }
         .media-layer iframe { min-height: 68vh; }
         .music-pill { position: fixed; right: 16px; bottom: 16px; z-index: 12; min-height: 40px; padding: 0 14px; border: 1px solid rgba(255,255,255,.75); border-radius: 999px; background: rgba(18,51,72,.88); color: white; font-weight: 900; cursor: pointer; box-shadow: 0 14px 34px rgba(20,52,71,.22); }
-        .radio-widget { position: fixed; right: 16px; bottom: 16px; z-index: 13; display: grid; gap: 10px; width: min(250px, calc(100vw - 32px)); padding: 13px; border: 1px solid rgba(255,255,255,.72); border-radius: 20px; background: rgba(245,250,248,.92); box-shadow: 0 18px 42px rgba(20,52,71,.2); backdrop-filter: blur(16px); }
+        .radio-widget { position: fixed; right: 16px; bottom: 16px; z-index: 13; display: flex; align-items: center; gap: 9px; width: auto; min-width: 188px; padding: 8px 9px; border: 1px solid rgba(255,255,255,.72); border-radius: 16px; background: rgba(245,250,248,.94); box-shadow: 0 14px 32px rgba(20,52,71,.2); backdrop-filter: blur(16px); }
         .radio-widget-head { display: flex; align-items: center; gap: 10px; color: #123348; }
         .radio-widget-head span:last-child { display: grid; gap: 3px; }
         .radio-widget-head small { color: #4f6b78; font-weight: 850; }
@@ -3437,8 +3440,13 @@ const TYPES = {
         .radio-widget.is-playing .radio-widget-head i { background: #1c8b78; box-shadow: 0 0 0 4px rgba(28,139,120,.12); }
         .radio-widget.is-playing { animation: radioGlow 2.4s ease-in-out infinite; }
         @keyframes radioGlow { 0%, 100% { box-shadow: 0 18px 42px rgba(20,52,71,.2); } 50% { box-shadow: 0 18px 42px rgba(28,139,120,.3); } }
-        .radio-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 12px; background: #123348; color: #f6d365; font-size: 1.1rem; }
-        .radio-toggle { min-height: 38px; border: 0; border-radius: 12px; background: #123348; color: #fff; font: inherit; font-weight: 900; cursor: pointer; }
+        .radio-mark { display: grid; place-items: center; width: 31px; height: 31px; flex: 0 0 auto; border-radius: 10px; background: #123348; color: #f6d365; font-size: .9rem; }
+        .radio-widget-head { flex: 1 1 auto; min-width: 0; }
+        .radio-widget-head strong { font-size: .85rem; }
+        .radio-widget-head small { font-size: .7rem; }
+        .radio-toggle { display: grid; place-items: center; width: 34px; height: 34px; min-height: 34px; padding: 0; border: 0; border-radius: 10px; background: #123348; color: #fff; font: inherit; font-weight: 900; cursor: pointer; font-size: 0; }
+        .radio-toggle::before { content: "▶"; font-size: .85rem; }
+        .radio-widget.is-playing .radio-toggle::before { content: "Ⅱ"; font-size: .8rem; }
         @media (max-width: 900px) {
           .home-hero, .detail-hero, .split-grid, .agenda-grid, .admin-layout, .login-card, .decom-grid, .decom-board { grid-template-columns: 1fr; }
           .home-welcome { grid-template-columns: 1fr; }
