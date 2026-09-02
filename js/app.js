@@ -1798,6 +1798,7 @@ const TYPES = {
               </div>
             </div>
           </section>
+          ${isAdmin() ? inlineAdminEventEditor(event) : ""}
           <section class="detail-grid-page">
             <article class="content-card glass"><div class="section-title"><p class="eyebrow">Material</p><h2>Invitaciones disponibles</h2></div>${assetGrid(invitationAssets(event))}</article>
             <article class="content-card glass"><div class="section-title"><p class="eyebrow">Galería</p><h2>Fotos relacionadas</h2></div>${assetGrid(event.gallery || [])}</article>
@@ -1807,6 +1808,38 @@ const TYPES = {
         `;
         bindAssetButtons();
         view().querySelector("[data-add-event]").onclick = () => downloadEventsCalendar([event], `${slugify(event.title)}.ics`);
+        bindInlineAdminEditor();
+      }
+
+      function inlineAdminEventEditor(event) {
+        const department = event.department || event.organizer || "Pastoral";
+        return `<details class="inline-admin-editor glass"><summary><span><b>Modo administrador</b><strong>Editar este evento</strong><small>Actualiza los datos o cambia la imagen que se muestra en el cronograma.</small></span><em>Solo visible para administradores</em></summary><div class="inline-admin-form"><div class="form-grid"><label>Nombre<input id="inlineTitle" value="${escapeHtml(event.title)}"></label><label>Fecha<input id="inlineDate" type="date" value="${escapeHtml(event.date)}"></label><label>Hora<input id="inlineTime" value="${escapeHtml(event.time || "")}"></label><label>Tipo<select id="inlineType">${Object.keys(TYPES).map(type => `<option value="${type}" ${event.type === type ? "selected" : ""}>${TYPES[type].label}</option>`).join("")}</select></label><label>Estado<select id="inlineStatus">${["Proximo","Pendiente","Realizado","Cancelado"].map(status => `<option ${platformStatus(event) === status ? "selected" : ""}>${status}</option>`).join("")}</select></label><label>Lugar<input id="inlinePlace" value="${escapeHtml(event.place || "IPUC Villa del Rio")}"></label><label>Comité<input id="inlineDepartment" value="${escapeHtml(department)}"></label><label>Responsable<input id="inlineResponsible" value="${escapeHtml(event.responsible || "")}"></label><label class="full file-dropzone inline-event-image-drop">Imagen del cronograma<input id="inlineEventImage" data-event-id="${escapeHtml(event.id)}" type="file" accept="image/*"><small>Arrástrala aquí o haz clic para reemplazar la imagen del día.</small></label><label class="full">Descripción<textarea id="inlineDescription">${escapeHtml(event.description || "")}</textarea></label><label class="full">Observaciones<textarea id="inlineObservations">${escapeHtml(event.observations || "")}</textarea></label><div class="button-row full"><button class="primary-link" type="button" data-inline-save>Guardar cambios</button><button class="small-action" type="button" data-inline-cancel>Cancelar</button></div></div></div></details>`;
+      }
+
+      function bindInlineAdminEditor() {
+        const editor = view().querySelector(".inline-admin-editor");
+        if (!editor) return;
+        editor.querySelector("[data-inline-save]").onclick = saveInlineEvent;
+        editor.querySelector("[data-inline-cancel]").onclick = () => { editor.open = false; };
+        bindFileDropzones();
+      }
+
+      async function saveInlineEvent() {
+        if (!requireCloudAdmin()) return;
+        const input = document.getElementById("inlineEventImage");
+        const eventId = input?.dataset.eventId;
+        const current = platformEventById(eventId);
+        if (!current) return alert("No encontramos este evento.");
+        const title = document.getElementById("inlineTitle").value.trim();
+        const date = document.getElementById("inlineDate").value;
+        if (!title || !date) return alert("Nombre y fecha son obligatorios.");
+        const payload = { ...(APP_STATE.events[eventId] || {}), id: eventId, custom: Boolean(current.custom), deleted: false, title, date, time: document.getElementById("inlineTime").value.trim() || autoTime({ date, type: document.getElementById("inlineType").value }), type: document.getElementById("inlineType").value, status: document.getElementById("inlineStatus").value, place: document.getElementById("inlinePlace").value.trim() || "IPUC Villa del Rio", department: document.getElementById("inlineDepartment").value.trim() || "Pastoral", organizer: document.getElementById("inlineDepartment").value.trim() || "Pastoral", responsible: document.getElementById("inlineResponsible").value.trim() || "Por definir", description: document.getElementById("inlineDescription").value.trim(), observations: document.getElementById("inlineObservations").value.trim(), autoStyle: current.autoStyle || "automatico", featured: Boolean(current.featured), tags: current.tags || inferTags(title, document.getElementById("inlineType").value) };
+        const image = pendingUploadFiles("inlineEventImage")[0];
+        if (image) payload.image = await uploadCloudFile(image, eventId, "principal", "Imagen del evento");
+        await saveCloudDoc("events", eventId, payload);
+        clearPendingUpload("inlineEventImage");
+        alert("Evento actualizado.");
+        renderRoute();
       }
 
       function renderLoginPage() {
@@ -2723,7 +2756,8 @@ const TYPES = {
       }
 
       function pendingUploadKey(inputId) {
-        if (inputId === "adminEventImage") return `event:${platform.selectedAdminEvent || "__new__"}:${inputId}`;
+        const input = document.getElementById(inputId);
+        if (inputId === "adminEventImage" || inputId === "inlineEventImage") return `event:${input?.dataset.eventId || platform.selectedAdminEvent || "__new__"}:${inputId}`;
         const materialId = document.getElementById("materialSelect")?.value || "__new__";
         return `material:${materialId}:${inputId}`;
       }
@@ -3430,6 +3464,17 @@ const TYPES = {
         .admin-module[hidden] { display: none !important; }
         .admin-module { grid-column: 1 / -1; }
         .admin-card-wide { max-width: 980px; margin: 0 auto; }
+        .inline-admin-editor { max-width: 980px; margin: 16px auto; padding: 0; border: 1px solid rgba(28,139,120,.28); background: rgba(235,249,245,.62); overflow: hidden; }
+        .inline-admin-editor summary { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 18px; cursor: pointer; list-style: none; }
+        .inline-admin-editor summary::-webkit-details-marker { display: none; }
+        .inline-admin-editor summary > span { display: grid; gap: 3px; }
+        .inline-admin-editor summary b { color: #1c8b78; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+        .inline-admin-editor summary strong { color: #123348; font-size: 1.05rem; }
+        .inline-admin-editor summary small, .inline-admin-editor summary em { color: var(--muted); font-size: .76rem; font-style: normal; font-weight: 750; }
+        .inline-admin-editor summary em { padding: 7px 10px; border-radius: 999px; background: rgba(18,51,72,.08); white-space: nowrap; }
+        .inline-admin-editor[open] summary { border-bottom: 1px solid rgba(28,139,120,.18); }
+        .inline-admin-form { padding: 15px 18px 18px; }
+        .inline-event-image-drop { min-height: 140px; }
         .admin-card-narrow { max-width: 760px; margin: 0 auto; }
         .upload-guide { display: grid; gap: 3px; padding: 12px 14px; border-radius: 14px; background: rgba(28,139,120,.1); color: #185f53; }
         .upload-guide span { color: #4f6b78; font-size: .82rem; font-weight: 700; text-transform: none; }
@@ -3661,6 +3706,8 @@ const TYPES = {
           .info-list, .form-grid, .event-grid, .asset-grid-page, .year-view { grid-template-columns: 1fr; }
           .admin-summary { grid-template-columns: 1fr; }
           .admin-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .inline-admin-editor summary { align-items: flex-start; flex-direction: column; }
+          .inline-admin-editor summary em { white-space: normal; }
           .announcement-page-grid { grid-template-columns: 1fr; }
           .week-head, .month-grid { gap: 4px; }
           .week-head { font-size: .62rem; }
