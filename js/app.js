@@ -1322,6 +1322,11 @@ const TYPES = {
       const shell = document.querySelector("main.app");
       shell.className = "platform-shell";
       shell.innerHTML = `
+        <div class="site-intro-screen" data-site-intro>
+          <video autoplay muted playsinline preload="auto" aria-label="Video de bienvenida de IPUC Villa del Río"><source src="/assets/site-intro.mp4" type="video/mp4"></video>
+          <span class="site-intro-shade" aria-hidden="true"></span>
+          <div class="site-intro-content"><img src="/assets/logo.png" alt="Logo IPUC Villa del Río"><p class="eyebrow">Bienvenidos a</p><h1>IPUC Villa del Río</h1><p>Información, recursos y vida de iglesia.</p><button type="button" class="site-intro-skip" data-skip-intro>Entrar ahora <span aria-hidden="true">→</span></button></div>
+        </div>
         <div class="site-video-backdrop" aria-hidden="true"><video autoplay muted loop playsinline preload="auto"><source src="assets/ipuc-villa-del-rio.mp4" type="video/mp4"></video><span></span></div>
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
         <header class="platform-top glass">
@@ -1398,6 +1403,7 @@ const TYPES = {
         renderRoute();
       });
       if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+      setupSiteIntro();
       setupPlatformMusic();
       setupRadioIpuc();
       if (location.hash) history.replaceState({}, "", location.hash.replace(/^#\/?/, "/") || "/");
@@ -3411,6 +3417,26 @@ const TYPES = {
           layer.innerHTML = "";
         };
         layer.querySelector("[data-download-media]").onclick = () => downloadAsset(asset);
+      }
+
+      function setupSiteIntro() {
+        const intro = document.querySelector("[data-site-intro]");
+        const video = intro?.querySelector("video");
+        if (!intro) return;
+        const close = () => {
+          if (intro.classList.contains("is-hidden")) return;
+          intro.classList.add("is-hidden");
+          window.setTimeout(() => intro.remove(), 700);
+        };
+        intro.querySelector("[data-skip-intro]")?.addEventListener("click", close);
+        video?.addEventListener("ended", close, { once: true });
+        video?.addEventListener("error", () => window.setTimeout(close, 300), { once: true });
+        window.setTimeout(close, 12000);
+        if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+          close();
+          return;
+        }
+        video?.play().catch(() => {});
       }
 
       function setupPlatformMusic() {
