@@ -190,6 +190,19 @@ const TYPES = {
     ];
     const STORAGE_KEY = "ipuc-villa-del-rio-event-center-v1";
     const TAGS = ["Jovenes", "Damas", "Caballeros", "Escuela Dominical", "Evangelismo", "Infantil", "Musica", "Multimedia", "Pastoral", "Distrital", "Nacional", "Especial"];
+    const COMMITTEES = [
+      ["ipuc", "IPUC Villa del Río", "assets/committees/ipuc-villa-del-rio.png", ["pastoral", "ipuc"]],
+      ["caballeros", "Caballeros", "assets/committees/caballeros.png", ["caballeros"]],
+      ["damas", "Damas Dorcas", "assets/committees/damas-dorcas.png", ["damas", "dorcas"]],
+      ["decom", "DECOM", "assets/committees/decom.png", ["decom"]],
+      ["evangelismo", "Evangelismo", "assets/committees/evangelismo.png", ["evangelismo"]],
+      ["jovenes", "Jóvenes", "assets/committees/jovenes.png", ["jovenes"]],
+      ["misiones", "Misiones", "assets/committees/misiones.png", ["misiones"]],
+      ["musica", "Música", "assets/committees/musica.png", ["musica"]],
+      ["familias", "Red de familias", "assets/committees/red-de-familias.png", ["familias", "red de familias"]],
+      ["escuela-dominical", "Escuela Dominical", "assets/committees/escuela-dominical.png", ["escuela dominical"]],
+      ["edad-dorada", "Edad Dorada", "assets/committees/edad-dorada.png", ["edad dorada"]]
+    ];
     const INVITATION_FIELDS = [
       ["main", "Invitacion principal"],
       ["whatsapp", "Invitacion para WhatsApp"],
@@ -464,6 +477,14 @@ const TYPES = {
     }
     function slugify(value) {
       return String(value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    }
+    function selectedCommittee(event) {
+      const value = slugify(event?.department || event?.organizer || "");
+      return COMMITTEES.find(([key, label, image, aliases]) => aliases.includes(value) || slugify(label) === value)?.[0] || "ipuc";
+    }
+    function committeePickerMarkup(event) {
+      const selected = selectedCommittee(event);
+      return `<div class="committee-picker full" role="radiogroup" aria-label="Comité responsable">${COMMITTEES.map(([key, label, image]) => `<button type="button" class="committee-option ${selected === key ? "selected" : ""}" data-committee="${key}" data-committee-label="${escapeHtml(label)}" aria-pressed="${selected === key}"><img src="${image}" alt=""><span>${escapeHtml(label)}</span></button>`).join("")}</div><input id="adminDepartment2" type="hidden" value="${escapeHtml(COMMITTEES.find(([key]) => key === selected)?.[1] || "IPUC Villa del Río")}">`;
     }
     function enrichEvent(event) {
       const id = event.id || eventIdFor(event);
@@ -1927,21 +1948,10 @@ const TYPES = {
             <section class="admin-module" data-admin-module="eventos" ${moduleVisibility("eventos")}>
             <article class="content-card glass admin-card-wide">
               <div class="section-title"><p class="eyebrow">Eventos</p><h2>Crear o editar evento</h2></div>
-              <div class="form-grid">
-                <label class="full">Evento a editar<select id="adminSelect"><option value="__new__">+ Crear evento nuevo</option>${adminEvents.map(event => `<option value="${event.id}" ${selected?.id === event.id ? "selected" : ""}>${formatDateShort(event.date)} - ${escapeHtml(event.title)}</option>`).join("")}</select></label>
-                <label>Nombre<input id="adminTitle2" value="${escapeHtml(selected?.title || "")}"></label>
-                <label>Fecha<input id="adminDate2" type="date" value="${escapeHtml(selected?.date || dateKey(platform.calendarDate))}"></label>
-                <label>Hora inicio<input id="adminTime2" value="${escapeHtml(selected?.time || BASE_TIMES.culto)}"></label>
-                <label>Tipo<select id="adminType2">${Object.keys(TYPES).map(type => `<option value="${type}" ${selected?.type === type ? "selected" : ""}>${TYPES[type].label}</option>`).join("")}</select></label>
-                <label>Estado<select id="adminStatus2">${["Proximo","Pendiente","Realizado","Cancelado"].map(status => `<option ${platformStatus(selected || {}) === status ? "selected" : ""}>${status}</option>`).join("")}</select></label>
-                <label>Lugar<input id="adminPlace2" value="${escapeHtml(selected?.place || "IPUC Villa del Rio")}"></label>
-                <label>Departamento<input id="adminDepartment2" value="${escapeHtml(selected?.department || selected?.organizer || "")}"></label>
-                <label>Responsable<input id="adminResponsible2" value="${escapeHtml(selected?.responsible || "")}"></label>
-                <label>Estilo imagen automatica<select id="adminAutoStyle">${["automatico","luz","amanecer","noche","naturaleza","congregacional","sobrio"].map(style => `<option value="${style}" ${selected?.autoStyle === style ? "selected" : ""}>${style}</option>`).join("")}</select></label>
-                <label class="full checkbox-line"><input id="adminFeatured2" type="checkbox" ${selected?.featured ? "checked" : ""}> Marcar como destacado</label>
-                <label class="full">Descripcion<textarea id="adminDescription2">${escapeHtml(selected?.description || "")}</textarea></label>
-                <label class="full">Observaciones<textarea id="adminObservations2">${escapeHtml(selected?.observations || "")}</textarea></label>
-                <div class="full tag-admin">${TAGS.map(tag => `<label><input type="checkbox" value="${tag}" ${selected?.tags?.includes(tag) ? "checked" : ""}>${tag}</label>`).join("")}</div>
+              <div class="event-editor-form">
+                <section class="admin-form-section"><p class="eyebrow">Paso 1</p><h3>Información principal</h3><div class="form-grid"><label class="full">Evento a editar<select id="adminSelect"><option value="__new__">+ Crear evento nuevo</option>${adminEvents.map(event => `<option value="${event.id}" ${selected?.id === event.id ? "selected" : ""}>${formatDateShort(event.date)} - ${escapeHtml(event.title)}</option>`).join("")}</select></label><label class="full">Nombre del evento<input id="adminTitle2" value="${escapeHtml(selected?.title || "")}" placeholder="Ej. Culto de oración"></label><label>Fecha<input id="adminDate2" type="date" value="${escapeHtml(selected?.date || dateKey(platform.calendarDate))}"></label><label>Tipo<select id="adminType2">${Object.keys(TYPES).map(type => `<option value="${type}" ${selected?.type === type ? "selected" : ""}>${TYPES[type].label}</option>`).join("")}</select></label></div></section>
+                <section class="admin-form-section"><p class="eyebrow">Paso 2</p><h3>Cuándo, dónde y quién organiza</h3><div class="form-grid"><label>Hora de inicio<input id="adminTime2" value="${escapeHtml(selected?.time || BASE_TIMES.culto)}"></label><label>Estado<select id="adminStatus2">${["Proximo","Pendiente","Realizado","Cancelado"].map(status => `<option ${platformStatus(selected || {}) === status ? "selected" : ""}>${status}</option>`).join("")}</select></label><label>Lugar<input id="adminPlace2" value="${escapeHtml(selected?.place || "IPUC Villa del Rio")}"></label><label>Responsable<input id="adminResponsible2" value="${escapeHtml(selected?.responsible || "")}" placeholder="Nombre del responsable"></label><div class="full"><span class="field-caption">Selecciona el comité</span>${committeePickerMarkup(selected)}</div></div></section>
+                <details class="admin-form-section" open><summary><span><p class="eyebrow">Paso 3</p><h3>Presentación y detalles</h3></span><span class="details-hint">Opcional</span></summary><div class="form-grid"><label>Estilo imagen automática<select id="adminAutoStyle">${["automatico","luz","amanecer","noche","naturaleza","congregacional","sobrio"].map(style => `<option value="${style}" ${selected?.autoStyle === style ? "selected" : ""}>${style}</option>`).join("")}</select></label><label class="checkbox-line"><input id="adminFeatured2" type="checkbox" ${selected?.featured ? "checked" : ""}> Marcar como destacado</label><label class="full">Descripción<textarea id="adminDescription2" placeholder="Cuenta brevemente de qué trata la actividad.">${escapeHtml(selected?.description || "")}</textarea></label><label class="full">Observaciones<textarea id="adminObservations2" placeholder="Información adicional para la iglesia.">${escapeHtml(selected?.observations || "")}</textarea></label><div class="full tag-admin">${TAGS.map(tag => `<label><input type="checkbox" value="${tag}" ${selected?.tags?.includes(tag) ? "checked" : ""}>${tag}</label>`).join("")}</div></div></details>
                 <div class="button-row full">
                   <button class="primary-link" id="adminSaveEvent" type="button">Guardar evento</button>
                   <button class="small-action" id="adminDeleteEvent" type="button">Eliminar evento</button>
@@ -2613,6 +2623,17 @@ const TYPES = {
           platform.selectedAdminEvent = event.target.value;
           renderAdminPage();
         };
+        view().querySelectorAll("[data-committee]").forEach(button => {
+          button.onclick = () => {
+            const hidden = document.getElementById("adminDepartment2");
+            if (hidden) hidden.value = button.dataset.committeeLabel;
+            view().querySelectorAll("[data-committee]").forEach(option => {
+              const isSelected = option === button;
+              option.classList.toggle("selected", isSelected);
+              option.setAttribute("aria-pressed", String(isSelected));
+            });
+          };
+        });
         document.getElementById("materialSelect").onchange = event => {
           platform.selectedAdminEvent = event.target.value;
           renderAdminPage();
@@ -3430,6 +3451,21 @@ const TYPES = {
         .form-grid label { display: grid; gap: 5px; color: #4f6b78; font-size: .78rem; font-weight: 900; text-transform: uppercase; }
         .form-grid .full, .button-row.full { grid-column: 1 / -1; }
         .form-grid textarea { min-height: 92px; resize: vertical; }
+        .event-editor-form { display: grid; gap: 14px; }
+        .admin-form-section { margin: 0; padding: 15px; border: 1px solid rgba(255,255,255,.78); border-radius: 20px; background: rgba(255,255,255,.34); }
+        .admin-form-section > h3, .admin-form-section summary h3 { margin: 2px 0 12px; color: #123348; font-size: 1.08rem; }
+        .admin-form-section > .eyebrow, .admin-form-section summary .eyebrow { margin: 0; }
+        .admin-form-section summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; list-style: none; }
+        .admin-form-section summary::-webkit-details-marker { display: none; }
+        .admin-form-section summary h3 { margin-bottom: 0; }
+        .details-hint, .field-caption { color: var(--muted); font-size: .75rem; font-weight: 850; text-transform: uppercase; }
+        .field-caption { display: block; margin-bottom: 8px; }
+        .committee-picker { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 9px; }
+        .committee-option { display: grid; justify-items: center; gap: 7px; min-height: 112px; padding: 9px 6px; border: 2px solid transparent; border-radius: 16px; background: rgba(255,255,255,.64); color: var(--ink); font: inherit; font-size: .72rem; font-weight: 900; cursor: pointer; transition: .18s ease; }
+        .committee-option:hover { transform: translateY(-2px); border-color: rgba(28,139,120,.45); }
+        .committee-option.selected { border-color: #1c8b78; background: rgba(224,250,244,.9); box-shadow: 0 8px 18px rgba(18,51,72,.12); }
+        .committee-option img { width: 62px; height: 62px; border-radius: 13px; object-fit: contain; background: white; }
+        .committee-option span { line-height: 1.1; text-align: center; }
         .checkbox-line { display: flex !important; align-items: center; gap: 8px; text-transform: none !important; color: var(--ink) !important; }
         .tag-admin { display: flex; flex-wrap: wrap; gap: 8px; }
         .tag-admin label { display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 999px; background: rgba(255,255,255,.55); color: var(--ink); text-transform: none; }
