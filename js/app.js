@@ -1706,8 +1706,7 @@ const TYPES = {
           cloud.enabled = true;
           cloud.ready = true;
           cloud.error = "";
-          cloud.storageReady = true;
-          cloud.storageError = "";
+          cloud.storageReady = await checkSupabaseStorageAvailability();
           setupLiveVisitors();
           supabaseAuthAdapter.onAuthStateChanged(cloud.auth, user => {
             cloud.user = user;
@@ -1880,6 +1879,29 @@ const TYPES = {
         async getDownloadURL(ref) { const { data } = cloud.storage.from(SUPABASE_CONFIG.storageBucket).getPublicUrl(ref.path); return data.publicUrl; },
         async deleteObject(ref) { return cloud.storage.from(SUPABASE_CONFIG.storageBucket).remove([ref.path]); }
       };
+
+      async function checkSupabaseStorageAvailability() {
+        try {
+          const response = await fetch(`${SUPABASE_CONFIG.url}/storage/v1/bucket/${encodeURIComponent(SUPABASE_CONFIG.storageBucket)}`, {
+            headers: { apikey: SUPABASE_CONFIG.publishableKey }
+          });
+          const body = await response.json().catch(() => null);
+          const description = `${body?.code || ""} ${body?.message || ""} ${body?.error || ""}`.toLowerCase();
+          if (response.status === 404 || description.includes("nosuchbucket") || description.includes("bucket not found")) {
+            cloud.storageError = "No existe el bucket público «event-media» en Supabase.";
+            return false;
+          }
+          if (response.status >= 500) {
+            cloud.storageError = "No se pudo comprobar el almacenamiento de Supabase. Inténtalo de nuevo en unos minutos.";
+            return false;
+          }
+          cloud.storageError = "";
+          return true;
+        } catch (error) {
+          cloud.storageError = "No se pudo comprobar el almacenamiento de Supabase. Revisa tu conexión e inténtalo de nuevo.";
+          return false;
+        }
+      }
 
       function normalizeCloudDoc(id, data) {
         return {
