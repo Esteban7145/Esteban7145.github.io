@@ -2598,7 +2598,32 @@ const TYPES = {
         view().querySelectorAll("[data-remove-asset]").forEach(button => {
           button.onclick = () => removePlatformAsset(button.dataset.kind, button.dataset.key || "", Number(button.dataset.index || -1));
         });
+        bindFileDropzones();
         bindDecomControls();
+      }
+
+      function bindFileDropzones() {
+        view().querySelectorAll('input[type="file"]').forEach(input => {
+          const zone = input.closest("label") || input.parentElement;
+          if (!zone) return;
+          zone.classList.add("file-dropzone");
+          ["dragenter", "dragover"].forEach(eventName => zone.addEventListener(eventName, event => {
+            event.preventDefault();
+            zone.classList.add("is-dragging");
+          }));
+          ["dragleave", "drop"].forEach(eventName => zone.addEventListener(eventName, event => {
+            event.preventDefault();
+            zone.classList.remove("is-dragging");
+          }));
+          zone.addEventListener("drop", event => {
+            if (input.disabled || !event.dataTransfer?.files?.length) return;
+            const transfer = new DataTransfer();
+            [...event.dataTransfer.files].forEach(file => transfer.items.add(file));
+            input.files = transfer.files;
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+          });
+          input.addEventListener("change", () => zone.classList.toggle("has-file", Boolean(input.files?.length)));
+        });
       }
 
       function bindDecomControls() {
@@ -3245,6 +3270,10 @@ const TYPES = {
         .upload-group { border: 1px solid rgba(83,102,117,.14); border-radius: 16px; background: rgba(255,255,255,.34); padding: 0 12px 12px; }
         .upload-group summary { padding: 12px 2px; color: #123348; font-weight: 950; cursor: pointer; }
         .upload-group .form-grid { padding-top: 2px; }
+        .file-dropzone { min-height: 84px; padding: 10px; border: 1px dashed rgba(18,51,72,.26); border-radius: 14px; background: rgba(255,255,255,.34); transition: border-color .18s ease, background .18s ease, transform .18s ease; }
+        .file-dropzone input[type="file"] { min-height: 38px; }
+        .file-dropzone.is-dragging { border-color: #1c8b78; background: rgba(28,139,120,.13); transform: translateY(-2px); }
+        .file-dropzone.has-file { border-color: rgba(28,139,120,.48); background: rgba(235,249,245,.64); }
         .admin-wide { grid-column: 1 / -1; }
         .detail-grid-page .wide { grid-column: 1 / -1; }
         .section-title { margin-bottom: 12px; }
