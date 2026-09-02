@@ -1915,7 +1915,7 @@ const TYPES = {
                 <details class="upload-group full"><summary>Audio de fondo del sitio</summary><div class="form-grid"><label class="full">Música autorizada<input id="uploadMusic2" type="file" accept="audio/*"></label></div></details>
                 <button class="primary-link full" id="adminSaveMaterial" type="button">Guardar todo el material</button>
                 <div class="full admin-existing-material">${adminMaterialList(selected)}</div>
-                <div class="upload-group full weekly-upload"><strong>Cronograma semanal</strong><p>Sube la imagen oficial que resume los cultos de la semana. Se mostrará directamente en la vista semanal.</p><label>Imagen de esta semana<input id="uploadWeeklySchedule" type="file" accept="image/*"></label><button class="small-action" id="saveWeeklySchedule" type="button">Guardar imagen semanal</button>${APP_STATE.weeklySchedule ? `<small>Archivo actual: ${escapeHtml(APP_STATE.weeklySchedule.name || "Cronograma semanal")}</small>` : ""}</div>
+                <div class="upload-group full weekly-upload"><strong>Cronograma semanal</strong><p>Sube la imagen oficial que resume los cultos de la semana. Se mostrará directamente en la vista semanal.</p><label>Imagen de esta semana<input id="uploadWeeklySchedule" type="file" accept="image/*"></label><div class="button-row"><button class="small-action" id="saveWeeklySchedule" type="button">Guardar imagen semanal</button>${APP_STATE.weeklySchedule ? `<button class="small-action danger-action" id="deleteWeeklySchedule" type="button">Eliminar imagen actual</button>` : ""}</div>${APP_STATE.weeklySchedule ? `<small>Archivo actual: ${escapeHtml(APP_STATE.weeklySchedule.name || "Cronograma semanal")}</small>` : ""}</div>
               </div>
             </article>
             </section>
@@ -2574,6 +2574,8 @@ const TYPES = {
         document.getElementById("adminDeleteEvent").onclick = deletePlatformEvent;
         document.getElementById("adminSaveMaterial").onclick = savePlatformMaterial;
         document.getElementById("saveWeeklySchedule").onclick = saveWeeklySchedule;
+        const deleteWeeklyButton = document.getElementById("deleteWeeklySchedule");
+        if (deleteWeeklyButton) deleteWeeklyButton.onclick = deleteWeeklySchedule;
         if (!cloud.storageReady) {
           ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2", "adminSaveMaterial", "uploadWeeklySchedule", "saveWeeklySchedule"].forEach(id => {
             const control = document.getElementById(id);
@@ -2711,6 +2713,17 @@ const TYPES = {
         await saveCloudDoc("settings", "site", { weeklySchedule: asset });
         APP_STATE.weeklySchedule = asset;
         alert("Cronograma semanal guardado.");
+        renderAdminPage();
+      }
+
+      async function deleteWeeklySchedule() {
+        if (!requireCloudAdmin()) return;
+        if (!APP_STATE.weeklySchedule) return;
+        if (!confirm("¿Eliminar la imagen actual del cronograma semanal?")) return;
+        await deleteCloudAsset(APP_STATE.weeklySchedule);
+        await saveCloudDoc("settings", "site", { weeklySchedule: null });
+        APP_STATE.weeklySchedule = null;
+        alert("Imagen del cronograma eliminada.");
         renderAdminPage();
       }
 
@@ -3145,6 +3158,7 @@ const TYPES = {
         .platform-brand small { color: var(--muted); font-weight: 800; }
         .platform-nav { display: flex; align-items: center; gap: 8px; }
         .platform-nav a, .nav-toggle, .primary-link, .small-action, .view-switch button, .month-strip button { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border: 1px solid rgba(255,255,255,.75); border-radius: 14px; background: rgba(255,255,255,.55); color: var(--ink); font: inherit; font-weight: 900; text-decoration: none; cursor: pointer; }
+        .danger-action { border-color: rgba(180,35,53,.2) !important; background: rgba(232,75,95,.12) !important; color: #8f2130 !important; }
         .primary-link, .view-switch button.active, .month-strip button.active { background: linear-gradient(145deg, #123348, #1c8b78); color: white; box-shadow: 0 14px 34px rgba(20,52,71,.18); }
         .nav-toggle { display: none; }
         .route-view { display: grid; gap: 16px; margin-top: 16px; }
