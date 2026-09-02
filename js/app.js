@@ -1278,6 +1278,38 @@ const TYPES = {
       const RESOURCE_BUCKET_URL = "https://elon-file.s3.us-east-1.amazonaws.com";
       const RESOURCE_ROOT_PREFIX = "Elon/descargas/";
       const RESOURCE_LOOSE_FILES_PATH = "__documentos_sueltos__";
+      const DRIVE_RESOURCE_FOLDER_URL = "https://drive.google.com/drive/folders/1-0RjZH6aagkQu0t9dys9qY4vbK6pX88P?usp=drive_link";
+      const DRIVE_RESOURCE_ITEMS = [
+        ["infografías_bíblicasdel_antiguo_y_nuevo_testamento_comprimido.pdf", "Biblias ilustradas/Infografías bíblicas", 59125158, "https://drive.google.com/file/d/1-jzJb_AMazLvIJHu4oinfpn4NBCn2qO2/view?usp=drivesdk"],
+        ["Esquemas de la Biblia Nuevo Testamento.pdf", "Esquemas bíblicos/Nuevo Testamento", 19013952, "https://drive.google.com/file/d/1-9ax036FQQQJP7C9c5CKJ_DTFJLD3hu_/view?usp=drivesdk"],
+        ["Los_Personajes_de_la_Biblia_en_un_Vistazo_Fichas_Referencia_28_Personajes.pdf", "Biblias ilustradas/Personajes de la Biblia", 23637783, "https://drive.google.com/file/d/1-uGbQoZ-950thfy-nmRIXtSm5fUg41br/view?usp=drivesdk"],
+        ["Esquemas de la Biblia Antiguo Testamento.pdf", "Esquemas bíblicos/Antiguo Testamento", 28072582, "https://drive.google.com/file/d/1-5m6coo5mif5Z82oZ0gldvXjqBJ1U7_1/view?usp=drivesdk"],
+        ["Esquemas Mentales de la Biblia - Nuevo Testamento.pdf", "Esquemas bíblicos/Nuevo Testamento", 17571709, "https://drive.google.com/file/d/1-AptQIgMN18jdk6w0YYyxajDVDFFwJgp/view?usp=drivesdk"],
+        ["Esquemas_Mentales_de_la_Biblia_Antiguo_Testamento2_compressed.pdf", "Esquemas bíblicos/Antiguo Testamento", 12634276, "https://drive.google.com/file/d/1-SCHxyGOHJ_7yIZNpqsvVZDtXO4Sqzpe/view?usp=drivesdk"],
+        ["Fichasdelabiblia.pdf", "Biblias ilustradas/Fichas de la Biblia", 5467283, "https://drive.google.com/file/d/1-Sf1KcX2FZAVCce__PRcuPPdvgFWFdDZ/view?usp=drivesdk"],
+        ["Libro_por_libro_desglose_de_la_Biblia_Antiguo_Testamento_Teach_Sunday.pdf", "Estudios y guías/Libro por libro · Antiguo Testamento", 17983059, "https://drive.google.com/file/d/1-kksKRJi0GNGdNH8wNaDl_3ihxzqGfTD/view?usp=drivesdk"],
+        ["Los libros de la Biblia en un vistazo (p).pdf", "Biblias ilustradas/Los libros de la Biblia", 30351417, "https://drive.google.com/file/d/1-o9QafzeaqCbtyxdMOCDPp1oeunGCdwE/view?usp=drivesdk"],
+        ["Libro_por_libro_desglose_de_la_Biblia_Nuevo_Testamento_Teach_Sunday.pdf", "Estudios y guías/Libro por libro · Nuevo Testamento", 14922687, "https://drive.google.com/file/d/1-o6wizeK97zp-vKkg4HJAkxreZGODrK-/view?usp=drivesdk"],
+        ["La_Biblia_en_Acción_La_Historia_Redentora_de_Dios_Español.pdf", "Biblias de estudio/La Biblia en Acción", 652345057, "https://drive.google.com/file/d/10I1UOKBK1aLt1t1IxprW6JXer9oTLXA2/view?usp=drivesdk"],
+        ["gran_diccionario_enciclopédico_de_imágenes_símbolos_de_la_biblia.pdf", "Biblias ilustradas/Diccionario visual de la Biblia", 12291537, "https://drive.google.com/file/d/10Hgu7sF6b0jmj58_sJO-IpLGH72SHxh5/view?usp=drivesdk"],
+        ["Los_libros_de_la_Biblia_Explicados_en_Gráficos_Antiguo_Testamento.pdf", "Esquemas bíblicos/Antiguo Testamento", 14975387, "https://drive.google.com/file/d/10SZrlZSIGjBOA_TwqOUfzVSD9neGvqBG/view?usp=drivesdk"],
+        ["Biblia Completa Ilustrada.pdf", "Biblias ilustradas/Biblia completa ilustrada", 65677150, "https://drive.google.com/file/d/10DbDGyqjkpJ_bVLQ1u7kkKbkreoeQAim/view?usp=drivesdk"],
+        ["LOS LIBROS DE LA BIBLIA EXPLICADOS EN GRAFICOS NUEVO TESTAMENTO.pdf", "Esquemas bíblicos/Nuevo Testamento", 16210520, "https://drive.google.com/file/d/10PQCEeeg3TUT14Uu3UMN2sALjMQbkM5I/view?usp=drivesdk"],
+        ["Manual_para_entender_versículos_difíciles_de_la_Biblia_Josh_y_Sean.pdf", "Estudios y guías/Versículos difíciles", 7982261, "https://drive.google.com/file/d/10TGVBubMLLFeG4QpuqbKLGU-QyjGqFqW/view?usp=drivesdk"],
+        ["La biblia en su contexto.pdf", "Estudios y guías/La Biblia en su contexto", 1381347, "https://drive.google.com/file/d/10H_CJCbzv4vN21ZNSeWKLpCWrmcMeVtB/view?usp=drivesdk"],
+        ["Vol.01 - Los Siete sellos de Apocalipsis.pdf", "Apocalipsis y material especial/Siete sellos de Apocalipsis", 6722521, "https://drive.google.com/file/d/10ZCildvmWk3LQIvJTa13aoUJs081QxdN/view?usp=drivesdk"],
+        ["Vol.02- Los Siete sellos de Apocalipsis 1.pdf", "Apocalipsis y material especial/Siete sellos de Apocalipsis", 6359373, "https://drive.google.com/file/d/10YwUvhcuNeug-HcXkmu8DX3qTDnYgYXX/view?usp=drivesdk"],
+        ["Atlas de la biblia selecciones de Reader_s Digest.pdf", "Biblias ilustradas/Atlas bíblico", 63591043, "https://drive.google.com/file/d/10at4KJbswiWNc8nPfobzh_GTRqZFykJ9/view?usp=drivesdk"],
+        ["Biblia de Estudio Esquematizada Reina Valera .pdf", "Biblias de estudio/Biblia de estudio esquematizada", 51828845, "https://drive.google.com/file/d/10fTDg2xnCGxRsyywX5TFMnmFO56hdGoF/view?usp=drivesdk"],
+        ["Guía_esencial_de_la_Biblia_Caminando_a_través_de_los_66_libros_1.pdf", "Estudios y guías/Guía esencial de la Biblia", 41009955, "https://drive.google.com/file/d/10fvHlUMVSzEtDRva3v1KJvP4xllVnUC9/view?usp=drivesdk"],
+        ["LBEA Parte 1.pdf", "Biblias de estudio/La Biblia en Acción", 101274373, "https://drive.google.com/file/d/10jJa-uKonhNpy1TcJmz63Uhd_ZnZmnF_/view?usp=drivesdk"],
+        ["LBEA Parte 2.pdf", "Biblias de estudio/La Biblia en Acción", 102360795, "https://drive.google.com/file/d/10jz_3BWqywsjs8nfpCQ7UVV5xXXA6cfQ/view?usp=drivesdk"],
+        ["LBEA Parte 3.pdf", "Biblias de estudio/La Biblia en Acción", 98425337, "https://drive.google.com/file/d/10rQMstdiwcslG2FJGZAywXtyiJ9FyI10/view?usp=drivesdk"],
+        ["LBEA Parte 4.pdf", "Biblias de estudio/La Biblia en Acción", 100144899, "https://drive.google.com/file/d/10vCvnlKHm0M6IFKpGcuFkcQU1JTDxreA/view?usp=drivesdk"],
+        ["LBEA Parte 5.pdf", "Biblias de estudio/La Biblia en Acción", 100305502, "https://drive.google.com/file/d/10vuzs4WYgR23ezHeP_go2hLX9w-KDHPm/view?usp=drivesdk"],
+        ["LBEA Parte 6.pdf", "Biblias de estudio/La Biblia en Acción", 101206870, "https://drive.google.com/file/d/117Ys9cg56vt5bJMV1ni53CMNsDmfUP5e/view?usp=drivesdk"],
+        ["LBEA Parte 7.pdf", "Biblias de estudio/La Biblia en Acción", 12276727, "https://drive.google.com/file/d/11B1Yxxd_yso4Rg1vJGeIC4CbOEgywO_F/view?usp=drivesdk"]
+      ];
       const DECOM_MEMBERS = [
         {
           name: "Esteban Arango",
@@ -1465,7 +1497,7 @@ const TYPES = {
         view().innerHTML = `
           <section class="page-head glass resource-hero">
             <div><p class="eyebrow">DECOM · Biblioteca oficial</p><h1>Banco de recursos IPUC</h1><p>Encuentra logos, manuales, piezas gráficas y materiales oficiales para apoyar la comunicación de la Iglesia.</p></div>
-            <a class="small-action" href="https://ipuc.org.co/descargas-ipuc#graficos-ipuc" target="_blank" rel="noopener">Ver banco oficial</a>
+            <div class="resource-hero-actions"><a class="small-action" href="https://ipuc.org.co/descargas-ipuc#graficos-ipuc" target="_blank" rel="noopener">Ver banco oficial</a><a class="small-action" href="${DRIVE_RESOURCE_FOLDER_URL}" target="_blank" rel="noopener">Abrir carpeta bíblica</a></div>
           </section>
           <section class="resource-note glass"><span class="resource-note-icon">✓</span><p><strong>Recursos oficiales IPUC</strong><small>Esta biblioteca consulta el repositorio público oficial y conserva la organización por carpetas. Cada archivo se abre desde su fuente original.</small></p></section>
           <section class="resource-toolbar glass" aria-label="Buscar recursos">
@@ -1494,14 +1526,16 @@ const TYPES = {
           if (!response.ok) throw new Error("No se pudo consultar el repositorio");
           const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
           const nodes = [...xml.getElementsByTagNameNS("*", "Contents")];
-          platform.resourceItems = nodes.map(node => node.getElementsByTagNameNS("*", "Key")[0]?.textContent || "").filter(key => key && !key.endsWith("/.folder") && !key.endsWith("/")).map(key => {
+          const officialItems = nodes.map(node => node.getElementsByTagNameNS("*", "Key")[0]?.textContent || "").filter(key => key && !key.endsWith("/.folder") && !key.endsWith("/")).map(key => {
             const relative = key.slice(RESOURCE_ROOT_PREFIX.length);
             const parts = relative.split("/");
             const name = parts.pop() || relative;
             const sizeNode = nodes.find(item => item.getElementsByTagNameNS("*", "Key")[0]?.textContent === key)?.getElementsByTagNameNS("*", "Size")[0];
             const folderPath = parts.join("/");
             return { key, name, relativePath: relative, folderPath, folder: parts.join(" / "), category: parts[0] || "Otros", size: Number(sizeNode?.textContent || 0), kind: resourceKind(name), url: resourceUrl(key) };
-          }).sort((a, b) => a.category.localeCompare(b.category, "es") || a.name.localeCompare(b.name, "es"));
+          });
+          const driveItems = DRIVE_RESOURCE_ITEMS.map(([name, folderPath, size, url]) => ({ key: `drive:${url}`, name, relativePath: `Material bíblico/${folderPath}/${name}`, folderPath: `Material bíblico/${folderPath}`, folder: `Material bíblico / ${folderPath.replace(/\//g, " / ")}`, category: "Material bíblico", size, kind: resourceKind(name), url, source: "Google Drive" }));
+          platform.resourceItems = [...officialItems, ...driveItems].sort((a, b) => a.folderPath.localeCompare(b.folderPath, "es") || a.name.localeCompare(b.name, "es"));
           platform.resourcesLoaded = true;
         } catch (error) {
           platform.resourcesError = error.message || "No se pudo cargar el banco";
@@ -1586,7 +1620,7 @@ const TYPES = {
       }
 
       function resourceCard(item) {
-        return `<article class="resource-card glass"><div class="resource-kind resource-kind-${escapeHtml(item.kind.extension)}">${escapeHtml(item.kind.icon)}</div><div class="resource-card-body"><span class="resource-category-label">${escapeHtml(resourceCategoryLabel(item.category))}</span><h3 title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</h3><p>${escapeHtml(item.folder || "Carpeta principal")}</p><small>${escapeHtml(item.kind.label)} · ${humanFileSize(item.size)}</small></div><a class="resource-download" href="${escapeHtml(item.url)}" target="_blank" rel="noopener" download>Descargar<span aria-hidden="true">↓</span></a></article>`;
+        return `<article class="resource-card glass"><div class="resource-kind resource-kind-${escapeHtml(item.kind.extension)}">${escapeHtml(item.kind.icon)}</div><div class="resource-card-body"><span class="resource-category-label">${escapeHtml(resourceCategoryLabel(item.category))}</span><h3 title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</h3><p>${escapeHtml(item.folder || "Carpeta principal")}</p><small>${escapeHtml(item.source || "Banco oficial IPUC")} · ${escapeHtml(item.kind.label)} · ${humanFileSize(item.size)}</small></div><a class="resource-download" href="${escapeHtml(item.url)}" target="_blank" rel="noopener" download>Descargar<span aria-hidden="true">↓</span></a></article>`;
       }
 
       function renderLocationPage() {
