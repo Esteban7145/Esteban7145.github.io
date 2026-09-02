@@ -1,4 +1,4 @@
-const CACHE_NAME = "ipuc-villa-del-rio-v23-audit-fixes";
+const CACHE_NAME = "ipuc-villa-del-rio-v24-direct-routes";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/assets/logo.png", "/assets/favicon.png", "/assets/ipuc-villa-del-rio-brand.png"];
 
 self.addEventListener("install", event => {
