@@ -11,6 +11,7 @@ vigilias, ayunos y eventos de la congregación.
 - Detalles compartibles por WhatsApp y descarga de calendarios `.ics`.
 - Panel privado con Firebase Authentication, Firestore y Storage.
 - Cronograma interno DECOM.
+- Banco de recursos IPUC con búsqueda, filtros por carpeta y descarga desde el repositorio oficial.
 
 ## Estructura
 

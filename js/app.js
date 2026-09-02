@@ -1275,6 +1275,8 @@ const TYPES = {
       const DECOM_YEAR = 2026;
       const DECOM_MONTHS = months.map((_, index) => index);
       const DECOM_STATUSES = ["Pendiente", "Confirmado", "Cubierto", "Sin asignar", "Cambio solicitado"];
+      const RESOURCE_BUCKET_URL = "https://elon-file.s3.us-east-1.amazonaws.com";
+      const RESOURCE_ROOT_PREFIX = "Elon/descargas/";
       const DECOM_MEMBERS = [
         {
           name: "Esteban Arango",
@@ -1304,6 +1306,12 @@ const TYPES = {
         calendarView: "mes",
         tag: "todos",
         search: "",
+        resourceSearch: "",
+        resourceCategory: "all",
+        resourceItems: [],
+        resourcesLoaded: false,
+        resourcesLoading: false,
+        resourcesError: "",
         selectedAdminEvent: "__new__",
         adminSection: "eventos"
       };
@@ -1327,6 +1335,7 @@ const TYPES = {
             <a href="/agenda" data-route-link="agenda">Agenda</a>
             <a href="/anuncios" data-route-link="anuncios">Anuncios</a>
             <a href="/archivo" data-route-link="archivo">Archivo</a>
+            <a href="/recursos" data-route-link="recursos">Recursos</a>
             <a href="/ubicacion" data-route-link="ubicacion">Ubicación</a>
             <a href="/admin/login" data-login-link>Admin</a>
           </nav>
@@ -1412,6 +1421,7 @@ const TYPES = {
         if (route.name === "eventos") return renderEventsPage();
         if (route.name === "anuncios") return renderAnnouncementsPage();
         if (route.name === "archivo") return renderArchivePage();
+        if (route.name === "recursos") return renderResourcesPage();
         if (route.name === "ubicacion") return renderLocationPage();
         if (route.name === "evento") return renderEventDetail(route.id);
         if (route.name === "admin") {
@@ -1431,6 +1441,85 @@ const TYPES = {
       function renderArchivePage() {
         const items = platformEventsForYear(today.getFullYear()).filter(event => platformStatus(event) === "Realizado" || event.date < dateKey(today)).sort((a, b) => b.date.localeCompare(a.date));
         view().innerHTML = `<section class="page-head glass"><div><p class="eyebrow">Memoria</p><h1>Archivo de eventos</h1><p>Consulta invitaciones, galerías y documentos de actividades anteriores.</p></div></section><section class="event-grid archive-grid">${items.map(eventCard).join("") || emptyText("Todavía no hay eventos archivados.")}</section>`;
+      }
+
+      function renderResourcesPage() {
+        const categories = [...new Set(platform.resourceItems.map(item => item.category))].sort((a, b) => a.localeCompare(b, "es"));
+        const needle = platform.resourceSearch.trim().toLocaleLowerCase("es");
+        const filtered = platform.resourceItems.filter(item => {
+          const matchesCategory = platform.resourceCategory === "all" || item.category === platform.resourceCategory;
+          const haystack = `${item.name} ${item.category} ${item.folder}`.toLocaleLowerCase("es");
+          return matchesCategory && (!needle || haystack.includes(needle));
+        });
+        view().innerHTML = `
+          <section class="page-head glass resource-hero">
+            <div><p class="eyebrow">DECOM · Biblioteca oficial</p><h1>Banco de recursos IPUC</h1><p>Encuentra logos, manuales, piezas gráficas y materiales oficiales para apoyar la comunicación de la Iglesia.</p></div>
+            <a class="small-action" href="https://ipuc.org.co/descargas-ipuc#graficos-ipuc" target="_blank" rel="noopener">Ver banco oficial</a>
+          </section>
+          <section class="resource-note glass"><span class="resource-note-icon">✓</span><p><strong>Recursos oficiales IPUC</strong><small>Esta biblioteca consulta el repositorio público oficial y conserva la organización por carpetas. Cada archivo se abre desde su fuente original.</small></p></section>
+          <section class="resource-toolbar glass" aria-label="Buscar recursos">
+            <label class="resource-search"><span>Buscar</span><input id="resourceSearch" type="search" placeholder="Buscar por nombre o carpeta" value="${escapeHtml(platform.resourceSearch)}"></label>
+            <div class="resource-categories" role="list" aria-label="Filtrar por carpeta"><button type="button" class="resource-category ${platform.resourceCategory === "all" ? "active" : ""}" data-resource-category="all">Todos <b>${platform.resourceItems.length}</b></button>${categories.map(category => `<button type="button" class="resource-category ${platform.resourceCategory === category ? "active" : ""}" data-resource-category="${escapeHtml(category)}">${escapeHtml(resourceCategoryLabel(category))} <b>${platform.resourceItems.filter(item => item.category === category).length}</b></button>`).join("")}</div>
+          </section>
+          <section class="resource-results-head"><div><p class="eyebrow">Biblioteca</p><h2>${platform.resourcesLoaded ? `${filtered.length} recursos disponibles` : "Cargando recursos oficiales"}</h2></div>${platform.resourcesLoaded ? `<span>${platform.resourceCategory === "all" ? "Todas las carpetas" : escapeHtml(resourceCategoryLabel(platform.resourceCategory))}</span>` : ""}</section>
+          <section class="resource-grid" id="resourceGrid">${platform.resourcesError ? `<div class="resource-error">No se pudo cargar el banco ahora. <button type="button" class="small-action" data-resource-retry>Reintentar</button></div>` : platform.resourcesLoading ? `<div class="resource-loading"><span></span><span></span><span></span><p>Consultando la biblioteca oficial…</p></div>` : filtered.map(resourceCard).join("") || emptyText(needle ? "No encontramos recursos con esa búsqueda." : "No hay archivos en esta carpeta.")}</section>
+        `;
+        const search = view().querySelector("#resourceSearch");
+        if (search) search.oninput = event => { platform.resourceSearch = event.target.value; renderResourcesPage(); };
+        view().querySelectorAll("[data-resource-category]").forEach(button => {
+          button.onclick = () => { platform.resourceCategory = button.dataset.resourceCategory; renderResourcesPage(); };
+        });
+        view().querySelector("[data-resource-retry]")?.addEventListener("click", loadResourceCatalog);
+        if (!platform.resourcesLoaded && !platform.resourcesLoading) loadResourceCatalog();
+      }
+
+      async function loadResourceCatalog() {
+        if (platform.resourcesLoading) return;
+        platform.resourcesLoading = true;
+        platform.resourcesError = "";
+        if (parseRoute().name === "recursos") renderResourcesPage();
+        try {
+          const response = await fetch(`${RESOURCE_BUCKET_URL}/?list-type=2&prefix=${encodeURIComponent(RESOURCE_ROOT_PREFIX)}&max-keys=1000`);
+          if (!response.ok) throw new Error("No se pudo consultar el repositorio");
+          const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
+          const nodes = [...xml.getElementsByTagNameNS("*", "Contents")];
+          platform.resourceItems = nodes.map(node => node.getElementsByTagNameNS("*", "Key")[0]?.textContent || "").filter(key => key && !key.endsWith("/.folder") && !key.endsWith("/")).map(key => {
+            const relative = key.slice(RESOURCE_ROOT_PREFIX.length);
+            const parts = relative.split("/");
+            const name = parts.pop() || relative;
+            const sizeNode = nodes.find(item => item.getElementsByTagNameNS("*", "Key")[0]?.textContent === key)?.getElementsByTagNameNS("*", "Size")[0];
+            return { key, name, folder: parts.join(" / "), category: parts[0] || "Otros", size: Number(sizeNode?.textContent || 0), kind: resourceKind(name), url: resourceUrl(key) };
+          }).sort((a, b) => a.category.localeCompare(b.category, "es") || a.name.localeCompare(b.name, "es"));
+          platform.resourcesLoaded = true;
+        } catch (error) {
+          platform.resourcesError = error.message || "No se pudo cargar el banco";
+        } finally {
+          platform.resourcesLoading = false;
+          if (parseRoute().name === "recursos") renderResourcesPage();
+        }
+      }
+
+      function resourceUrl(key) {
+        return `${RESOURCE_BUCKET_URL}/${key.split("/").map(encodeURIComponent).join("/")}`;
+      }
+
+      function resourceKind(name) {
+        const extension = String(name).split(".").pop()?.toLowerCase() || "archivo";
+        if (["png", "jpg", "jpeg", "webp", "svg"].includes(extension)) return { extension, label: "Imagen", icon: "IMG" };
+        if (["mp4", "mov", "webm"].includes(extension)) return { extension, label: "Video", icon: "VID" };
+        if (["mp3", "wav", "m4a"].includes(extension)) return { extension, label: "Audio", icon: "AUD" };
+        if (extension === "pdf") return { extension, label: "PDF", icon: "PDF" };
+        if (["ai", "eps", "psd"].includes(extension)) return { extension, label: "Editable", icon: extension.toUpperCase() };
+        if (["zip", "rar"].includes(extension)) return { extension, label: "Paquete", icon: "ZIP" };
+        return { extension, label: "Archivo", icon: extension.toUpperCase().slice(0, 4) };
+      }
+
+      function resourceCategoryLabel(category) {
+        return category.replace(/_/g, " ").replace(/\s+/g, " ").trim().toLocaleLowerCase("es").replace(/\b\w/g, letter => letter.toLocaleUpperCase("es"));
+      }
+
+      function resourceCard(item) {
+        return `<article class="resource-card glass"><div class="resource-kind resource-kind-${escapeHtml(item.kind.extension)}">${escapeHtml(item.kind.icon)}</div><div class="resource-card-body"><span class="resource-category-label">${escapeHtml(resourceCategoryLabel(item.category))}</span><h3 title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</h3><p>${escapeHtml(item.folder || "Carpeta principal")}</p><small>${escapeHtml(item.kind.label)} · ${humanFileSize(item.size)}</small></div><a class="resource-download" href="${escapeHtml(item.url)}" target="_blank" rel="noopener" download>Descargar<span aria-hidden="true">↓</span></a></article>`;
       }
 
       function renderLocationPage() {
