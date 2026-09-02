@@ -1307,7 +1307,7 @@ const TYPES = {
         tag: "todos",
         search: "",
         resourceSearch: "",
-        resourceCategory: "all",
+        resourcePath: "",
         resourceItems: [],
         resourcesLoaded: false,
         resourcesLoading: false,
@@ -1444,13 +1444,17 @@ const TYPES = {
       }
 
       function renderResourcesPage() {
-        const categories = [...new Set(platform.resourceItems.map(item => item.category))].sort((a, b) => a.localeCompare(b, "es"));
+        const path = platform.resourcePath || "";
         const needle = platform.resourceSearch.trim().toLocaleLowerCase("es");
-        const filtered = platform.resourceItems.filter(item => {
-          const matchesCategory = platform.resourceCategory === "all" || item.category === platform.resourceCategory;
-          const haystack = `${item.name} ${item.category} ${item.folder}`.toLocaleLowerCase("es");
-          return matchesCategory && (!needle || haystack.includes(needle));
-        });
+        const entries = resourceEntriesAtPath(path);
+        const searchResults = needle ? platform.resourceItems.filter(item => `${item.name} ${item.category} ${item.folder} ${item.relativePath}`.toLocaleLowerCase("es").includes(needle)) : [];
+        const folderCount = entries.folders.length;
+        const fileCount = entries.files.length;
+        const pathParts = resourcePathParts(path);
+        const currentLabel = path ? resourceCategoryLabel(pathParts[pathParts.length - 1]) : "Carpetas principales";
+        const content = needle
+          ? searchResults.map(resourceCard).join("") || emptyText("No encontramos recursos con esa búsqueda.")
+          : `${entries.folders.map(resourceFolderCard).join("")}${entries.files.map(resourceCard).join("")}${!folderCount && !fileCount ? emptyText("Esta carpeta no contiene archivos.") : ""}`;
         view().innerHTML = `
           <section class="page-head glass resource-hero">
             <div><p class="eyebrow">DECOM · Biblioteca oficial</p><h1>Banco de recursos IPUC</h1><p>Encuentra logos, manuales, piezas gráficas y materiales oficiales para apoyar la comunicación de la Iglesia.</p></div>
@@ -1458,16 +1462,16 @@ const TYPES = {
           </section>
           <section class="resource-note glass"><span class="resource-note-icon">✓</span><p><strong>Recursos oficiales IPUC</strong><small>Esta biblioteca consulta el repositorio público oficial y conserva la organización por carpetas. Cada archivo se abre desde su fuente original.</small></p></section>
           <section class="resource-toolbar glass" aria-label="Buscar recursos">
-            <label class="resource-search"><span>Buscar</span><input id="resourceSearch" type="search" placeholder="Buscar por nombre o carpeta" value="${escapeHtml(platform.resourceSearch)}"></label>
-            <div class="resource-categories" role="list" aria-label="Filtrar por carpeta"><button type="button" class="resource-category ${platform.resourceCategory === "all" ? "active" : ""}" data-resource-category="all">Todos <b>${platform.resourceItems.length}</b></button>${categories.map(category => `<button type="button" class="resource-category ${platform.resourceCategory === category ? "active" : ""}" data-resource-category="${escapeHtml(category)}">${escapeHtml(resourceCategoryLabel(category))} <b>${platform.resourceItems.filter(item => item.category === category).length}</b></button>`).join("")}</div>
+            <label class="resource-search"><span>Buscar en toda la biblioteca</span><input id="resourceSearch" type="search" placeholder="Buscar por nombre o carpeta" value="${escapeHtml(platform.resourceSearch)}"></label>
+            ${platform.resourcesLoaded ? resourceBreadcrumb(path) : ""}
           </section>
-          <section class="resource-results-head"><div><p class="eyebrow">Biblioteca</p><h2>${platform.resourcesLoaded ? `${filtered.length} recursos disponibles` : "Cargando recursos oficiales"}</h2></div>${platform.resourcesLoaded ? `<span>${platform.resourceCategory === "all" ? "Todas las carpetas" : escapeHtml(resourceCategoryLabel(platform.resourceCategory))}</span>` : ""}</section>
-          <section class="resource-grid" id="resourceGrid">${platform.resourcesError ? `<div class="resource-error">No se pudo cargar el banco ahora. <button type="button" class="small-action" data-resource-retry>Reintentar</button></div>` : platform.resourcesLoading ? `<div class="resource-loading"><span></span><span></span><span></span><p>Consultando la biblioteca oficial…</p></div>` : filtered.map(resourceCard).join("") || emptyText(needle ? "No encontramos recursos con esa búsqueda." : "No hay archivos en esta carpeta.")}</section>
+          <section class="resource-results-head"><div><p class="eyebrow">${needle ? "Resultados" : "Ubicación actual"}</p><h2>${platform.resourcesLoaded ? (needle ? `${searchResults.length} recursos encontrados` : currentLabel) : "Cargando recursos oficiales"}</h2></div>${platform.resourcesLoaded && !needle ? `<span>${folderCount} carpetas · ${fileCount} archivos</span>` : platform.resourcesLoaded && needle ? `<span>Buscando en toda la biblioteca</span>` : ""}</section>
+          <section class="resource-grid" id="resourceGrid">${platform.resourcesError ? `<div class="resource-error">No se pudo cargar el banco ahora. <button type="button" class="small-action" data-resource-retry>Reintentar</button></div>` : platform.resourcesLoading ? `<div class="resource-loading"><span></span><span></span><span></span><p>Consultando la biblioteca oficial…</p></div>` : content}</section>
         `;
         const search = view().querySelector("#resourceSearch");
         if (search) search.oninput = event => { platform.resourceSearch = event.target.value; renderResourcesPage(); };
-        view().querySelectorAll("[data-resource-category]").forEach(button => {
-          button.onclick = () => { platform.resourceCategory = button.dataset.resourceCategory; renderResourcesPage(); };
+        view().querySelectorAll("[data-resource-path]").forEach(button => {
+          button.onclick = () => { platform.resourcePath = button.dataset.resourcePath || ""; platform.resourceSearch = ""; renderResourcesPage(); };
         });
         view().querySelector("[data-resource-retry]")?.addEventListener("click", loadResourceCatalog);
         if (!platform.resourcesLoaded && !platform.resourcesLoading) loadResourceCatalog();
@@ -1488,7 +1492,8 @@ const TYPES = {
             const parts = relative.split("/");
             const name = parts.pop() || relative;
             const sizeNode = nodes.find(item => item.getElementsByTagNameNS("*", "Key")[0]?.textContent === key)?.getElementsByTagNameNS("*", "Size")[0];
-            return { key, name, folder: parts.join(" / "), category: parts[0] || "Otros", size: Number(sizeNode?.textContent || 0), kind: resourceKind(name), url: resourceUrl(key) };
+            const folderPath = parts.join("/");
+            return { key, name, relativePath: relative, folderPath, folder: parts.join(" / "), category: parts[0] || "Otros", size: Number(sizeNode?.textContent || 0), kind: resourceKind(name), url: resourceUrl(key) };
           }).sort((a, b) => a.category.localeCompare(b.category, "es") || a.name.localeCompare(b.name, "es"));
           platform.resourcesLoaded = true;
         } catch (error) {
@@ -1516,6 +1521,56 @@ const TYPES = {
 
       function resourceCategoryLabel(category) {
         return category.replace(/_/g, " ").replace(/\s+/g, " ").trim().toLocaleLowerCase("es").replace(/\b\w/g, letter => letter.toLocaleUpperCase("es"));
+      }
+
+      function resourcePathParts(path) {
+        return String(path || "").split("/").filter(Boolean);
+      }
+
+      function resourceEntriesAtPath(path) {
+        const normalizedPath = resourcePathParts(path).join("/");
+        const prefix = normalizedPath ? `${normalizedPath}/` : "";
+        const folders = new Map();
+        platform.resourceItems.forEach(item => {
+          if (!item.folderPath.startsWith(prefix) || item.folderPath === normalizedPath) return;
+          const child = item.folderPath.slice(prefix.length).split("/")[0];
+          if (!child) return;
+          const childPath = `${prefix}${child}`;
+          folders.set(childPath, { path: childPath, name: child, ...resourceFolderStats(childPath) });
+        });
+        return {
+          folders: [...folders.values()].sort((a, b) => a.name.localeCompare(b.name, "es")),
+          files: platform.resourceItems.filter(item => item.folderPath === normalizedPath).sort((a, b) => a.name.localeCompare(b.name, "es"))
+        };
+      }
+
+      function resourceFolderStats(path) {
+        const prefix = `${path}/`;
+        const descendants = platform.resourceItems.filter(item => item.folderPath === path || item.folderPath.startsWith(prefix));
+        const subfolders = new Set();
+        platform.resourceItems.forEach(item => {
+          if (!item.folderPath.startsWith(prefix)) return;
+          const child = item.folderPath.slice(prefix.length).split("/")[0];
+          if (child) subfolders.add(child);
+        });
+        return { files: descendants.length, subfolders: subfolders.size };
+      }
+
+      function resourceBreadcrumb(path) {
+        const parts = resourcePathParts(path);
+        let current = "";
+        const crumbs = [`<button type="button" data-resource-path="">Banco de recursos</button>`];
+        parts.forEach((part, index) => {
+          current = current ? `${current}/${part}` : part;
+          crumbs.push(`<span aria-hidden="true">›</span>${index === parts.length - 1 ? `<strong>${escapeHtml(resourceCategoryLabel(part))}</strong>` : `<button type="button" data-resource-path="${escapeHtml(current)}">${escapeHtml(resourceCategoryLabel(part))}</button>`}`);
+        });
+        return `<nav class="resource-breadcrumb" aria-label="Ubicación de la carpeta">${crumbs.join("")}</nav>`;
+      }
+
+      function resourceFolderCard(folder) {
+        const fileLabel = `${folder.files} ${folder.files === 1 ? "archivo" : "archivos"}`;
+        const subfolderLabel = folder.subfolders ? ` · ${folder.subfolders} ${folder.subfolders === 1 ? "subcarpeta" : "subcarpetas"}` : "";
+        return `<article class="resource-folder-card glass"><button class="resource-folder-open" type="button" data-resource-path="${escapeHtml(folder.path)}"><span class="resource-folder-icon" aria-hidden="true">CARPETA</span><span class="resource-folder-copy"><small>Carpeta</small><h3>${escapeHtml(resourceCategoryLabel(folder.name))}</h3><span>${fileLabel}${subfolderLabel}</span></span><span class="resource-folder-arrow" aria-hidden="true">›</span></button></article>`;
       }
 
       function resourceCard(item) {
