@@ -1564,16 +1564,22 @@ const TYPES = {
         const events = eventsForPlatformDate(today);
         const main = events[0];
         const reflection = reflectionForDate(today);
+        const next = platformEventsForYear(today.getFullYear()).filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Realizado").sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
         view().innerHTML = `
           <section class="home-hero glass">
             <div class="hero-copy">
-              <p class="eyebrow">${main ? "Evento de hoy" : "Reflexión de hoy"}</p>
-              <h1>${escapeHtml(main ? main.title : longPlatformDate(today))}</h1>
-              <p>${escapeHtml(main ? shortDescription(main) : reflection.text + " (" + reflection.ref + ")")}</p>
+              <div class="home-kicker"><span class="home-live-dot"></span><span>IPUC Villa del Río</span><span>•</span><span>${escapeHtml(longPlatformDate(today))}</span></div>
+              <p class="eyebrow">${main ? "Lo que vivimos hoy" : "Una palabra para hoy"}</p>
+              <h1>${escapeHtml(main ? main.title : "Caminamos juntos en la fe")}</h1>
+              <p class="home-lead">${escapeHtml(main ? shortDescription(main) : reflection.text + " (" + reflection.ref + ")")}</p>
               ${main ? eventInfoList(main) : `<div class="today-line">${escapeHtml(longPlatformDate(today))}</div>`}
-              ${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver más detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}
+              <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="radio-home-action" type="button" data-home-radio>▶ Escuchar Radio IPUC</button></div>
             </div>
             <img class="hero-image" src="${main ? eventImage(main) : autoImage("reflexion", reflection.style, reflection.text)}" alt="${escapeHtml(main ? `Imagen de ${main.title}` : "Reflexión del día")}">
+          </section>
+          <section class="home-welcome glass">
+            <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta los próximos encuentros, guarda las fechas y mantente al día con la iglesia.</p></div>
+            <div class="home-quick-links"><a href="#/calendario"><strong>Calendario</strong><span>Ver la semana completa →</span></a><a href="#/agenda"><strong>Agenda</strong><span>Próximos encuentros →</span></a><a href="#/ubicacion"><strong>Ubicación</strong><span>Cómo llegar →</span></a></div>
           </section>
           <section class="type-shortcuts glass" aria-label="Buscar por tipo de evento">
             <div><p class="eyebrow">Accesos rápidos</p><h2>¿Qué evento buscas?</h2></div>
@@ -1591,6 +1597,8 @@ const TYPES = {
           </section>
         `;
         bindTypeShortcuts();
+        const homeRadio = view().querySelector("[data-home-radio]");
+        if (homeRadio) homeRadio.onclick = () => document.getElementById("radioToggle")?.click();
       }
 
       function renderCalendarPage() {
@@ -3086,9 +3094,22 @@ const TYPES = {
         .route-view { display: grid; gap: 16px; margin-top: 16px; }
         .home-hero, .page-head, .content-card, .calendar-page, .view-switch, .month-strip, .filters, .login-card { border-radius: 26px; padding: 18px; }
         .home-hero, .detail-hero { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr); gap: 18px; align-items: center; }
+        .home-kicker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 26px; color: #4f6b78; font-size: .78rem; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
+        .home-live-dot { width: 9px; height: 9px; border-radius: 50%; background: #1c8b78; box-shadow: 0 0 0 5px rgba(28,139,120,.12); }
+        .home-lead { max-width: 600px; font-size: 1.03rem; }
+        .home-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
+        .radio-home-action { min-height: 44px; padding: 0 15px; border: 1px solid rgba(11,59,76,.12); border-radius: 13px; background: rgba(255,255,255,.7); color: #123348; font: inherit; font-weight: 900; cursor: pointer; transition: transform .18s ease, background .18s ease; }
+        .radio-home-action:hover { transform: translateY(-2px); background: white; }
         .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { margin: 0; font-size: clamp(2rem, 4vw, 4.2rem); line-height: .96; }
         .hero-copy p, .page-head p, .detail-hero p, .content-card p { color: var(--muted); line-height: 1.45; }
         .hero-image, .detail-hero > img, .event-card-public > img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 22px; box-shadow: 0 20px 46px rgba(31,55,72,.18); }
+        .home-welcome { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 18px; align-items: center; padding: 18px 20px; border-radius: 22px; }
+        .home-welcome h2 { color: #123348; font-size: 1.35rem; }
+        .home-welcome p:not(.eyebrow) { margin: 7px 0 0; color: var(--muted); line-height: 1.45; }
+        .home-quick-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+        .home-quick-links a { display: grid; gap: 5px; min-height: 76px; padding: 12px; border: 1px solid rgba(11,59,76,.08); border-radius: 15px; background: rgba(255,255,255,.5); color: #123348; text-decoration: none; transition: transform .18s ease, background .18s ease; }
+        .home-quick-links a:hover { transform: translateY(-3px); background: rgba(255,255,255,.86); }
+        .home-quick-links span { color: var(--muted); font-size: .75rem; font-weight: 750; }
         .today-line { display: inline-flex; margin: 8px 0 14px; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.58); color: #405665; font-weight: 900; }
         .split-grid, .agenda-grid, .admin-layout, .detail-grid-page { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
         .admin-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
@@ -3253,6 +3274,7 @@ const TYPES = {
         .radio-toggle { min-height: 38px; border: 0; border-radius: 12px; background: #123348; color: #fff; font: inherit; font-weight: 900; cursor: pointer; }
         @media (max-width: 900px) {
           .home-hero, .detail-hero, .split-grid, .agenda-grid, .admin-layout, .login-card, .decom-grid, .decom-board { grid-template-columns: 1fr; }
+          .home-welcome { grid-template-columns: 1fr; }
           .admin-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
           .decom-editor { position: static; }
           .event-grid, .year-view, .asset-grid-page { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -3269,6 +3291,11 @@ const TYPES = {
           .platform-nav.open { display: flex; }
           .platform-nav a { justify-content: flex-start; }
           .home-hero, .page-head, .content-card, .calendar-page, .view-switch, .month-strip, .filters, .login-card, .detail-hero { padding: 12px; border-radius: 18px; }
+          .home-kicker { margin-bottom: 18px; font-size: .68rem; }
+          .home-actions { align-items: stretch; flex-direction: column; }
+          .home-actions a, .radio-home-action { width: 100%; justify-content: center; text-align: center; }
+          .home-welcome { padding: 14px; border-radius: 18px; }
+          .home-quick-links { grid-template-columns: 1fr; }
           .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { font-size: 1.9rem; line-height: 1.05; }
           .info-list, .form-grid, .event-grid, .asset-grid-page, .year-view { grid-template-columns: 1fr; }
           .admin-summary { grid-template-columns: 1fr; }
