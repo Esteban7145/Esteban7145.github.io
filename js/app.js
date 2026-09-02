@@ -1561,7 +1561,26 @@ const TYPES = {
       }
 
       function resourceCategoryLabel(category) {
-        return category.replace(/_/g, " ").replace(/\s+/g, " ").trim().toLocaleLowerCase("es").replace(/\b\w/g, letter => letter.toLocaleUpperCase("es"));
+        const acronymMap = { ipuc: "IPUC", decom: "DECOM", lbea: "LBEA", pdf: "PDF", png: "PNG", svg: "SVG", jpg: "JPG", jpeg: "JPEG", webp: "WEBP", mp4: "MP4", nt: "NT", at: "AT" };
+        const lowerWords = new Set(["a", "al", "de", "del", "el", "en", "la", "las", "los", "para", "por", "y"]);
+        const words = String(category || "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim().toLocaleLowerCase("es").split(" ").filter(Boolean);
+        return words.map((word, index) => {
+          if (acronymMap[word]) return acronymMap[word];
+          if (index > 0 && lowerWords.has(word)) return word;
+          return word.charAt(0).toLocaleUpperCase("es") + word.slice(1);
+        }).join(" ");
+      }
+
+      function resourceNameLabel(name) {
+        const raw = String(name || "").replace(/[_]+/g, " ").replace(/\s+/g, " ").trim();
+        const match = raw.match(/^(.+?)(\.[a-z0-9]{2,5})$/i);
+        const base = match ? match[1].trim() : raw;
+        const extension = match ? match[2].toUpperCase() : "";
+        return `${resourceCategoryLabel(base)}${extension}`;
+      }
+
+      function resourceFolderLabel(folder) {
+        return String(folder || "").split(" / ").map(resourceCategoryLabel).join(" / ");
       }
 
       function resourcePathParts(path) {
@@ -1589,7 +1608,11 @@ const TYPES = {
         const looseFiles = platform.resourceItems.filter(item => item.folderPath === "");
         if (!normalizedPath && looseFiles.length) folders.set(RESOURCE_LOOSE_FILES_PATH, { path: RESOURCE_LOOSE_FILES_PATH, name: "Documentos sueltos", files: looseFiles.length, subfolders: 0 });
         return {
-          folders: [...folders.values()].sort((a, b) => a.name.localeCompare(b.name, "es")),
+          folders: [...folders.values()].sort((a, b) => {
+            const priorityA = a.path === "Material bíblico" ? -1 : 0;
+            const priorityB = b.path === "Material bíblico" ? -1 : 0;
+            return priorityA - priorityB || a.name.localeCompare(b.name, "es");
+          }),
           files: platform.resourceItems.filter(item => item.folderPath === normalizedPath && normalizedPath !== "").sort((a, b) => a.name.localeCompare(b.name, "es"))
         };
       }
@@ -1620,11 +1643,12 @@ const TYPES = {
       function resourceFolderCard(folder) {
         const fileLabel = `${folder.files} ${folder.files === 1 ? "archivo" : "archivos"}`;
         const subfolderLabel = folder.subfolders ? ` · ${folder.subfolders} ${folder.subfolders === 1 ? "subcarpeta" : "subcarpetas"}` : "";
-        return `<article class="resource-folder-card glass"><button class="resource-folder-open" type="button" data-resource-path="${escapeHtml(folder.path)}"><span class="resource-folder-icon" aria-hidden="true">CARPETA</span><span class="resource-folder-copy"><small>Carpeta</small><h3>${escapeHtml(resourceCategoryLabel(folder.name))}</h3><span>${fileLabel}${subfolderLabel}</span></span><span class="resource-folder-arrow" aria-hidden="true">›</span></button></article>`;
+        const featured = folder.path === "Material bíblico";
+        return `<article class="resource-folder-card glass${featured ? " resource-folder-featured" : ""}"><button class="resource-folder-open" type="button" data-resource-path="${escapeHtml(folder.path)}"><span class="resource-folder-icon" aria-hidden="true">CARPETA</span><span class="resource-folder-copy"><small>${featured ? "Biblioteca destacada" : "Carpeta"}</small><h3>${escapeHtml(resourceCategoryLabel(folder.name))}</h3><span>${fileLabel}${subfolderLabel}</span></span><span class="resource-folder-arrow" aria-hidden="true">›</span></button></article>`;
       }
 
       function resourceCard(item) {
-        return `<article class="resource-card glass"><div class="resource-kind resource-kind-${escapeHtml(item.kind.extension)}">${escapeHtml(item.kind.icon)}</div><div class="resource-card-body"><span class="resource-category-label">${escapeHtml(resourceCategoryLabel(item.category))}</span><h3 title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</h3><p>${escapeHtml(item.folder || "Carpeta principal")}</p><small>${escapeHtml(item.source || "Banco oficial IPUC")} · ${escapeHtml(item.kind.label)} · ${humanFileSize(item.size)}</small></div><a class="resource-download" href="${escapeHtml(item.url)}" target="_blank" rel="noopener" download>Descargar<span aria-hidden="true">↓</span></a></article>`;
+        return `<article class="resource-card glass"><div class="resource-kind resource-kind-${escapeHtml(item.kind.extension)}">${escapeHtml(item.kind.icon)}</div><div class="resource-card-body"><span class="resource-category-label">${escapeHtml(resourceCategoryLabel(item.category))}</span><h3 title="${escapeHtml(item.name)}">${escapeHtml(resourceNameLabel(item.name))}</h3><p>${escapeHtml(resourceFolderLabel(item.folder || "Carpeta principal"))}</p><small>${escapeHtml(item.source || "Banco oficial IPUC")} · ${escapeHtml(item.kind.label)} · ${humanFileSize(item.size)}</small></div><a class="resource-download" href="${escapeHtml(item.url)}" target="_blank" rel="noopener" download>Descargar<span aria-hidden="true">↓</span></a></article>`;
       }
 
       function renderLocationPage() {
