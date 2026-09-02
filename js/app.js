@@ -1512,7 +1512,7 @@ const TYPES = {
 
       const supabaseStorageAdapter = {
         ref: (_storage, path) => ({ path }),
-        async uploadBytes(ref, file, options) { return cloud.storage.from("event-media").upload(ref.path, file, { contentType: options?.contentType, upsert: true }); },
+        async uploadBytes(ref, file, options) { const result = await cloud.storage.from("event-media").upload(ref.path, file, { contentType: options?.contentType, upsert: true }); if (result.error) throw result.error; return result; },
         async getDownloadURL(ref) { const { data } = cloud.storage.from("event-media").getPublicUrl(ref.path); return data.publicUrl; },
         async deleteObject(ref) { return cloud.storage.from("event-media").remove([ref.path]); }
       };
@@ -2709,11 +2709,32 @@ const TYPES = {
         const file = document.getElementById("uploadWeeklySchedule")?.files[0];
         if (!file) return alert("Selecciona primero una imagen.");
         if (!file.type.startsWith("image/")) return alert("El cronograma semanal debe subirse como imagen (PNG, JPG o WEBP).");
-        const asset = await uploadCloudFile(file, "site", "cronograma-semanal", "Cronograma semanal");
+        const optimizedFile = await optimizeScheduleImage(file);
+        const asset = await uploadCloudFile(optimizedFile, "site", "cronograma-semanal", "Cronograma semanal");
         await saveCloudDoc("settings", "site", { weeklySchedule: asset });
         APP_STATE.weeklySchedule = asset;
         alert("Cronograma semanal guardado.");
         renderAdminPage();
+      }
+
+      async function optimizeScheduleImage(file) {
+        if (!window.createImageBitmap || file.size < 4 * 1024 * 1024) return file;
+        try {
+          const bitmap = await createImageBitmap(file);
+          const maxWidth = 3000;
+          const scale = Math.min(1, maxWidth / bitmap.width);
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(bitmap.width * scale);
+          canvas.height = Math.round(bitmap.height * scale);
+          canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", .9));
+          bitmap.close();
+          if (!blob) return file;
+          return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.jpg`, { type: "image/jpeg", lastModified: Date.now() });
+        } catch (error) {
+          console.warn("No se pudo optimizar el cronograma; se intentará subir el original", error);
+          return file;
+        }
       }
 
       async function deleteWeeklySchedule() {
