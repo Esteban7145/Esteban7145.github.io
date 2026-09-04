@@ -1550,7 +1550,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-scroll-fix-3").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-mobile-priority-3").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
       setupPlatformMusic();
