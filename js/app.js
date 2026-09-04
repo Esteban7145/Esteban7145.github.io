@@ -206,6 +206,7 @@ const TYPES = {
     ];
     const STORAGE_KEY = "ipuc-villa-del-rio-event-center-v1";
     const TAGS = ["Jovenes", "Damas", "Caballeros", "Escuela Dominical", "Evangelismo", "Infantil", "Musica", "Multimedia", "Pastoral", "Distrital", "Nacional", "Especial"];
+    const PODCAST_CATEGORIES = ["Testimonios", "Milagros", "Predicaciones", "Experiencias de fe", "Especiales IPUC"];
     const COMMITTEE_ASSET = "https://raw.githubusercontent.com/Esteban7145/Esteban7145.github.io/main/assets/";
     const COMMITTEES = [
       ["ipuc", "IPUC Villa del Río", `${COMMITTEE_ASSET}committee-ipuc-villa-del-rio.png`, ["pastoral", "ipuc"]],
@@ -487,7 +488,7 @@ const TYPES = {
       return [...bySignature.values()];
     }
     function loadState() {
-      return { events: {}, announcements: DEFAULT_ANNOUNCEMENTS, reflections: {}, music: null };
+      return { events: {}, announcements: DEFAULT_ANNOUNCEMENTS, reflections: {}, podcasts: [], music: null };
     }
     function saveState() {
       window.dispatchEvent(new CustomEvent("ipuc-state-updated"));
@@ -1221,6 +1222,7 @@ const TYPES = {
       APP_STATE.events = APP_STATE.events || {};
       APP_STATE.announcements = APP_STATE.announcements || DEFAULT_ANNOUNCEMENTS;
       APP_STATE.reflections = APP_STATE.reflections || {};
+      APP_STATE.podcasts = Array.isArray(APP_STATE.podcasts) ? APP_STATE.podcasts : [];
       APP_STATE.music = APP_STATE.music || null;
       APP_STATE.weeklySchedule = APP_STATE.weeklySchedule || null;
       APP_STATE.decomTurns = APP_STATE.decomTurns || {};
@@ -1369,11 +1371,13 @@ const TYPES = {
         search: "",
         resourceSearch: "",
         resourcePath: "",
+        podcastCategory: "Todos",
         resourceItems: [],
         resourcesLoaded: false,
         resourcesLoading: false,
         resourcesError: "",
         selectedAdminEvent: "__new__",
+        selectedPodcast: null,
         adminSection: "eventos"
       };
 
@@ -1397,6 +1401,7 @@ const TYPES = {
             <a href="/calendario" data-route-link="calendario">Calendario</a>
             <a href="/agenda" data-route-link="agenda">Agenda</a>
             <a href="/anuncios" data-route-link="anuncios">Anuncios</a>
+            <a href="/podcast" data-route-link="podcast">Podcast</a>
             <a href="/archivo" data-route-link="archivo">Archivo</a>
             <a href="/recursos" data-route-link="recursos">Recursos</a>
             <a href="/ubicacion" data-route-link="ubicacion">Ubicación</a>
@@ -1484,6 +1489,7 @@ const TYPES = {
         if (route.name === "agenda") return renderAgendaPage();
         if (route.name === "eventos") return renderEventsPage();
         if (route.name === "anuncios") return renderAnnouncementsPage();
+        if (route.name === "podcast") return renderPodcastPage();
         if (route.name === "archivo") return renderArchivePage();
         if (route.name === "recursos") return renderResourcesPage();
         if (route.name === "ubicacion") return renderLocationPage();
@@ -1501,6 +1507,34 @@ const TYPES = {
       function renderAnnouncementsPage() {
         const items = (APP_STATE.announcements || []).filter(item => item.published !== false && (!item.expiresAt || String(item.expiresAt) >= dateKey(today))).slice().reverse();
         view().innerHTML = `<section class="page-head glass"><div><p class="eyebrow">Comunicaciones</p><h1>Anuncios</h1><p>Información importante y novedades de IPUC Villa del Río.</p></div></section><section class="announcement-page-grid">${items.map(item => `<article class="content-card glass announcement-public"><span class="status-chip">${escapeHtml(item.type || "Información")}</span><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.description || "")}</p><small>${escapeHtml(formatDateShort(item.date || item.startsAt || ""))}</small></article>`).join("") || emptyText("No hay anuncios publicados.")}</section>`;
+      }
+
+      function podcastMediaMarkup(item) {
+        const media = item?.media;
+        if (!media) return `<div class="podcast-empty-media"><span>🎙️</span><small>Próximamente</small></div>`;
+        if (media.type === "youtube") {
+          const source = youtubeEmbedUrl(media.url).replace("autoplay=1&mute=1", "autoplay=0&mute=0");
+          return source ? `<iframe src="${source}" title="${escapeHtml(item.title || "Podcast IPUC")}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : "";
+        }
+        if (isVideo(media)) return `<video controls playsinline preload="metadata" ${item.cover && assetSource(item.cover) ? `poster="${escapeHtml(assetSource(item.cover))}"` : ""} src="${escapeHtml(assetSource(media))}"></video>`;
+        if (isAudio(media)) return `<div class="podcast-audio-box"><span>▶</span><audio controls preload="metadata" src="${escapeHtml(assetSource(media))}"></audio></div>`;
+        return `<div class="podcast-empty-media"><span>📁</span><small>Archivo disponible</small></div>`;
+      }
+
+      function renderPodcastPage() {
+        const activeCategory = platform.podcastCategory || "Todos";
+        const all = (APP_STATE.podcasts || []).filter(item => item.published !== false).sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+        const items = activeCategory === "Todos" ? all : all.filter(item => item.category === activeCategory);
+        view().innerHTML = `
+          <section class="page-head glass podcast-hero"><div><p class="eyebrow">Voces de la iglesia</p><h1>Podcast IPUC</h1><p>Testimonios, milagros, predicaciones especiales y experiencias de fe para escuchar y compartir.</p></div><span class="podcast-hero-mark">◉</span></section>
+          <section class="podcast-filters glass" aria-label="Categorías del podcast">${["Todos", ...PODCAST_CATEGORIES].map(category => `<button type="button" class="podcast-filter ${activeCategory === category ? "active" : ""}" data-podcast-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join("")}</section>
+          <section class="podcast-grid">${items.map(item => `<article class="podcast-card glass ${item.featured ? "is-featured" : ""}"><div class="podcast-media${item.cover && assetSource(item.cover) ? " has-cover" : ""}"${item.cover && assetSource(item.cover) ? ` style="background-image:linear-gradient(145deg,rgba(0,51,141,.72),rgba(8,123,136,.72)),url('${escapeHtml(assetSource(item.cover))}')"` : ""}>${podcastMediaMarkup(item)}</div><div class="podcast-copy"><div class="podcast-card-head"><span class="status-chip">${escapeHtml(item.category || "Experiencias de fe")}</span>${item.featured ? `<span class="podcast-featured">Destacado</span>` : ""}</div><h2>${escapeHtml(item.title || "Podcast IPUC")}</h2><p>${escapeHtml(item.description || "Una historia que edifica nuestra fe.")}</p><small>${item.createdAt ? `Publicado ${escapeHtml(formatDateShort(String(item.createdAt).slice(0, 10)))}` : "Contenido IPUC Villa del Río"}</small></div></article>`).join("") || emptyText(activeCategory === "Todos" ? "Aún no hay episodios publicados. Pronto encontrarás aquí testimonios y predicaciones de la iglesia." : "No hay episodios en esta categoría.")}</section>`;
+        view().querySelectorAll("[data-podcast-category]").forEach(button => {
+          button.onclick = () => { platform.podcastCategory = button.dataset.podcastCategory || "Todos"; renderPodcastPage(); };
+        });
+        view().querySelectorAll("audio, video").forEach(media => media.addEventListener("play", () => {
+          view().querySelectorAll("audio, video").forEach(other => { if (other !== media) other.pause(); });
+        }));
       }
 
       function renderArchivePage() {
@@ -1731,7 +1765,7 @@ const TYPES = {
             const route = parseRoute();
             if (route.name === "admin" || route.name === "login") renderRoute();
           });
-          ["events", "announcements", "reflections", "settings"].forEach(collectionName => {
+          ["events", "announcements", "reflections", "podcasts", "settings"].forEach(collectionName => {
             cloud.unsubscribers.push(supabaseDbAdapter.onSnapshot(collectionName, snapshot => {
               if (collectionName === "events") {
                 const events = {};
@@ -1743,6 +1777,8 @@ const TYPES = {
                 const reflections = {};
                 snapshot.forEach(item => { reflections[item.id] = normalizeCloudDoc(item.id, item.data()); });
                 APP_STATE.reflections = reflections;
+              } else if (collectionName === "podcasts") {
+                APP_STATE.podcasts = snapshot.docs.map(item => normalizeCloudDoc(item.id, item.data())).sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
               } else if (collectionName === "settings") {
                 const data = snapshot.docs.find(item => item.id === "site")?.data() || {};
                 APP_STATE.music = data.music || null;
@@ -1822,6 +1858,11 @@ const TYPES = {
         const next = { ...(data || {}), id };
         if (collectionName === "events") APP_STATE.events[id] = { ...(APP_STATE.events[id] || {}), ...next };
         if (collectionName === "reflections") APP_STATE.reflections[id] = { ...(APP_STATE.reflections[id] || {}), ...next };
+        if (collectionName === "podcasts") {
+          const existing = APP_STATE.podcasts.findIndex(item => item.id === id);
+          if (existing >= 0) APP_STATE.podcasts[existing] = { ...APP_STATE.podcasts[existing], ...next };
+          else APP_STATE.podcasts.unshift(next);
+        }
         if (collectionName === "decomTurns") APP_STATE.decomTurns[id] = { ...(APP_STATE.decomTurns[id] || {}), ...next };
         if (collectionName === "committeeLeaders") {
           const existing = APP_STATE.committeeLeaders.findIndex(item => item.id === id);
@@ -1861,7 +1902,7 @@ const TYPES = {
       function toSupabaseRow(data) {
         const aliases = { startTime: "start_time", endTime: "end_time", place: "location", organizer: "department", eventId: "related_event_id", submissionEventId: "event_id", eventLabel: "event_label", leaderEmail: "leader_email", submissionTitle: "request_title", startsAt: "starts_at", expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at", createdBy: "created_by", specialEventIds: "special_event_ids", weeklySchedule: "weekly_schedule", autoStyle: "auto_style" };
         const row = {};
-        Object.entries(data || {}).forEach(([key, value]) => { const target = aliases[key] || key; if (target in { id: 1, title: 1, description: 1, date: 1, start_time: 1, end_time: 1, type: 1, status: 1, location: 1, department: 1, responsible: 1, featured: 1, published: 1, tags: 1, observations: 1, media: 1, gallery: 1, invitations: 1, image: 1, attachments: 1, custom: 1, deleted: 1, auto_style: 1, created_at: 1, updated_at: 1, created_by: 1, related_event_id: 1, priority: 1, starts_at: 1, expires_at: 1, time: 1, assigned: 1, support: 1, special_event_ids: 1, music: 1, weekly_schedule: 1, leader_email: 1, event_id: 1, event_label: 1, request_title: 1, message: 1, files: 1, committee: 1, active: 1 }) row[target] = value; });
+        Object.entries(data || {}).forEach(([key, value]) => { const target = aliases[key] || key; if (target in { id: 1, title: 1, description: 1, category: 1, date: 1, start_time: 1, end_time: 1, type: 1, status: 1, location: 1, department: 1, responsible: 1, featured: 1, published: 1, tags: 1, observations: 1, media: 1, cover: 1, gallery: 1, invitations: 1, image: 1, attachments: 1, custom: 1, deleted: 1, auto_style: 1, created_at: 1, updated_at: 1, created_by: 1, related_event_id: 1, priority: 1, starts_at: 1, expires_at: 1, time: 1, assigned: 1, support: 1, special_event_ids: 1, music: 1, weekly_schedule: 1, leader_email: 1, event_id: 1, event_label: 1, request_title: 1, message: 1, files: 1, committee: 1, active: 1 }) row[target] = value; });
         return row;
       }
 
@@ -2016,7 +2057,7 @@ const TYPES = {
           </section>
           <section class="home-welcome glass">
             <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta actividades, recursos, horarios y novedades de la congregación desde un solo lugar.</p></div>
-            <div class="home-quick-links"><a href="#/calendario"><strong>Calendario</strong><span>Ver la semana completa →</span></a><a href="#/agenda"><strong>Agenda</strong><span>Próximos encuentros →</span></a><a href="#/recursos"><strong>Recursos</strong><span>Material oficial IPUC →</span></a><a href="#/ubicacion"><strong>Ubicación</strong><span>Cómo llegar →</span></a></div>
+            <div class="home-quick-links"><a href="#/calendario"><strong>Calendario</strong><span>Ver la semana completa →</span></a><a href="#/agenda"><strong>Agenda</strong><span>Próximos encuentros →</span></a><a href="#/podcast"><strong>Podcast IPUC</strong><span>Historias que edifican →</span></a><a href="#/recursos"><strong>Recursos</strong><span>Material oficial IPUC →</span></a><a href="#/ubicacion"><strong>Ubicación</strong><span>Cómo llegar →</span></a></div>
           </section>
           <section class="home-community glass">
             <div class="home-community-head"><div><p class="eyebrow">Familia IPUC</p><h2>Una iglesia que sirve unida</h2><p>Conoce los comités y ministerios que hacen parte de la vida de IPUC Villa del Río.</p></div><a class="small-action" href="#/eventos">Ver actividades</a></div>
@@ -2421,6 +2462,29 @@ const TYPES = {
         </section>`;
       }
 
+      function renderPodcastModule() {
+        const selected = (APP_STATE.podcasts || []).find(item => item.id === platform.selectedPodcast) || null;
+        return `<section class="admin-module" data-admin-module="podcast" ${platform.adminSection === "podcast" ? "" : "hidden"}>
+          <article class="content-card glass admin-card-wide podcast-admin-module">
+            <div class="section-title"><p class="eyebrow">Voces de la iglesia</p><h2>Podcast IPUC</h2><p>Publica testimonios, milagros, predicaciones especiales y experiencias de fe en audio o video.</p></div>
+            <div class="form-grid">
+              <label class="full">Episodio a editar<select id="podcastSelect"><option value="__new__">+ Crear episodio nuevo</option>${(APP_STATE.podcasts || []).map(item => `<option value="${escapeHtml(item.id)}" ${selected?.id === item.id ? "selected" : ""}>${escapeHtml(item.title || "Sin título")}</option>`).join("")}</select></label>
+              <label class="full">Título del episodio<input id="podcastTitle" value="${escapeHtml(selected?.title || "")}" placeholder="Ej. Dios obró un milagro en mi familia"></label>
+              <label>Categoría<select id="podcastCategory">${PODCAST_CATEGORIES.map(category => `<option ${selected?.category === category ? "selected" : ""}>${escapeHtml(category)}</option>`).join("")}</select></label>
+              <label>Tipo de contenido<select id="podcastMediaType"><option value="youtube" ${selected?.media?.type === "youtube" ? "selected" : ""}>Video de YouTube</option><option value="upload" ${selected?.media?.type !== "youtube" ? "selected" : ""}>Audio o video de la iglesia</option></select></label>
+              <label class="full">Enlace de YouTube<input id="podcastYoutube" type="url" value="${escapeHtml(selected?.media?.type === "youtube" ? selected.media.url : "")}" placeholder="https://www.youtube.com/watch?v=..."></label>
+              <label class="full file-dropzone">Audio o video del episodio<input id="podcastMediaFile" type="file" accept="audio/*,video/*"><small>El archivo se guardará en la carpeta de multimedia de Drive cuando la conexión esté activa.</small></label>
+              <label class="full file-dropzone">Imagen de portada<input id="podcastCoverFile" type="file" accept="image/*"><small>Opcional. Se mostrará como portada del episodio y miniatura del video.</small></label>
+              <label class="full">Descripción<textarea id="podcastDescription" placeholder="Cuenta brevemente qué encontrará la iglesia en este episodio.">${escapeHtml(selected?.description || "")}</textarea></label>
+              <label class="checkbox-line"><input id="podcastPublished" type="checkbox" ${selected?.published !== false ? "checked" : ""}> Publicar en la web</label>
+              <label class="checkbox-line"><input id="podcastFeatured" type="checkbox" ${selected?.featured ? "checked" : ""}> Marcar como destacado</label>
+              <div class="button-row full"><button class="primary-link" id="savePodcast" type="button">Guardar episodio</button>${selected ? `<button class="small-action danger-action" id="deletePodcast" type="button">Eliminar episodio</button>` : ""}</div>
+              ${selected ? `<div class="podcast-current-media full"><strong>Contenido actual:</strong> ${escapeHtml(selected.media?.name || selected.media?.url || "Sin archivo")}</div>` : ""}
+            </div>
+          </article>
+        </section>`;
+      }
+
       function renderAdminPage() {
         const selected = platform.selectedAdminEvent === "__new__" ? null : platformEventById(platform.selectedAdminEvent);
         const adminEvents = platformEventsForYear(today.getFullYear());
@@ -2439,7 +2503,7 @@ const TYPES = {
             <article><strong>${APP_STATE.announcements?.length || 0}</strong><span>Anuncios publicados</span></article>
           </section>
           <nav class="admin-tabs glass" aria-label="Módulos de administración">
-            ${[["eventos", "Eventos", "Crear o editar"], ["material", "Material", "Subir archivos"], ["anuncios", "Anuncios", "Publicar aviso"], ["reflexiones", "Reflexiones", "Mensaje diario"], ["solicitudes", "Solicitudes", "Mensajes de líderes"], ["lideres", "Líderes", "Correos autorizados"], ["decom", "DECOM", "Turnos internos"]].map(([key, label, hint]) => `<button type="button" class="admin-tab ${activeAdminSection === key ? "active" : ""}" data-admin-section="${key}"><strong>${label}</strong><span>${hint}</span></button>`).join("")}
+            ${[["eventos", "Eventos", "Crear o editar"], ["material", "Material", "Subir archivos"], ["podcast", "Podcast", "Testimonios y predicas"], ["anuncios", "Anuncios", "Publicar aviso"], ["reflexiones", "Reflexiones", "Mensaje diario"], ["solicitudes", "Solicitudes", "Mensajes de líderes"], ["lideres", "Líderes", "Correos autorizados"], ["decom", "DECOM", "Turnos internos"]].map(([key, label, hint]) => `<button type="button" class="admin-tab ${activeAdminSection === key ? "active" : ""}" data-admin-section="${key}"><strong>${label}</strong><span>${hint}</span></button>`).join("")}
           </nav>
           <section class="admin-layout admin-workspace">
             <section class="admin-module" data-admin-module="eventos" ${moduleVisibility("eventos")}>
@@ -2485,6 +2549,7 @@ const TYPES = {
               </div>
             </article>
             </section>
+            ${renderPodcastModule()}
             <section class="admin-module" data-admin-module="anuncios" ${moduleVisibility("anuncios")}>
             <article class="content-card glass admin-card-narrow">
               <div class="section-title"><p class="eyebrow">Anuncios</p><h2>Últimos anuncios</h2></div>
@@ -3182,6 +3247,15 @@ const TYPES = {
         document.getElementById("adminSaveEvent").onclick = runAdminAction(savePlatformEvent);
         document.getElementById("adminDeleteEvent").onclick = runAdminAction(deletePlatformEvent);
         document.getElementById("adminSaveMaterial").onclick = runAdminAction(savePlatformMaterial);
+        const podcastSelect = document.getElementById("podcastSelect");
+        if (podcastSelect) podcastSelect.onchange = event => {
+          platform.selectedPodcast = event.target.value === "__new__" ? null : event.target.value;
+          renderAdminPage();
+        };
+        const savePodcast = document.getElementById("savePodcast");
+        if (savePodcast) savePodcast.onclick = runAdminAction(savePlatformPodcast);
+        const deletePodcast = document.getElementById("deletePodcast");
+        if (deletePodcast) deletePodcast.onclick = runAdminAction(deletePlatformPodcast);
         document.getElementById("saveWeeklySchedule").onclick = runAdminAction(saveWeeklySchedule);
         const deleteWeeklyButton = document.getElementById("deleteWeeklySchedule");
         if (deleteWeeklyButton) deleteWeeklyButton.onclick = runAdminAction(deleteWeeklySchedule);
@@ -3571,6 +3645,67 @@ const TYPES = {
         });
         completeUploadProgress("Reflexión guardada correctamente.");
         alert("Reflexión multimedia guardada.");
+        renderAdminPage();
+      }
+
+      async function savePlatformPodcast() {
+        if (!requireCloudAdmin()) return;
+        const title = document.getElementById("podcastTitle")?.value.trim();
+        const category = document.getElementById("podcastCategory")?.value || "Testimonios";
+        const mediaType = document.getElementById("podcastMediaType")?.value || "upload";
+        const youtube = document.getElementById("podcastYoutube")?.value.trim();
+        const mediaFile = pendingUploadFiles("podcastMediaFile")[0];
+        const coverFile = pendingUploadFiles("podcastCoverFile")[0];
+        if (!title) return alert("El título del episodio es obligatorio.");
+        const selected = (APP_STATE.podcasts || []).find(item => item.id === platform.selectedPodcast) || null;
+        const id = selected?.id || `podcast-${Date.now()}-${slugify(title)}`;
+        let media = selected?.media || null;
+        if (mediaType === "youtube") {
+          if (!youtube || !youtubeEmbedUrl(youtube)) return alert("Pega un enlace válido de YouTube.");
+          if (selected?.media) await deleteCloudAsset(selected.media);
+          media = { type: "youtube", url: youtube };
+        } else if (mediaFile) {
+          if (!isAudio(mediaFile) && !isVideo(mediaFile)) return alert("El episodio debe ser un archivo de audio o video.");
+          if (selected?.media) await deleteCloudAsset(selected.media);
+          media = await uploadCloudFile(mediaFile, id, "podcasts", "Episodio del Podcast IPUC");
+        } else if (!media) {
+          return alert("Agrega un enlace de YouTube o un audio/video del episodio.");
+        }
+        let cover = selected?.cover || null;
+        if (coverFile) {
+          if (!isImage(coverFile)) return alert("La portada debe ser una imagen.");
+          if (cover) await deleteCloudAsset(cover);
+          cover = await uploadCloudFile(coverFile, id, "podcast-cover", "Portada del Podcast IPUC");
+        }
+        await saveCloudDoc("podcasts", id, {
+          id,
+          title,
+          category,
+          description: document.getElementById("podcastDescription")?.value.trim() || "",
+          media,
+          cover,
+          published: document.getElementById("podcastPublished")?.checked !== false,
+          featured: Boolean(document.getElementById("podcastFeatured")?.checked),
+          createdBy: cloud.user.id,
+          createdAt: selected?.createdAt || new Date().toISOString()
+        });
+        ["podcastMediaFile", "podcastCoverFile"].forEach(clearPendingUpload);
+        platform.selectedPodcast = id;
+        completeUploadProgress("Episodio guardado correctamente.");
+        alert("Episodio guardado en el Podcast IPUC.");
+        renderAdminPage();
+      }
+
+      async function deletePlatformPodcast() {
+        if (!requireCloudAdmin()) return;
+        const item = (APP_STATE.podcasts || []).find(podcast => podcast.id === platform.selectedPodcast);
+        if (!item || !confirm(`¿Eliminar “${item.title}” del Podcast IPUC?`)) return;
+        if (item.media) await deleteCloudAsset(item.media);
+        if (item.cover) await deleteCloudAsset(item.cover);
+        await cloud.dbMod.deleteDoc(cloud.dbMod.doc(cloud.db, "podcasts", item.id));
+        APP_STATE.podcasts = APP_STATE.podcasts.filter(podcast => podcast.id !== item.id);
+        platform.selectedPodcast = null;
+        alert("Episodio eliminado del Podcast IPUC.");
         renderAdminPage();
       }
 
@@ -4104,7 +4239,7 @@ const TYPES = {
 
       async function uploadDriveFile(file, eventId, section, label) {
         const event = eventId && eventId !== "site" ? APP_STATE.events[eventId] : null;
-        const folderKey = section === "cronograma-semanal" ? "weekly" : (section === "reflexiones" || section === "musica" ? "multimedia" : "event");
+        const folderKey = section === "cronograma-semanal" ? "weekly" : (["reflexiones", "musica", "podcasts", "podcast-cover"].includes(section) ? "multimedia" : "event");
         const form = new FormData();
         form.append("action", "upload");
         form.append("file", file, file.name);
