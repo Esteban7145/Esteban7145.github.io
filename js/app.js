@@ -1367,6 +1367,7 @@ const TYPES = {
         privateUnsubscribers: []
       };
       let reflectionIsActive = false;
+      let lastRouteName = "";
       let liveVisitorsChannel = null;
       const BASE_TIMES = {
         culto: "7:00 p. m.",
@@ -1556,8 +1557,9 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-scroll-fix-2").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-scroll-fix-3").catch(() => {});
       setupSiteLoader();
+      setupReflectionPlaybackMemory();
       setupPlatformMusic();
       setupRadioIpuc();
       if (location.hash) history.replaceState({}, "", location.hash.replace(/^#\/?/, "/") || "/");
@@ -1570,7 +1572,10 @@ const TYPES = {
         document.getElementById("platformNav").classList.remove("open");
         document.querySelector("[data-toggle-nav]").setAttribute("aria-expanded", "false");
         const route = parseRoute();
+        const returningHome = route.name === "inicio" && lastRouteName && lastRouteName !== "inicio";
+        lastRouteName = route.name;
         if (route.name !== "inicio" && reflectionIsActive) {
+          requestReflectionPlaybackPosition();
           stopReflectionMedia();
           reflectionIsActive = false;
           startRadioIpuc();
@@ -1593,7 +1598,7 @@ const TYPES = {
           return renderLoginPage();
         }
         if (route.name === "login") return renderLoginPage();
-        return renderHomePage();
+        return renderHomePage({ pauseReflection: returningHome });
       }
 
       function renderAnnouncementsPage() {
@@ -2121,12 +2126,13 @@ const TYPES = {
         return true;
       }
 
-      function renderHomePage() {
+      function renderHomePage(options = {}) {
         const events = eventsForPlatformDate(today);
         const main = events[0];
         const reflection = reflectionForDate(today);
         const mainInvitation = main && main.type === "culto" && ((main.image && isImage(main.image)) || (main.invitations?.main && isImage(main.invitations.main)) || isRegularSundayWorship(main));
-        const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, true) : "";
+        const reflectionStart = !main ? reflectionResumeSeconds(reflection?.media?.url) : 0;
+        const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, !options.pauseReflection, { start: reflectionStart }) : "";
         const bible3DMarkup = !main ? `<aside class="home-bible-3d" aria-label="Biblia 3D interactiva"><div class="home-bible-3d-head"><span class="eyebrow">Palabra viva</span><span class="home-bible-3d-spark" aria-hidden="true">✦</span></div><div class="home-bible-3d-frame"><iframe title="Biblia 3D interactiva" src="${sketchfabViewerUrl(SKETCHFAB_3D_MODELS.bible)}" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share allowfullscreen loading="eager"></iframe></div><a class="home-bible-3d-credit" href="https://sketchfab.com/3d-models/biblia-bbe98a3005864fec92528f39b4746f7f" target="_blank" rel="noopener noreferrer">Explorar la Biblia en 3D <span aria-hidden="true">↗</span></a></aside>` : "";
         reflectionIsActive = Boolean(reflectionMarkup);
         if (reflectionIsActive) {
@@ -2192,8 +2198,59 @@ const TYPES = {
           renderRoute();
         };
         bindHomeMotion();
+        bindLocalReflectionPlayback();
         bindReflectionAutoplayUnlock();
         updateLiveVisitors();
+      }
+
+      function setupReflectionPlaybackMemory() {
+        if (window.__ipucReflectionPlaybackMemory) return;
+        window.__ipucReflectionPlaybackMemory = true;
+        window.addEventListener("message", event => {
+          let message = event.data;
+          if (typeof message === "string") {
+            try { message = JSON.parse(message); } catch { return; }
+          }
+          const seconds = Number(message?.info?.currentTime);
+          const frame = document.querySelector(".youtube-reflection iframe[data-reflection-url]");
+          if (message?.event !== "infoDelivery" || !frame || !Number.isFinite(seconds) || seconds < 0) return;
+          rememberReflectionPosition(frame.dataset.reflectionUrl, seconds);
+        });
+        window.setInterval(requestReflectionPlaybackPosition, 800);
+      }
+
+      function requestReflectionPlaybackPosition() {
+        const frame = document.querySelector(".youtube-reflection iframe[data-reflection-url]");
+        if (!frame?.contentWindow) return;
+        const message = JSON.stringify({ event: "command", func: "getCurrentTime", args: [] });
+        frame.contentWindow.postMessage(JSON.stringify({ event: "listening", id: "ipuc-reflection", channel: "ipuc-villa-del-rio" }), "*");
+        frame.contentWindow.postMessage(message, "*");
+      }
+
+      function rememberReflectionPosition(url, seconds) {
+        if (!url || !Number.isFinite(seconds)) return;
+        const payload = { url, seconds: Math.max(0, Math.floor(seconds)) };
+        try { sessionStorage.setItem("ipuc-reflection-position", JSON.stringify(payload)); } catch {}
+      }
+
+      function reflectionResumeSeconds(url) {
+        if (!url) return 0;
+        try {
+          const payload = JSON.parse(sessionStorage.getItem("ipuc-reflection-position") || "null");
+          return payload?.url === url ? Math.max(0, Number(payload.seconds) || 0) : 0;
+        } catch { return 0; }
+      }
+
+      function bindLocalReflectionPlayback() {
+        const media = view().querySelector(".reflection-media video[data-reflection-url], .reflection-media audio[data-reflection-url]");
+        if (!media) return;
+        const restore = () => {
+          const seconds = reflectionResumeSeconds(media.dataset.reflectionUrl);
+          if (seconds > 0 && Number.isFinite(media.duration) && seconds < media.duration) media.currentTime = seconds;
+        };
+        if (media.readyState >= 1) restore();
+        else media.addEventListener("loadedmetadata", restore, { once: true });
+        media.addEventListener("timeupdate", () => rememberReflectionPosition(media.dataset.reflectionUrl, media.currentTime), { passive: true });
       }
 
       function bindReflectionAutoplayUnlock() {
@@ -4393,20 +4450,24 @@ const TYPES = {
         return APP_STATE.reflections[dateKey(date)] || { ...REFLECTIONS[index], media: { type: "youtube", url: DEFAULT_REFLECTION_MEDIA[index % DEFAULT_REFLECTION_MEDIA.length] } };
       }
 
-      function youtubeEmbedUrl(url) {
+      function youtubeEmbedUrl(url, options = {}) {
         const match = String(url || "").match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([\w-]{11})/);
-        return match ? `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&mute=1&playsinline=1&enablejsapi=1&rel=0` : "";
+        if (!match) return "";
+        const autoplay = options.autoplay === false ? 0 : 1;
+        const mute = options.mute === false ? 0 : 1;
+        const start = Math.max(0, Math.floor(Number(options.start) || 0));
+        return `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=${autoplay}&mute=${mute}&playsinline=1&enablejsapi=1&rel=0${start ? `&start=${start}` : ""}`;
       }
 
-      function reflectionMediaMarkup(reflection, autoplay = false) {
+      function reflectionMediaMarkup(reflection, autoplay = false, options = {}) {
         const media = reflection?.media;
         if (!media) return "";
         if (media.type === "youtube") {
-          const source = youtubeEmbedUrl(media.url);
-          return source ? `<div class="reflection-media youtube-reflection"><iframe src="${source}" title="Reflexión IPUC" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>` : "";
+          const source = youtubeEmbedUrl(media.url, { autoplay, mute: autoplay, start: options.start });
+          return source ? `<div class="reflection-media youtube-reflection"><iframe src="${source}" data-reflection-url="${escapeHtml(media.url)}" title="Reflexión IPUC" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>` : "";
         }
-        if (isVideo(media)) return `<div class="reflection-media"><video ${autoplay ? "autoplay muted" : "controls"} controls playsinline preload="metadata" src="${escapeHtml(assetSource(media))}"></video></div>`;
-        if (isAudio(media)) return `<div class="reflection-media audio-reflection"><audio ${autoplay ? "autoplay" : "controls"} controls preload="metadata" src="${escapeHtml(assetSource(media))}"></audio></div>`;
+        if (isVideo(media)) return `<div class="reflection-media"><video ${autoplay ? "autoplay muted" : "controls"} controls playsinline preload="metadata" data-reflection-url="${escapeHtml(media.url || assetSource(media))}" src="${escapeHtml(assetSource(media))}"></video></div>`;
+        if (isAudio(media)) return `<div class="reflection-media audio-reflection"><audio ${autoplay ? "autoplay" : "controls"} controls preload="metadata" data-reflection-url="${escapeHtml(media.url || assetSource(media))}" src="${escapeHtml(assetSource(media))}"></audio></div>`;
         return "";
       }
 
