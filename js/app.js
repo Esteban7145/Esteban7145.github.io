@@ -2131,7 +2131,7 @@ const TYPES = {
             <div class="hero-copy">
               <div class="home-kicker"><span class="home-live-dot"></span><span>IPUC Villa del Río</span><span>•</span><span>${escapeHtml(longPlatformDate(today))}</span></div>
               <p class="eyebrow">${main ? "Lo que vivimos hoy" : "Una palabra para hoy"}</p>
-              <h1>${escapeHtml(main ? main.title : "Caminamos juntos en la fe")}</h1>
+              <h1 class="${main ? "home-event-title" : "home-hero-title"}">${escapeHtml(main ? main.title : "Caminamos juntos en la fe")}</h1>
               <p class="home-lead">${escapeHtml(main ? shortDescription(main) : reflection.media ? "Escucha o mira la reflexión de hoy." : reflection.text + " (" + reflection.ref + ")")}</p>
               ${main ? eventInfoList(main) : `<div class="today-line">${escapeHtml(longPlatformDate(today))}</div>`}
               ${reflectionMarkup}
@@ -4466,13 +4466,15 @@ const TYPES = {
         .platform-top.is-compact .nav-toggle::before { content: "☰"; font-size: 1.45rem; line-height: 1; }
         .platform-top.is-compact .platform-nav { position: absolute; top: calc(100% + 8px); right: 0; display: none; flex-direction: column; align-items: stretch; width: min(230px, calc(100vw - 28px)); padding: 10px; border: 1px solid rgba(255,255,255,.78); border-radius: 18px; background: rgba(245,250,248,.97); box-shadow: 0 20px 50px rgba(31,55,72,.22); }
         .platform-top.is-compact .platform-nav.open { display: flex; }
-        .platform-brand { display: flex; align-items: center; flex: 0 1 290px; min-width: 0; color: var(--ink); text-decoration: none; }
-        .platform-brand img { width: 278px; height: 74px; object-fit: contain; border: 0; border-radius: 0; background: transparent; padding: 0; box-shadow: none; }
+        .platform-brand { display: flex; align-items: center; flex: 0 1 260px; min-width: 0; color: var(--ink); text-decoration: none; }
+        .platform-brand img { width: 250px; height: 68px; object-fit: contain; border: 0; border-radius: 0; background: transparent; padding: 0; box-shadow: none; }
         .platform-brand span { display: grid; gap: 3px; min-width: 0; }
         .platform-brand strong { font-size: 1rem; line-height: 1.1; }
         .platform-brand small { color: var(--muted); font-weight: 800; }
-        .platform-nav { display: flex; align-items: center; gap: 8px; }
-        .platform-nav a, .nav-toggle, .primary-link, .small-action, .view-switch button, .month-strip button { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border: 1px solid rgba(255,255,255,.75); border-radius: 14px; background: rgba(255,255,255,.55); color: var(--ink); font: inherit; font-weight: 900; text-decoration: none; cursor: pointer; }
+        .platform-nav { display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
+        .platform-nav a, .nav-toggle, .primary-link, .small-action, .view-switch button, .month-strip button { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 10px; border: 1px solid rgba(255,255,255,.75); border-radius: 14px; background: rgba(255,255,255,.55); color: var(--ink); font: inherit; font-size: .84rem; font-weight: 900; text-decoration: none; cursor: pointer; }
+        .platform-nav a { white-space: nowrap; }
+        .platform-nav a[href="/podcast"] { min-width: 145px; }
         .danger-action { border-color: rgba(180,35,53,.2) !important; background: rgba(232,75,95,.12) !important; color: #8f2130 !important; }
         .primary-link, .view-switch button.active, .month-strip button.active { background: linear-gradient(145deg, #123348, #1c8b78); color: white; box-shadow: 0 14px 34px rgba(20,52,71,.18); }
         .nav-toggle { display: none; }
@@ -4498,6 +4500,7 @@ const TYPES = {
         .radio-home-action { min-height: 44px; padding: 0 15px; border: 1px solid rgba(11,59,76,.12); border-radius: 13px; background: rgba(255,255,255,.7); color: #123348; font: inherit; font-weight: 900; cursor: pointer; transition: transform .18s ease, background .18s ease; }
         .radio-home-action:hover { transform: translateY(-2px); background: white; }
         .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { margin: 0; font-size: clamp(2rem, 4vw, 4.2rem); line-height: .96; }
+        .hero-copy .home-hero-title { max-width: 820px; color: #0b3448; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.7rem, 5vw, 5rem); font-style: italic; font-weight: 700; letter-spacing: -.055em; line-height: .94; text-wrap: balance; text-shadow: 0 3px 0 rgba(255,255,255,.22), 0 14px 28px rgba(11,52,72,.12); }
         .hero-copy p, .page-head p, .detail-hero p, .content-card p { color: var(--muted); line-height: 1.45; }
         .hero-image { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 22px; box-shadow: 0 20px 46px rgba(31,55,72,.18); }
         .home-invitation-card { position: relative; display: grid; align-content: center; gap: 11px; min-width: 0; padding: 14px; border: 1px solid rgba(255,255,255,.78); border-radius: 24px; background: linear-gradient(145deg, rgba(255,255,255,.62), rgba(236,248,246,.48)); box-shadow: 0 18px 38px rgba(31,55,72,.14); }
