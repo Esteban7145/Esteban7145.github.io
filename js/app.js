@@ -1055,6 +1055,62 @@ const TYPES = {
       link.click();
       link.remove();
     }
+
+    function showToast(message, tone) {
+      const text = String(message || "").trim();
+      if (!text) return;
+      const lower = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const inferredTone = tone || (/(guardad|actualizad|publicad|autorizad|enviad|eliminad|complet|correctamente|cargad)/.test(lower) ? "success" : /(no se pudo|no hay|falta|debes|solo |obligatori|valido|bloque|permiso|disponible|error|selecciona|todavia|aun no)/.test(lower) ? "error" : "info");
+      const titles = { success: "Listo", error: "Revisa esto", info: "Aviso" };
+      const icons = { success: "✓", error: "!", info: "i" };
+      let stack = document.querySelector(".ipuc-toast-stack");
+      if (!stack) {
+        stack = document.createElement("div");
+        stack.className = "ipuc-toast-stack";
+        stack.setAttribute("aria-live", "polite");
+        stack.setAttribute("aria-atomic", "false");
+        document.body.appendChild(stack);
+      }
+      const toast = document.createElement("article");
+      toast.className = `ipuc-toast ipuc-toast-${inferredTone}`;
+      toast.setAttribute("role", inferredTone === "error" ? "alert" : "status");
+
+      const icon = document.createElement("span");
+      icon.className = "ipuc-toast-icon";
+      icon.textContent = icons[inferredTone];
+      icon.setAttribute("aria-hidden", "true");
+
+      const content = document.createElement("div");
+      content.className = "ipuc-toast-content";
+      const title = document.createElement("strong");
+      title.textContent = titles[inferredTone];
+      const body = document.createElement("p");
+      body.textContent = text;
+      content.append(title, body);
+
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "ipuc-toast-close";
+      close.setAttribute("aria-label", "Cerrar aviso");
+      close.textContent = "×";
+      const dismiss = () => {
+        toast.classList.add("is-closing");
+        setTimeout(() => toast.remove(), 220);
+      };
+      close.addEventListener("click", dismiss);
+
+      const progress = document.createElement("span");
+      progress.className = "ipuc-toast-progress";
+      toast.append(icon, content, close, progress);
+      stack.appendChild(toast);
+      while (stack.children.length > 3) stack.firstElementChild.remove();
+      requestAnimationFrame(() => toast.classList.add("is-visible"));
+      const timer = setTimeout(dismiss, inferredTone === "error" ? 6500 : 4800);
+      toast.addEventListener("mouseenter", () => clearTimeout(timer), { once: true });
+    }
+
+    window.alert = showToast;
+
     function assetSource(asset) {
       return asset?.url || asset?.dataUrl || "";
     }

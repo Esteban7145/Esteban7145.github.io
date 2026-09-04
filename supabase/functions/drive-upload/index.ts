@@ -1,13 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
-import { SignJWT, importPKCS8 } from "npm:jose@6.1.0";
 
 const SITE_ORIGIN = "https://esteban7145.github.io";
 const DEFAULT_FOLDERS = {
-  weekly: "1gwuNFB9cq4N-1EIvHd2pW-1A-OJDVJgn",
-  event: "1WPw3zTgNA_vgSssrQDtnuxxjfaXvtanF",
-  multimedia: "1EvzF26jKOTSYh-xGVB7S0V9YEGgxnLO6",
-  biblical: "1NQmDMepgLjFVaQDEYohD87kkbLfvIXQJ",
+  weekly: "1GTj8_8PcgZ1GnFU2eKT3smwlIWhG1uOY",
+  event: "1Z3C25CEZT_spPTYfe9ktHHwbcRWIUjcn",
+  multimedia: "1Av4jSQaDTimZwSIOcX58JyhCf2uLUo69",
+  biblical: "1CQouw6irDWXEzlSHkbJM5NQlf7jPKwA1",
 };
 
 function corsHeaders(req: Request) {
@@ -24,19 +23,6 @@ function corsHeaders(req: Request) {
 
 function response(req: Request, body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders(req) });
-}
-
-function readServiceAccount() {
-  const raw = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
-  if (!raw) throw new Error("Falta configurar la cuenta segura de Google Drive en Supabase.");
-  try {
-    const account = JSON.parse(raw);
-    if (!account.client_email || !account.private_key) throw new Error("La configuración de Google Drive está incompleta.");
-    return account;
-  } catch (error) {
-    if (error instanceof Error && error.message.includes("configuración")) throw error;
-    throw new Error("La configuración segura de Google Drive no es válida.");
-  }
 }
 
 function readFolders() {
@@ -66,22 +52,25 @@ async function getAuthenticatedUser(req: Request) {
   return data.user;
 }
 
-async function googleAccessToken(account: { client_email: string; private_key: string }) {
-  const key = await importPKCS8(account.private_key, "RS256");
-  const assertion = await new SignJWT({ scope: "https://www.googleapis.com/auth/drive" })
-    .setProtectedHeader({ alg: "RS256", typ: "JWT" })
-    .setIssuer(account.client_email)
-    .setAudience("https://oauth2.googleapis.com/token")
-    .setIssuedAt()
-    .setExpirationTime("1h")
-    .sign(key);
+async function googleAccessToken() {
+  const clientId = Deno.env.get("GOOGLE_DRIVE_CLIENT_ID");
+  const clientSecret = Deno.env.get("GOOGLE_DRIVE_CLIENT_SECRET");
+  const refreshToken = Deno.env.get("GOOGLE_DRIVE_REFRESH_TOKEN");
+  if (!clientId || !clientSecret || !refreshToken) {
+    throw new Error("Falta configurar la conexión segura con Google Drive en Supabase.");
+  }
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion }),
+    body: new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
   });
   const body = await tokenResponse.json().catch(() => ({}));
-  if (!tokenResponse.ok || !body.access_token) throw new Error("Google no autorizó el acceso seguro a Drive.");
+  if (!tokenResponse.ok || !body.access_token) throw new Error("Google no autorizó el acceso seguro a Drive. Vuelve a conectar la cuenta.");
   return body.access_token as string;
 }
 
@@ -162,10 +151,10 @@ Deno.serve(async req => {
     const form = await req.formData();
     const action = String(form.get("action") || "upload");
     if (action === "status") {
-      await googleAccessToken(readServiceAccount());
+      await googleAccessToken();
       return response(req, { configured: true });
     }
-    const token = await googleAccessToken(readServiceAccount());
+    const token = await googleAccessToken();
     if (action === "delete") {
       const fileId = String(form.get("driveFileId") || "");
       if (!fileId) return response(req, { error: "Falta el archivo que se desea eliminar." }, 400);
