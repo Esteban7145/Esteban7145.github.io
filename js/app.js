@@ -1556,7 +1556,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-scroll-fix-2").catch(() => {});
       setupSiteLoader();
       setupPlatformMusic();
       setupRadioIpuc();
