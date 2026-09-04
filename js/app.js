@@ -4335,6 +4335,10 @@ const TYPES = {
         next.onclick = () => changeChurchMusic(1);
         audio.onplay = () => setupChurchMusic();
         audio.onpause = () => setupChurchMusic();
+        audio.onerror = () => {
+          const status = document.getElementById("musicStatus");
+          if (status) status.textContent = "No se pudo reproducir esta canción";
+        };
         audio.onended = () => changeChurchMusic(1, true);
       }
 
@@ -4355,9 +4359,11 @@ const TYPES = {
           stopReflectionMedia();
           reflectionIsActive = false;
         }
-        audio.play().then(setupChurchMusic).catch(() => {
+        audio.play().then(setupChurchMusic).catch((error) => {
           const status = document.getElementById("musicStatus");
-          if (status) status.textContent = "Pulsa ▶ para escuchar";
+          if (status) status.textContent = error?.name === "NotAllowedError"
+            ? "Pulsa ▶ para escuchar"
+            : "No se pudo reproducir esta canción";
         });
       }
 

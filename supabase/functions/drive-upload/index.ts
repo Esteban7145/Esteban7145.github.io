@@ -180,7 +180,8 @@ async function listMusicFromDrive(token: string) {
       type: file.mimeType,
       size: Number(file.size || 0),
       modifiedTime: file.modifiedTime,
-      audioUrl: `https://drive.google.com/uc?export=download&id=${encodeURIComponent(String(file.id))}`,
+      // export=media entrega el archivo en línea (audio/mpeg), no como descarga.
+      audioUrl: `https://drive.google.com/uc?export=media&id=${encodeURIComponent(String(file.id))}`,
       webViewLink: file.webViewLink || `https://drive.google.com/file/d/${encodeURIComponent(String(file.id))}/view`,
     })),
   };
