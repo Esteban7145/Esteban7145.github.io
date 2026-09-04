@@ -2038,6 +2038,7 @@ const TYPES = {
         const events = eventsForPlatformDate(today);
         const main = events[0];
         const reflection = reflectionForDate(today);
+        const mainInvitation = main && ((main.image && isImage(main.image)) || (main.invitations?.main && isImage(main.invitations.main)) || isRegularSundayWorship(main));
         const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, true) : "";
         reflectionIsActive = Boolean(reflectionMarkup);
         if (reflectionIsActive) {
@@ -2049,7 +2050,7 @@ const TYPES = {
         }
         const next = platformEventsForYear(today.getFullYear()).filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Realizado").sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
         view().innerHTML = `
-          <section class="home-hero glass">
+          <section class="home-hero glass ${mainInvitation ? "has-today-invitation" : ""}">
             <div class="hero-copy">
               <div class="home-kicker"><span class="home-live-dot"></span><span>IPUC Villa del Río</span><span>•</span><span>${escapeHtml(longPlatformDate(today))}</span></div>
               <p class="eyebrow">${main ? "Lo que vivimos hoy" : "Una palabra para hoy"}</p>
@@ -2060,6 +2061,7 @@ const TYPES = {
               <div class="live-visitors" aria-live="polite"><span class="live-visitors-dot"></span><strong data-online-count>1</strong> personas en la página ahora</div>
               <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="radio-home-action" type="button" data-home-radio>▶ Escuchar Radio IPUC</button>${deferredInstallPrompt ? `<button class="radio-home-action install-home-action" type="button" data-install-app>＋ Instalar app</button>` : ""}</div>
             </div>
+            ${mainInvitation ? `<aside class="home-invitation-card"><div class="home-invitation-head"><span class="eyebrow">Invitación del día</span><span class="home-invitation-dot" aria-hidden="true"></span></div><img class="home-invitation-image" src="${escapeHtml(eventImage(main))}" alt="Invitación de ${escapeHtml(main.title)}"><a class="home-invitation-link" href="#/evento/${encodeURIComponent(main.id)}">Ver invitación completa <span aria-hidden="true">→</span></a></aside>` : ""}
           </section>
           <section class="home-welcome glass">
             <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta actividades, recursos, horarios y novedades de la congregación desde un solo lugar.</p></div>
@@ -4318,7 +4320,7 @@ const TYPES = {
       }
 
       function eventInfoList(event) {
-        return `<dl class="info-list"><div><dt>Fecha</dt><dd>${escapeHtml(formatDateShort(event.date))}</dd></div><div><dt>Hora</dt><dd>${escapeHtml(event.time)}</dd></div><div><dt>Lugar</dt><dd>${escapeHtml(event.place)}</dd></div><div><dt>Departamento</dt><dd>${escapeHtml(event.department || event.organizer)}</dd></div><div><dt>Responsable</dt><dd>${escapeHtml(event.responsible || "Por definir")}</dd></div></dl>`;
+        return `<dl class="info-list"><div><dt>Fecha</dt><dd>${escapeHtml(formatDateShort(event.date))}</dd></div><div><dt>Hora</dt><dd>${escapeHtml(event.time)}</dd></div><div><dt>Lugar</dt><dd>${escapeHtml(event.place)}</dd></div><div><dt>Departamento</dt><dd>${escapeHtml(event.department || event.organizer)}</dd></div></dl>`;
       }
 
       function shortDescription(event) {
@@ -4400,7 +4402,7 @@ const TYPES = {
         .route-view { display: grid; gap: 16px; margin-top: 16px; }
         .home-hero, .page-head, .content-card, .calendar-page, .view-switch, .month-strip, .filters, .login-card { border-radius: 26px; padding: 18px; }
         .home-hero, .detail-hero { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr); gap: 18px; align-items: center; }
-        .home-hero { grid-template-columns: 1fr; min-height: 390px; }
+        .home-hero { grid-template-columns: minmax(0, 1.12fr) minmax(280px, .88fr); min-height: 430px; }
         .home-hero, .home-welcome, .type-shortcuts, .split-grid > article { opacity: 0; transform: translateY(18px); animation: homeReveal .65s cubic-bezier(.2,.75,.25,1) var(--reveal-delay, 0ms) forwards; }
         .home-hero.is-visible, .home-welcome.is-visible, .type-shortcuts.is-visible, .split-grid > article.is-visible { opacity: 1; transform: translateY(0); }
         @keyframes homeReveal { to { opacity: 1; transform: translateY(0); } }
@@ -4419,6 +4421,14 @@ const TYPES = {
         .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { margin: 0; font-size: clamp(2rem, 4vw, 4.2rem); line-height: .96; }
         .hero-copy p, .page-head p, .detail-hero p, .content-card p { color: var(--muted); line-height: 1.45; }
         .hero-image { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 22px; box-shadow: 0 20px 46px rgba(31,55,72,.18); }
+        .home-invitation-card { position: relative; display: grid; align-content: center; gap: 11px; min-width: 0; padding: 14px; border: 1px solid rgba(255,255,255,.78); border-radius: 24px; background: linear-gradient(145deg, rgba(255,255,255,.62), rgba(236,248,246,.48)); box-shadow: 0 18px 38px rgba(31,55,72,.14); }
+        .home-invitation-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px; }
+        .home-invitation-head .eyebrow { margin: 0; color: #1c8b78; }
+        .home-invitation-dot { width: 9px; height: 9px; border-radius: 50%; background: #f0ab00; box-shadow: 0 0 0 5px rgba(240,171,0,.14); }
+        .home-invitation-image { display: block; width: 100%; max-height: 350px; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 17px; background: rgba(255,255,255,.62); box-shadow: 0 12px 26px rgba(31,55,72,.12); }
+        .home-invitation-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 4px 3px; color: #123348; font-size: .82rem; font-weight: 900; text-decoration: none; }
+        .home-invitation-link span { color: #1c8b78; font-size: 1.2rem; transition: transform .18s ease; }
+        .home-invitation-link:hover span { transform: translateX(4px); }
         .event-card-public > img { width: 100%; aspect-ratio: 16 / 10; object-fit: contain; border-radius: 22px; background: rgba(18,51,72,.08); box-shadow: 0 20px 46px rgba(31,55,72,.18); }
         .detail-hero > img { display: block; width: 100%; height: auto; max-height: 680px; min-height: 220px; object-fit: contain; border-radius: 22px; background: rgba(18,51,72,.08); box-shadow: 0 20px 46px rgba(31,55,72,.18); }
         .home-hero .hero-image { animation: heroFloat 7s ease-in-out infinite; }
