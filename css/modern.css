@@ -219,7 +219,7 @@ body.platform-body .month-summary { padding: 7px 11px; border-radius: 999px; bac
 body.platform-body .week-head { margin-bottom: 9px; padding: 0 6px; }
 body.platform-body .week-head span { padding: 9px 4px; border-radius: 10px; background: rgba(0,51,141,.06); color: var(--brand-deep); letter-spacing: .08em; }
 body.platform-body .month-grid { gap: 8px; }
-body.platform-body .month-day { position: relative; min-height: 146px; padding: 10px; border-radius: 18px; background: linear-gradient(145deg, rgba(255,255,255,.6), rgba(232,243,246,.38)); border: 1px solid rgba(255,255,255,.8); box-shadow: 0 8px 18px rgba(31,55,72,.05); transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
+body.platform-body .month-day { position: relative; min-height: 154px; padding: 10px; border-radius: 18px; background: linear-gradient(145deg, rgba(255,255,255,.6), rgba(232,243,246,.38)); border: 1px solid rgba(255,255,255,.8); box-shadow: 0 8px 18px rgba(31,55,72,.05); transition: transform .2s ease, box-shadow .2s ease, background .2s ease; }
 body.platform-body .month-day:hover { transform: translateY(-2px); background: rgba(255,255,255,.72); box-shadow: 0 14px 24px rgba(31,55,72,.1); }
 body.platform-body .month-day.weekend-day { background: linear-gradient(145deg, rgba(237,248,248,.68), rgba(222,238,244,.44)); }
 body.platform-body .month-day.has-events { border-color: rgba(0,159,218,.22); }
@@ -250,10 +250,14 @@ body.platform-body .event-colors .color-vigilia { --event-color: var(--vigilia);
 body.platform-body .event-colors .color-ayuno { --event-color: var(--ayuno); }
 body.platform-body .event-colors .color-especial { --event-color: var(--especial); }
 
-body.platform-body .month-day-events { display: grid; gap: 5px; margin-top: 7px; }
-body.platform-body .event-pill { position: relative; margin-top: 0; padding: 7px 8px 7px 10px; border: 1px solid rgba(255,255,255,.76); border-left: 3px solid var(--pill-color, var(--brand-teal)); border-radius: 11px; background: rgba(255,255,255,.67); box-shadow: 0 4px 10px rgba(31,55,72,.06); }
-body.platform-body .event-pill:hover { background: white; box-shadow: 0 7px 14px rgba(31,55,72,.1); }
-body.platform-body .event-pill span { display: block; line-height: 1.15; }
+body.platform-body .month-day-events { display: grid; gap: 6px; margin-top: 7px; }
+body.platform-body .event-pill { display: grid; grid-template-columns: 42px minmax(0, 1fr); align-items: center; min-height: 54px; position: relative; margin-top: 0; padding: 5px 6px 5px 7px; border: 1px solid rgba(255,255,255,.76); border-left: 3px solid var(--pill-color, var(--brand-teal)); border-radius: 12px; background: rgba(255,255,255,.72); color: var(--brand-deep); box-shadow: 0 4px 10px rgba(31,55,72,.06); text-decoration: none; transition: transform .18s ease, background .18s ease, box-shadow .18s ease; }
+body.platform-body .event-pill:hover { transform: translateY(-1px); background: white; box-shadow: 0 7px 14px rgba(31,55,72,.14); }
+body.platform-body .event-pill-thumb { width: 42px; height: 42px; object-fit: cover; border-radius: 9px; background: rgba(0,51,141,.1); }
+body.platform-body .event-pill-mark { width: 10px; height: 10px; margin: auto; border-radius: 50%; background: var(--pill-color, var(--brand-teal)); box-shadow: 0 0 0 6px color-mix(in srgb, var(--pill-color, var(--brand-teal)) 14%, transparent); }
+body.platform-body .event-pill-copy { min-width: 0; display: block; line-height: 1.12; }
+body.platform-body .event-pill-copy strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: .71rem; line-height: 1.16; font-weight: 950; overflow-wrap: anywhere; }
+body.platform-body .event-pill-copy small { display: block; margin-top: 4px; color: var(--muted); font-size: .64rem; font-weight: 850; white-space: nowrap; }
 body.platform-body .month-more { border: 0; padding: 3px 4px; background: transparent; color: var(--brand-teal); font: inherit; font-size: .7rem; font-weight: 950; text-align: left; cursor: pointer; }
 body.platform-body .event-type-culto { --pill-color: var(--culto); }
 body.platform-body .event-type-oracion { --pill-color: var(--oracion); }
@@ -352,7 +356,11 @@ body.platform-body input:disabled { cursor: not-allowed; opacity: .48; }
   body.platform-body .month-summary { font-size: .7rem; }
   body.platform-body .type-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; }
   body.platform-body .type-chip { justify-content: flex-start; padding: 0 9px; font-size: .78rem; }
-  body.platform-body .month-day { min-height: 76px; }
+  body.platform-body .month-day { min-height: 86px; }
+  body.platform-body .event-pill { grid-template-columns: 34px minmax(0, 1fr); min-height: 44px; padding: 4px; }
+  body.platform-body .event-pill-thumb { width: 34px; height: 34px; border-radius: 7px; }
+  body.platform-body .event-pill-copy strong { font-size: .65rem; }
+  body.platform-body .event-pill-copy small { margin-top: 2px; font-size: .58rem; }
   body.platform-body .day-number { width: 25px; height: 25px; border-radius: 8px; font-size: .78rem; }
   body.platform-body .year-view { grid-template-columns: 1fr; }
   body.platform-body .platform-footer { align-items: flex-start; flex-direction: column; }

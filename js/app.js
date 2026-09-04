@@ -2854,7 +2854,7 @@ const TYPES = {
           html += `<article class="month-day ${date.getMonth() !== month ? "muted-day" : ""} ${isWeekend ? "weekend-day" : ""} ${dayEvents.length ? "has-events" : ""} ${sameDay(date, today) ? "today-day" : ""}">
             <div class="month-day-top"><button class="day-number" type="button" data-calendar-date="${dateKey(date)}" aria-label="Ver ${longPlatformDate(date)}">${date.getDate()}</button>${dayEvents.length ? `<span class="month-event-count">${dayEvents.length}</span>` : ""}</div>
             ${eventColorBars(dayEvents)}
-            <div class="month-day-events">${dayEvents.slice(0, 3).map(eventPill).join("")}${dayEvents.length > 3 ? `<button class="month-more" type="button" data-calendar-date="${dateKey(date)}">+${dayEvents.length - 3} más</button>` : ""}</div>
+            <div class="month-day-events">${dayEvents.slice(0, 2).map(eventPill).join("")}${dayEvents.length > 2 ? `<button class="month-more" type="button" data-calendar-date="${dateKey(date)}">+${dayEvents.length - 2} más</button>` : ""}</div>
           </article>`;
         }
         return html + "</div></div>";
@@ -2908,7 +2908,15 @@ const TYPES = {
       }
 
       function eventPill(event) {
-        return `<a class="event-pill event-type-${escapeHtml(event.type)}" href="#/evento/${encodeURIComponent(event.id)}"><span>${escapeHtml(event.title)}<small>${escapeHtml(event.time)}</small></span></a>`;
+        const image = eventCalendarImage(event);
+        return `<a class="event-pill event-type-${escapeHtml(event.type)}${image ? " has-thumbnail" : ""}" href="#/evento/${encodeURIComponent(event.id)}" title="${escapeHtml(event.title)}" aria-label="Ver detalles de ${escapeHtml(event.title)}">${image ? `<img class="event-pill-thumb" src="${escapeHtml(image)}" alt="">` : `<span class="event-pill-mark" aria-hidden="true"></span>`}<span class="event-pill-copy"><strong>${escapeHtml(event.title)}</strong><small>${escapeHtml(event.time)}</small></span></a>`;
+      }
+
+      function eventCalendarImage(event) {
+        if (event.image && isImage(event.image)) return assetSource(event.image, "display");
+        if (event.invitations?.main && isImage(event.invitations.main)) return assetSource(event.invitations.main, "display");
+        if (isRegularSundayWorship(event)) return DEFAULT_SUNDAY_INVITATION.url;
+        return "";
       }
 
       function agendaList(events, compact = false) {
