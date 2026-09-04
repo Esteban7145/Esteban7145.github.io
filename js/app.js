@@ -1483,10 +1483,8 @@ const TYPES = {
           <nav class="platform-nav" id="platformNav" aria-label="Navegación principal">
             <a href="/" data-route-link="inicio">Inicio</a>
             <a href="/calendario" data-route-link="calendario">Calendario</a>
-            <a href="/agenda" data-route-link="agenda">Agenda</a>
             <a href="/anuncios" data-route-link="anuncios">Anuncios</a>
             <a href="/podcast" data-route-link="podcast">Voces que Edifican</a>
-            <a href="/archivo" data-route-link="archivo">Archivo</a>
             <a href="/recursos" data-route-link="recursos">Recursos</a>
             <a href="/ubicacion" data-route-link="ubicacion">Ubicación</a>
             <a href="/admin/login" data-login-link>Admin</a>
@@ -1550,7 +1548,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-brand-logo-6").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-menu-simple-7").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
       setupPlatformMusic();
