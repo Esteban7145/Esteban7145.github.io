@@ -5005,10 +5005,10 @@ const TYPES = {
           .mini-card, .agenda-item, .file-public-list article { grid-template-columns: 58px minmax(0, 1fr); }
           .mini-card img, .agenda-item img { width: 58px; height: 48px; }
           .agenda-item .small-action { grid-column: 1 / -1; }
-          .month-strip { overflow-x: auto; flex-wrap: nowrap; justify-content: flex-start; }
-          .month-strip button { flex: 0 0 auto; }
-          .decom-months { overflow-x: auto; flex-wrap: nowrap; }
-          .decom-months button { flex: 0 0 auto; }
+          .month-strip { overflow: visible; flex-wrap: wrap; justify-content: stretch; }
+          .month-strip button { flex: 1 1 calc(33.333% - 8px); min-width: 0; }
+          .decom-months { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }
+          .decom-months button { min-width: 0; padding: 0 5px; font-size: .72rem; }
           .decom-calendar-shell, .decom-editor { padding: 9px; border-radius: 16px; }
           .decom-week-head, .decom-calendar-grid { gap: 3px; min-width: 0; width: 100%; grid-template-columns: repeat(7, minmax(0, 1fr)); }
           .decom-week-head { font-size: .57rem; }
