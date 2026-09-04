@@ -1,5 +1,5 @@
-const CACHE_NAME = "ipuc-villa-del-rio-v39-mobile-stable-layout";
-const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/assets/logo.png", "/assets/favicon.png", "/assets/ipuc-villa-del-rio-brand.png"];
+const CACHE_NAME = "ipuc-villa-del-rio-v40-brand-logo-layout";
+const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/assets/logo.png", "/assets/favicon.png", "/assets/ipuc-villa-del-rio-brand.png", "/assets/historias-que-edifican.svg"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));

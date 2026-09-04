@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 344 183" role="img" aria-labelledby="title desc">
+  <title id="title">Historias que Edifican</title>
+  <desc id="desc">Logotipo de Historias que Edifican, con un libro abierto y líneas doradas ascendentes.</desc>
+  <g id="simbolo-libro" fill="#00338D">
+    <path d="M13 90c17 3 35 10 54 21 13 8 24 8 36-1v35c-14 8-29 7-44-1l-46-10Z"/>
+    <path d="M103 109c13-7 25-17 35-29v47c-10 13-22 21-35 22Z"/>
+    <path d="M68 108c11 7 22 8 35 1v39c-12 8-24 8-35 1Z" fill="#fff" opacity=".98"/>
+  </g>
+  <g id="lineas-doradas" fill="#C99A36">
+    <path d="M38 94V80l16-10v27Z"/>
+    <path d="M54 83V54l16-10v29Z"/>
+    <path d="M70 73V26l16-10v47Z"/>
+    <path d="M27 143c19 5 35 7 49 3 12-4 21-10 28-16-11 14-24 22-39 26-13 3-26 1-38-4Z"/>
+    <path d="M18 149c19 7 36 9 51 5 14-4 26-11 36-20-12 15-26 25-42 29-15 3-30 0-45-7Z"/>
+  </g>
+  <g id="nombre" font-family="Arial, Helvetica, sans-serif" font-weight="400">
+    <text x="116" y="86" fill="#00338D" font-size="36" letter-spacing="-1.25">Historias</text>
+    <text x="120" y="113" fill="#C99A36" font-size="22" letter-spacing="-.55">que</text>
+    <text x="171" y="135" fill="#00338D" font-size="36" letter-spacing="-1.25">Edifican</text>
+  </g>
+  <g id="acentos" fill="#C99A36">
+    <path d="M155 58l5-8 3 1-5 9Z"/>
+    <path d="M260 65l5-9 3 1-5 9Z"/>
+  </g>
+</svg>
