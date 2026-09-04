@@ -2776,18 +2776,20 @@ const TYPES = {
         const first = new Date(year, month, 1);
         const offset = (first.getDay() + 6) % 7;
         const start = new Date(year, month, 1 - offset);
-        let html = `<div class="week-head">${["Lun","Mar","Mie","Jue","Vie","Sab","Dom"].map(day => `<span>${day}</span>`).join("")}</div><div class="month-grid">`;
+        const monthEvents = events.filter(event => parseDate(event.date).getMonth() === month);
+        let html = `<div class="month-calendar-view"><div class="month-calendar-bar"><div><p class="eyebrow">Vista mensual</p><h2>${capitalize(months[month])} ${year}</h2></div><span class="month-summary">${monthEvents.length} ${monthEvents.length === 1 ? "actividad programada" : "actividades programadas"}</span></div><div class="week-head">${["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(day => `<span>${day}</span>`).join("")}</div><div class="month-grid">`;
         for (let i = 0; i < 42; i += 1) {
           const date = new Date(start);
           date.setDate(start.getDate() + i);
           const dayEvents = eventsForPlatformDate(date);
-          html += `<article class="month-day ${date.getMonth() !== month ? "muted-day" : ""} ${sameDay(date, today) ? "today-day" : ""}">
-            <button class="day-number" type="button" data-calendar-date="${dateKey(date)}" aria-label="Ver ${longPlatformDate(date)}">${date.getDate()}</button>
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          html += `<article class="month-day ${date.getMonth() !== month ? "muted-day" : ""} ${isWeekend ? "weekend-day" : ""} ${dayEvents.length ? "has-events" : ""} ${sameDay(date, today) ? "today-day" : ""}">
+            <div class="month-day-top"><button class="day-number" type="button" data-calendar-date="${dateKey(date)}" aria-label="Ver ${longPlatformDate(date)}">${date.getDate()}</button>${dayEvents.length ? `<span class="month-event-count">${dayEvents.length}</span>` : ""}</div>
             ${eventColorBars(dayEvents)}
-            <div>${dayEvents.slice(0, 3).map(eventPill).join("")}</div>
+            <div class="month-day-events">${dayEvents.slice(0, 3).map(eventPill).join("")}${dayEvents.length > 3 ? `<button class="month-more" type="button" data-calendar-date="${dateKey(date)}">+${dayEvents.length - 3} más</button>` : ""}</div>
           </article>`;
         }
-        return html + "</div>";
+        return html + "</div></div>";
       }
 
       function weekView() {
