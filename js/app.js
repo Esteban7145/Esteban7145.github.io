@@ -1121,14 +1121,6 @@ const TYPES = {
       return "";
     }
 
-    // Visor 3D reutilizable: permite sumar modelos de Sketchfab sin exponer
-    // tokens y conserva una configuración ligera para la experiencia pública.
-    const SKETCHFAB_3D_MODELS = Object.freeze({ bible: "bbe98a3005864fec92528f39b4746f7f" });
-    function sketchfabViewerUrl(modelId, options = {}) {
-      const params = new URLSearchParams({ autospin: "1", autostart: "1", preload: "1", transparent: "1", ui_theme: "dark", ...options });
-      return `https://sketchfab.com/models/${encodeURIComponent(modelId)}/embed?${params.toString()}`;
-    }
-
     function assetSource(asset, purpose = "download") {
       if (!asset) return "";
       const fallback = asset.url || asset.dataUrl || asset.previewUrl || "";
@@ -2127,6 +2119,14 @@ const TYPES = {
         return true;
       }
 
+      function glassHeroTitleMarkup(text) {
+        return Array.from(text).map((character, index) => {
+          if (/\s/.test(character)) return `<span class="hero-letter hero-space" aria-hidden="true">&nbsp;</span>`;
+          const tilt = index % 2 === 0 ? -4 : 4;
+          return `<span class="hero-letter" style="--letter-tilt:${tilt}deg" aria-hidden="true">${escapeHtml(character)}</span>`;
+        }).join("");
+      }
+
       function renderHomePage(options = {}) {
         const events = eventsForPlatformDate(today);
         const main = events[0];
@@ -2134,7 +2134,6 @@ const TYPES = {
         const mainInvitation = main && main.type === "culto" && ((main.image && isImage(main.image)) || (main.invitations?.main && isImage(main.invitations.main)) || isRegularSundayWorship(main));
         const reflectionStart = !main ? reflectionResumeSeconds(reflection?.media?.url) : 0;
         const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, !options.pauseReflection, { start: reflectionStart }) : "";
-        const bible3DMarkup = !main ? `<aside class="home-bible-3d" aria-label="Biblia 3D interactiva"><div class="home-bible-3d-head"><span class="eyebrow">Palabra viva</span><span class="home-bible-3d-spark" aria-hidden="true">✦</span></div><div class="home-bible-3d-frame"><iframe title="Biblia 3D interactiva" src="${sketchfabViewerUrl(SKETCHFAB_3D_MODELS.bible, { autospin: "0.35", ui_controls: "0", ui_infos: "0", ui_stop: "0", ui_inspector: "0", ui_watermark: "0", ui_watermark_link: "0", ui_hint: "0", ui_help: "0", ui_settings: "0", ui_vr: "0", ui_fullscreen: "0", ui_annotations: "0", ui_animations: "0" })}" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share allowfullscreen loading="eager"></iframe></div><a class="home-bible-3d-credit" href="https://sketchfab.com/3d-models/biblia-bbe98a3005864fec92528f39b4746f7f" target="_blank" rel="noopener noreferrer">Modelo 3D: Sketchfab <span aria-hidden="true">↗</span></a></aside>` : "";
         reflectionIsActive = Boolean(reflectionMarkup);
         if (reflectionIsActive) {
           stopRadioIpuc();
@@ -2145,18 +2144,18 @@ const TYPES = {
         }
         const next = platformEventsForYear(today.getFullYear()).filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Realizado").sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
         view().innerHTML = `
-          <section class="home-hero glass ${mainInvitation ? "has-today-invitation" : "has-bible-3d"}">
+          <section class="home-hero glass ${mainInvitation ? "has-today-invitation" : "has-reflection-focus"}">
             <div class="hero-copy">
               <div class="home-kicker"><span class="home-live-dot"></span><span>IPUC Villa del Río</span><span>•</span><span>${escapeHtml(longPlatformDate(today))}</span></div>
               <p class="eyebrow">${main ? "Lo que vivimos hoy" : "Una palabra para hoy"}</p>
-              <h1 class="${main ? "home-event-title" : "home-hero-title"}">${escapeHtml(main ? main.title : "Caminamos juntos en la fe")}</h1>
+              <h1 class="${main ? "home-event-title" : "home-hero-title"}"${main ? "" : " aria-label=\"Caminamos juntos en la fe\""}>${main ? escapeHtml(main.title) : glassHeroTitleMarkup("Caminamos juntos en la fe")}</h1>
               <p class="home-lead">${escapeHtml(main ? shortDescription(main) : reflection.media ? "Escucha o mira la reflexión de hoy." : reflection.text + " (" + reflection.ref + ")")}</p>
               ${main ? eventInfoList(main) : `<div class="today-line">${escapeHtml(longPlatformDate(today))}</div>`}
               ${reflectionMarkup}
               <div class="live-visitors" aria-live="polite"><span class="live-visitors-dot"></span><strong data-online-count>1</strong> personas en la página ahora</div>
               <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="radio-home-action" type="button" data-home-radio>▶ Escuchar Radio IPUC</button>${deferredInstallPrompt ? `<button class="radio-home-action install-home-action" type="button" data-install-app>＋ Instalar app</button>` : ""}</div>
             </div>
-            ${mainInvitation ? `<aside class="home-invitation-card"><div class="home-invitation-head"><span class="eyebrow">Invitación del día</span><span class="home-invitation-dot" aria-hidden="true"></span></div><img class="home-invitation-image" src="${escapeHtml(eventImage(main))}" alt="Invitación de ${escapeHtml(main.title)}"><a class="home-invitation-link" href="#/evento/${encodeURIComponent(main.id)}">Ver invitación completa <span aria-hidden="true">→</span></a></aside>` : bible3DMarkup}
+            ${mainInvitation ? `<aside class="home-invitation-card"><div class="home-invitation-head"><span class="eyebrow">Invitación del día</span><span class="home-invitation-dot" aria-hidden="true"></span></div><img class="home-invitation-image" src="${escapeHtml(eventImage(main))}" alt="Invitación de ${escapeHtml(main.title)}"><a class="home-invitation-link" href="#/evento/${encodeURIComponent(main.id)}">Ver invitación completa <span aria-hidden="true">→</span></a></aside>` : ""}
           </section>
           <section class="home-welcome glass">
             <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta actividades, recursos, horarios y novedades de la congregación desde un solo lugar.</p></div>
@@ -4659,8 +4658,7 @@ const TYPES = {
         .home-hero { grid-template-columns: minmax(0, 1.12fr) minmax(280px, .88fr); min-height: 430px; }
         .home-hero:not(.has-today-invitation) { grid-template-columns: 1fr; }
         .home-hero:not(.has-today-invitation) .hero-copy { width: 100%; }
-        .home-hero.has-bible-3d { grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr); }
-        .home-hero.has-bible-3d .hero-copy { min-width: 0; }
+        .home-hero.has-reflection-focus .hero-copy { max-width: 1120px; margin: 0 auto; }
         .home-hero, .home-welcome, .type-shortcuts, .split-grid > article { opacity: 0; transform: translateY(18px); animation: homeReveal .65s cubic-bezier(.2,.75,.25,1) var(--reveal-delay, 0ms) forwards; }
         .home-hero.is-visible, .home-welcome.is-visible, .type-shortcuts.is-visible, .split-grid > article.is-visible { opacity: 1; transform: translateY(0); }
         @keyframes homeReveal { to { opacity: 1; transform: translateY(0); } }
@@ -4677,7 +4675,11 @@ const TYPES = {
         .radio-home-action { min-height: 44px; padding: 0 15px; border: 1px solid rgba(11,59,76,.12); border-radius: 13px; background: rgba(255,255,255,.7); color: #123348; font: inherit; font-weight: 900; cursor: pointer; transition: transform .18s ease, background .18s ease; }
         .radio-home-action:hover { transform: translateY(-2px); background: white; }
         .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { margin: 0; font-size: clamp(2rem, 4vw, 4.2rem); line-height: .96; }
-        .hero-copy .home-hero-title { max-width: 820px; color: #0b3448; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.7rem, 5vw, 5rem); font-style: italic; font-weight: 700; letter-spacing: -.055em; line-height: .94; text-wrap: balance; text-shadow: 0 3px 0 rgba(255,255,255,.22), 0 14px 28px rgba(11,52,72,.12); }
+        .hero-copy .home-hero-title { display: block; max-width: 1080px; color: transparent; font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif; font-size: clamp(3.15rem, 8vw, 8.6rem); font-style: normal; font-weight: 950; letter-spacing: -.075em; line-height: .86; text-wrap: balance; perspective: 900px; text-shadow: 0 2px 0 rgba(255,255,255,.34), 0 11px 22px rgba(11,52,72,.16); }
+        .hero-letter { position: relative; display: inline-block; color: rgba(236, 252, 255, .56); background: linear-gradient(165deg, rgba(255,255,255,.98) 0%, rgba(189,245,255,.75) 22%, rgba(55,174,214,.56) 53%, rgba(255,255,255,.84) 78%, rgba(124,227,245,.58) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 1px rgba(255,255,255,.64); filter: drop-shadow(0 4px 0 rgba(7,66,91,.12)) drop-shadow(0 14px 16px rgba(7,66,91,.13)); transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) scale(1); transform-origin: 50% 72%; transition: transform .34s cubic-bezier(.2,.85,.22,1), filter .34s ease, color .34s ease; will-change: transform; }
+        .hero-letter::after { position: absolute; inset: 12% 16% 50%; border-radius: 999px; background: linear-gradient(110deg, rgba(255,255,255,.52), rgba(255,255,255,0)); content: ""; opacity: .42; pointer-events: none; transform: skewX(-18deg); }
+        .hero-letter:hover, .hero-letter:focus-visible { color: rgba(255,255,255,.74); filter: drop-shadow(0 7px 0 rgba(7,66,91,.13)) drop-shadow(0 20px 22px rgba(0,128,171,.25)); transform: translate3d(0, -13px, 25px) rotateX(-8deg) rotateY(var(--letter-tilt, -4deg)) scale(1.08); }
+        .hero-space { width: .24em; -webkit-text-stroke: 0; filter: none; }
         .hero-copy p, .page-head p, .detail-hero p, .content-card p { color: var(--muted); line-height: 1.45; }
         .hero-image { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 22px; box-shadow: 0 20px 46px rgba(31,55,72,.18); }
         .home-invitation-card { position: relative; display: grid; align-content: center; gap: 11px; min-width: 0; padding: 14px; border: 1px solid rgba(255,255,255,.78); border-radius: 24px; background: linear-gradient(145deg, rgba(255,255,255,.62), rgba(236,248,246,.48)); box-shadow: 0 18px 38px rgba(31,55,72,.14); }
@@ -4688,17 +4690,6 @@ const TYPES = {
         .home-invitation-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 4px 3px; color: #123348; font-size: .82rem; font-weight: 900; text-decoration: none; }
         .home-invitation-link span { color: #1c8b78; font-size: 1.2rem; transition: transform .18s ease; }
         .home-invitation-link:hover span { transform: translateX(4px); }
-        .home-bible-3d { position: relative; display: grid; align-content: center; gap: 10px; min-width: 0; min-height: 360px; padding: 15px; border: 1px solid rgba(255,255,255,.56); border-radius: 24px; background: radial-gradient(circle at 50% 42%, rgba(255,255,255,.26), rgba(219,242,239,.12) 52%, rgba(18,51,72,.08)); box-shadow: inset 0 1px 0 rgba(255,255,255,.34), 0 18px 38px rgba(31,55,72,.1); overflow: hidden; }
-        .home-bible-3d::before { content: ""; position: absolute; width: 220px; height: 220px; left: 50%; top: 49%; transform: translate(-50%, -50%); border-radius: 50%; background: rgba(0,159,218,.12); filter: blur(24px); pointer-events: none; }
-        .home-bible-3d-head { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
-        .home-bible-3d-head .eyebrow { margin: 0; color: #1c8b78; }
-        .home-bible-3d-spark { color: #f0ab00; font-size: 1.1rem; animation: bibleSpark 2.5s ease-in-out infinite; }
-        @keyframes bibleSpark { 0%, 100% { transform: rotate(0deg) scale(.92); opacity: .62; } 50% { transform: rotate(18deg) scale(1.12); opacity: 1; } }
-        .home-bible-3d-frame { position: relative; z-index: 1; width: 100%; aspect-ratio: 1 / .9; min-height: 280px; overflow: hidden; border-radius: 18px; background: transparent; }
-        .home-bible-3d-frame iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; opacity: .52; filter: saturate(.82) brightness(1.08); pointer-events: none; }
-        .home-bible-3d-credit { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 8px; padding: 0 4px 2px; color: #123348; font-size: .75rem; font-weight: 900; text-decoration: none; }
-        .home-bible-3d-credit span { color: #1c8b78; font-size: 1rem; transition: transform .18s ease; }
-        .home-bible-3d-credit:hover span { transform: translate(2px, -2px); }
         .event-card-public > img { width: 100%; aspect-ratio: 16 / 10; object-fit: contain; border-radius: 22px; background: rgba(18,51,72,.08); box-shadow: 0 20px 46px rgba(31,55,72,.18); }
         .detail-hero > img { display: block; width: 100%; height: auto; max-height: 680px; min-height: 220px; object-fit: contain; border-radius: 22px; background: rgba(18,51,72,.08); box-shadow: 0 20px 46px rgba(31,55,72,.18); }
         .home-hero .hero-image { animation: heroFloat 7s ease-in-out infinite; }
@@ -4958,7 +4949,6 @@ const TYPES = {
         .radio-widget.is-playing .radio-toggle::before { content: "Ⅱ"; font-size: .8rem; }
         @media (max-width: 900px) {
           .home-hero, .detail-hero, .split-grid, .agenda-grid, .admin-layout, .login-card, .decom-grid, .decom-board { grid-template-columns: 1fr; }
-          .home-hero.has-bible-3d { grid-template-columns: 1fr; }
           .home-welcome { grid-template-columns: 1fr; }
           .admin-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
           .decom-editor { position: static; }
@@ -4978,8 +4968,6 @@ const TYPES = {
           .platform-nav.open { display: flex; }
           .platform-nav a { justify-content: flex-start; }
           .home-hero, .page-head, .content-card, .calendar-page, .view-switch, .month-strip, .filters, .login-card, .detail-hero { padding: 12px; border-radius: 18px; }
-          .home-bible-3d { min-height: 0; padding: 12px; }
-          .home-bible-3d-frame { min-height: 240px; }
           .home-kicker { margin-bottom: 18px; font-size: .68rem; }
           .home-actions { align-items: stretch; flex-direction: column; }
           .home-actions a, .radio-home-action { width: 100%; justify-content: center; text-align: center; }
