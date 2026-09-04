@@ -7,7 +7,7 @@ const DEFAULT_FOLDERS = {
   event: "1Z3C25CEZT_spPTYfe9ktHHwbcRWIUjcn",
   multimedia: "1Av4jSQaDTimZwSIOcX58JyhCf2uLUo69",
   biblical: "1CQouw6irDWXEzlSHkbJM5NQlf7jPKwA1",
-  music: "1TQTIz_Vi7BN8CMkBIIMp2U98GF7dnbs6",
+  music: "1yHRYX-6SkDjqNxJT7pZAJDjVgci2nGdP",
 };
 
 function corsHeaders(req: Request) {

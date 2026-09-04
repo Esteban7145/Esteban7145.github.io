@@ -1341,7 +1341,7 @@ const TYPES = {
         leaderBucket: "leader-submissions",
         driveFunction: "drive-upload"
       };
-      const MUSIC_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1TQTIz_Vi7BN8CMkBIIMp2U98GF7dnbs6";
+      const MUSIC_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1yHRYX-6SkDjqNxJT7pZAJDjVgci2nGdP";
       const cloud = {
         enabled: false,
         ready: false,
