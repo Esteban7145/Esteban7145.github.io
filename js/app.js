@@ -4062,7 +4062,8 @@ const TYPES = {
 
       function isLeader() {
         const profile = leaderProfile();
-        return Boolean(cloud.enabled && cloud.ready && !isAdmin() && profile?.committee);
+        const validCommittee = COMMITTEES.some(([key]) => key !== "ipuc" && key === profile?.committee);
+        return Boolean(cloud.enabled && cloud.ready && !isAdmin() && validCommittee);
       }
 
       function leaderCanManageEvent(event) {
