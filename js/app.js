@@ -2038,7 +2038,7 @@ const TYPES = {
         const events = eventsForPlatformDate(today);
         const main = events[0];
         const reflection = reflectionForDate(today);
-        const mainInvitation = main && ((main.image && isImage(main.image)) || (main.invitations?.main && isImage(main.invitations.main)) || isRegularSundayWorship(main));
+        const mainInvitation = main && main.type === "culto" && ((main.image && isImage(main.image)) || (main.invitations?.main && isImage(main.invitations.main)) || isRegularSundayWorship(main));
         const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, true) : "";
         reflectionIsActive = Boolean(reflectionMarkup);
         if (reflectionIsActive) {
@@ -4403,6 +4403,8 @@ const TYPES = {
         .home-hero, .page-head, .content-card, .calendar-page, .view-switch, .month-strip, .filters, .login-card { border-radius: 26px; padding: 18px; }
         .home-hero, .detail-hero { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr); gap: 18px; align-items: center; }
         .home-hero { grid-template-columns: minmax(0, 1.12fr) minmax(280px, .88fr); min-height: 430px; }
+        .home-hero:not(.has-today-invitation) { grid-template-columns: 1fr; }
+        .home-hero:not(.has-today-invitation) .hero-copy { width: 100%; }
         .home-hero, .home-welcome, .type-shortcuts, .split-grid > article { opacity: 0; transform: translateY(18px); animation: homeReveal .65s cubic-bezier(.2,.75,.25,1) var(--reveal-delay, 0ms) forwards; }
         .home-hero.is-visible, .home-welcome.is-visible, .type-shortcuts.is-visible, .split-grid > article.is-visible { opacity: 1; transform: translateY(0); }
         @keyframes homeReveal { to { opacity: 1; transform: translateY(0); } }
@@ -4413,7 +4415,7 @@ const TYPES = {
         @keyframes livePulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(28,139,120,.11); } 50% { box-shadow: 0 0 0 9px rgba(28,139,120,0); } }
         .home-lead { max-width: 600px; font-size: 1.03rem; }
         .home-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 18px; }
-        .reflection-media { width: min(100%, 940px); margin: 20px auto 0; overflow: hidden; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(7,28,43,.28); box-shadow: 0 14px 30px rgba(13,52,66,.16); }
+        .reflection-media { width: min(100%, 1040px); margin: 20px auto 0; overflow: hidden; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(7,28,43,.28); box-shadow: 0 14px 30px rgba(13,52,66,.16); }
         .reflection-media iframe, .reflection-media video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; object-fit: cover; }
         .reflection-media audio { display: block; width: 100%; min-height: 48px; }
         .radio-home-action { min-height: 44px; padding: 0 15px; border: 1px solid rgba(11,59,76,.12); border-radius: 13px; background: rgba(255,255,255,.7); color: #123348; font: inherit; font-weight: 900; cursor: pointer; transition: transform .18s ease, background .18s ease; }
