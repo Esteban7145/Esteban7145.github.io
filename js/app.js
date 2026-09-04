@@ -1555,7 +1555,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-musica-widget-11").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-musica-widget-12").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
       setupChurchMusic();
@@ -4307,9 +4307,15 @@ const TYPES = {
         const item = playlist[APP_STATE.musicIndex] || playlist[0];
         if (hasMusic) {
           APP_STATE.musicIndex = Math.max(0, playlist.indexOf(item));
-          const source = item.audioUrl || item.url || "";
+          // Drive redirige la URL /uc a otra dirección. Para <audio> resulta
+          // más estable usar directamente el endpoint que soporta rangos y
+          // devuelve audio/mpeg sin la página intermedia de Drive.
+          const source = item.id
+            ? `https://drive.usercontent.google.com/download?id=${encodeURIComponent(String(item.id))}&export=media`
+            : (item.audioUrl || item.url || "");
           if (source && audio.dataset.trackId !== String(item.id || source)) {
             audio.dataset.trackId = String(item.id || source);
+            audio.dataset.fallbackTried = "";
             audio.src = source;
             audio.load();
           }
@@ -4333,6 +4339,17 @@ const TYPES = {
         audio.onplay = () => setupChurchMusic();
         audio.onpause = () => setupChurchMusic();
         audio.onerror = () => {
+          const currentItem = (APP_STATE.musicPlaylist || [])[APP_STATE.musicIndex];
+          const currentId = currentItem?.id ? String(currentItem.id) : "";
+          const fallback = currentId
+            ? `https://drive.google.com/uc?export=media&id=${encodeURIComponent(currentId)}`
+            : "";
+          if (fallback && audio.dataset.fallbackTried !== currentId && audio.src !== fallback) {
+            audio.dataset.fallbackTried = currentId;
+            audio.src = fallback;
+            audio.load();
+            return;
+          }
           const status = document.getElementById("musicStatus");
           if (status) status.textContent = "No se pudo reproducir esta canción";
         };
