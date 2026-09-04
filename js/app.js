@@ -1224,6 +1224,8 @@ const TYPES = {
       APP_STATE.music = APP_STATE.music || null;
       APP_STATE.weeklySchedule = APP_STATE.weeklySchedule || null;
       APP_STATE.decomTurns = APP_STATE.decomTurns || {};
+      APP_STATE.committeeLeaders = APP_STATE.committeeLeaders || [];
+      APP_STATE.leaderSubmissions = APP_STATE.leaderSubmissions || [];
 
       const ADMIN_USER = "DECOMVILLADELRIO";
       const FIREBASE_CLOUD = {
@@ -1245,13 +1247,16 @@ const TYPES = {
       const SUPABASE_CONFIG = {
         url: "https://qgucwxgwehkualhfnckt.supabase.co",
         publishableKey: "sb_publishable_ZqqjaA95z6fwMSmQ8Rok9g_Wqhgc0ym",
-        storageBucket: "event-media"
+        storageBucket: "event-media",
+        leaderBucket: "leader-submissions"
       };
       const cloud = {
         enabled: false,
         ready: false,
         storageReady: false,
+        leaderStorageReady: false,
         storageError: "",
+        leaderStorageError: "",
         error: "",
         user: null,
         app: null,
@@ -1262,7 +1267,8 @@ const TYPES = {
         dbMod: null,
         storageMod: null,
         unsubscribers: [],
-        decomUnsubscribe: null
+        decomUnsubscribe: null,
+        privateUnsubscribers: []
       };
       let reflectionIsActive = false;
       let liveVisitorsChannel = null;
@@ -1481,6 +1487,7 @@ const TYPES = {
         if (route.name === "evento") return renderEventDetail(route.id);
         if (route.name === "admin") {
           if (isAdmin()) return renderAdminPage();
+          if (isLeader()) return renderLeaderPage();
           if (isDecomMember()) return renderDecomOnlyPage();
           return renderLoginPage();
         }
@@ -1706,11 +1713,15 @@ const TYPES = {
           cloud.enabled = true;
           cloud.ready = true;
           cloud.error = "";
-          cloud.storageReady = await checkSupabaseStorageAvailability();
+          cloud.storageReady = await checkSupabaseStorageAvailability(SUPABASE_CONFIG.storageBucket, "event-media");
+          // El bucket privado requiere sesión para consultar su contenido. Su existencia
+          // queda garantizada por la migración; el permiso real se valida al cargar.
+          cloud.leaderStorageReady = true;
           setupLiveVisitors();
           supabaseAuthAdapter.onAuthStateChanged(cloud.auth, user => {
             cloud.user = user;
             setupDecomListener();
+            setupPrivateCloudListeners();
             refreshAdminNav();
             const route = parseRoute();
             if (route.name === "admin" || route.name === "login") renderRoute();
@@ -1799,7 +1810,7 @@ const TYPES = {
       }
 
       function tableName(collectionName) {
-        return { decomTurns: "decom_turns" }[collectionName] || collectionName;
+        return { decomTurns: "decom_turns", committeeLeaders: "committee_leaders", leaderSubmissions: "leader_submissions" }[collectionName] || collectionName;
       }
 
       function syncLocalCloudDoc(collectionName, id, data) {
@@ -1807,6 +1818,16 @@ const TYPES = {
         if (collectionName === "events") APP_STATE.events[id] = { ...(APP_STATE.events[id] || {}), ...next };
         if (collectionName === "reflections") APP_STATE.reflections[id] = { ...(APP_STATE.reflections[id] || {}), ...next };
         if (collectionName === "decomTurns") APP_STATE.decomTurns[id] = { ...(APP_STATE.decomTurns[id] || {}), ...next };
+        if (collectionName === "committeeLeaders") {
+          const existing = APP_STATE.committeeLeaders.findIndex(item => item.id === id);
+          if (existing >= 0) APP_STATE.committeeLeaders[existing] = { ...APP_STATE.committeeLeaders[existing], ...next };
+          else APP_STATE.committeeLeaders.push(next);
+        }
+        if (collectionName === "leaderSubmissions") {
+          const existing = APP_STATE.leaderSubmissions.findIndex(item => item.id === id);
+          if (existing >= 0) APP_STATE.leaderSubmissions[existing] = { ...APP_STATE.leaderSubmissions[existing], ...next };
+          else APP_STATE.leaderSubmissions.push(next);
+        }
         if (collectionName === "announcements") {
           const existing = APP_STATE.announcements.findIndex(item => item.id === id);
           if (existing >= 0) APP_STATE.announcements[existing] = { ...APP_STATE.announcements[existing], ...next };
@@ -1826,26 +1847,26 @@ const TYPES = {
         if (code.includes("invalid refresh token") || code.includes("refresh token not found")) {
           return "La sesión administrativa venció. Recarga la página e inicia sesión nuevamente.";
         }
-        if (code.includes("row-level security") || code.includes("permission denied") || code.includes("not authorized")) {
+        if (code.includes("row-level security") || code.includes("new row violates") || code.includes("permission denied") || code.includes("not authorized")) {
           return "Supabase rechazó la operación por permisos. Revisa las políticas de la tabla o inicia sesión con una cuenta administradora.";
         }
         return error?.message || "No se pudo completar la acción. Inténtalo de nuevo.";
       }
 
       function toSupabaseRow(data) {
-        const aliases = { startTime: "start_time", endTime: "end_time", place: "location", organizer: "department", eventId: "related_event_id", startsAt: "starts_at", expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at", createdBy: "created_by", specialEventIds: "special_event_ids", weeklySchedule: "weekly_schedule", autoStyle: "auto_style" };
+        const aliases = { startTime: "start_time", endTime: "end_time", place: "location", organizer: "department", eventId: "related_event_id", submissionEventId: "event_id", eventLabel: "event_label", leaderEmail: "leader_email", submissionTitle: "request_title", startsAt: "starts_at", expiresAt: "expires_at", createdAt: "created_at", updatedAt: "updated_at", createdBy: "created_by", specialEventIds: "special_event_ids", weeklySchedule: "weekly_schedule", autoStyle: "auto_style" };
         const row = {};
-        Object.entries(data || {}).forEach(([key, value]) => { const target = aliases[key] || key; if (target in { id: 1, title: 1, description: 1, date: 1, start_time: 1, end_time: 1, type: 1, status: 1, location: 1, department: 1, responsible: 1, featured: 1, published: 1, tags: 1, observations: 1, media: 1, gallery: 1, invitations: 1, image: 1, attachments: 1, custom: 1, deleted: 1, auto_style: 1, created_at: 1, updated_at: 1, created_by: 1, related_event_id: 1, priority: 1, starts_at: 1, expires_at: 1, time: 1, assigned: 1, support: 1, special_event_ids: 1, music: 1, weekly_schedule: 1 }) row[target] = value; });
+        Object.entries(data || {}).forEach(([key, value]) => { const target = aliases[key] || key; if (target in { id: 1, title: 1, description: 1, date: 1, start_time: 1, end_time: 1, type: 1, status: 1, location: 1, department: 1, responsible: 1, featured: 1, published: 1, tags: 1, observations: 1, media: 1, gallery: 1, invitations: 1, image: 1, attachments: 1, custom: 1, deleted: 1, auto_style: 1, created_at: 1, updated_at: 1, created_by: 1, related_event_id: 1, priority: 1, starts_at: 1, expires_at: 1, time: 1, assigned: 1, support: 1, special_event_ids: 1, music: 1, weekly_schedule: 1, leader_email: 1, event_id: 1, event_label: 1, request_title: 1, message: 1, files: 1, committee: 1, active: 1 }) row[target] = value; });
         return row;
       }
 
       function fromSupabaseRow(row) {
-        const aliases = { start_time: "startTime", end_time: "endTime", location: "place", department: "organizer", related_event_id: "eventId", starts_at: "startsAt", expires_at: "expiresAt", created_at: "createdAt", updated_at: "updatedAt", created_by: "createdBy", special_event_ids: "specialEventIds", weekly_schedule: "weeklySchedule", auto_style: "autoStyle" };
+        const aliases = { start_time: "startTime", end_time: "endTime", location: "place", department: "organizer", related_event_id: "eventId", event_id: "submissionEventId", event_label: "eventLabel", leader_email: "leaderEmail", request_title: "submissionTitle", starts_at: "startsAt", expires_at: "expiresAt", created_at: "createdAt", updated_at: "updatedAt", created_by: "createdBy", special_event_ids: "specialEventIds", weekly_schedule: "weeklySchedule", auto_style: "autoStyle" };
         return Object.fromEntries(Object.entries(row || {}).map(([key, value]) => [aliases[key] || key, value]));
       }
 
       const supabaseStorageAdapter = {
-        ref: (_storage, path) => ({ path }),
+        ref: (_storage, path, bucket = SUPABASE_CONFIG.storageBucket) => ({ path, bucket }),
         async uploadBytes(ref, file, options) {
           const authClient = cloud.app?.auth;
           if (!authClient?.getSession) throw new Error("No se pudo acceder a la sesión administrativa. Recarga la página e inicia sesión nuevamente.");
@@ -1853,7 +1874,7 @@ const TYPES = {
           if (error) throw error;
           const accessToken = data?.session?.access_token;
           if (!accessToken) throw new Error("La sesión administrativa expiró. Vuelve a iniciar sesión.");
-          const endpoint = `${SUPABASE_CONFIG.url}/storage/v1/object/${encodeURIComponent(SUPABASE_CONFIG.storageBucket)}/${ref.path.split("/").map(encodeURIComponent).join("/")}`;
+          const endpoint = `${SUPABASE_CONFIG.url}/storage/v1/object/${encodeURIComponent(ref.bucket || SUPABASE_CONFIG.storageBucket)}/${ref.path.split("/").map(encodeURIComponent).join("/")}`;
           return new Promise((resolve, reject) => {
             const request = new XMLHttpRequest();
             request.open("POST", endpoint);
@@ -1876,31 +1897,40 @@ const TYPES = {
             request.send(file);
           });
         },
-        async getDownloadURL(ref) { const { data } = cloud.storage.from(SUPABASE_CONFIG.storageBucket).getPublicUrl(ref.path); return data.publicUrl; },
-        async deleteObject(ref) { return cloud.storage.from(SUPABASE_CONFIG.storageBucket).remove([ref.path]); }
+        async getDownloadURL(ref) { const { data } = cloud.storage.from(ref.bucket || SUPABASE_CONFIG.storageBucket).getPublicUrl(ref.path); return data.publicUrl; },
+        async getSignedDownloadURL(ref, expiresIn = 3600) { const { data, error } = await cloud.storage.from(ref.bucket || SUPABASE_CONFIG.storageBucket).createSignedUrl(ref.path, expiresIn); if (error) throw error; return data.signedUrl; },
+        async deleteObject(ref) { return cloud.storage.from(ref.bucket || SUPABASE_CONFIG.storageBucket).remove([ref.path]); }
       };
 
-      async function checkSupabaseStorageAvailability() {
+      async function checkSupabaseStorageAvailability(bucket = SUPABASE_CONFIG.storageBucket, label = bucket) {
         try {
-          const response = await fetch(`${SUPABASE_CONFIG.url}/storage/v1/object/list/${encodeURIComponent(SUPABASE_CONFIG.storageBucket)}`, {
+          const headers = { apikey: SUPABASE_CONFIG.publishableKey, "Content-Type": "application/json" };
+          const sessionResult = await Promise.resolve(cloud.app?.auth?.getSession?.()).catch(() => null);
+          const accessToken = sessionResult?.data?.session?.access_token;
+          if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+          const response = await fetch(`${SUPABASE_CONFIG.url}/storage/v1/object/list/${encodeURIComponent(bucket)}`, {
             method: "POST",
-            headers: { apikey: SUPABASE_CONFIG.publishableKey, "Content-Type": "application/json" },
+            headers,
             body: JSON.stringify({ prefix: "", limit: 1, offset: 0 })
           });
           const body = await response.json().catch(() => null);
           const description = `${body?.code || ""} ${body?.message || ""} ${body?.error || ""}`.toLowerCase();
           if (response.status === 404 || description.includes("nosuchbucket") || description.includes("bucket not found")) {
-            cloud.storageError = "No existe el bucket público «event-media» en Supabase.";
+            if (bucket === SUPABASE_CONFIG.storageBucket) cloud.storageError = `No existe el almacenamiento «${label}» en Supabase.`;
+            if (bucket === SUPABASE_CONFIG.leaderBucket) cloud.leaderStorageError = `No existe el almacenamiento «${label}» en Supabase.`;
             return false;
           }
           if (response.status >= 500) {
-            cloud.storageError = "No se pudo comprobar el almacenamiento de Supabase. Inténtalo de nuevo en unos minutos.";
+            if (bucket === SUPABASE_CONFIG.storageBucket) cloud.storageError = "No se pudo comprobar el almacenamiento de Supabase. Inténtalo de nuevo en unos minutos.";
+            if (bucket === SUPABASE_CONFIG.leaderBucket) cloud.leaderStorageError = "No se pudo comprobar el almacenamiento privado. Inténtalo de nuevo en unos minutos.";
             return false;
           }
-          cloud.storageError = "";
+          if (bucket === SUPABASE_CONFIG.storageBucket) cloud.storageError = "";
+          if (bucket === SUPABASE_CONFIG.leaderBucket) cloud.leaderStorageError = "";
           return true;
         } catch (error) {
-          cloud.storageError = "No se pudo comprobar el almacenamiento de Supabase. Revisa tu conexión e inténtalo de nuevo.";
+          if (bucket === SUPABASE_CONFIG.storageBucket) cloud.storageError = "No se pudo comprobar el almacenamiento de Supabase. Revisa tu conexión e inténtalo de nuevo.";
+          if (bucket === SUPABASE_CONFIG.leaderBucket) cloud.leaderStorageError = "No se pudo comprobar el almacenamiento privado. Revisa tu conexión e inténtalo de nuevo.";
           return false;
         }
       }
@@ -2191,7 +2221,7 @@ const TYPES = {
       function renderLoginPage() {
         view().innerHTML = `
           <section class="login-card glass">
-            <div><p class="eyebrow">Área privada</p><h1>Acceso administrador</h1><p>Gestiona eventos, anuncios y archivos con una cuenta autorizada.</p>${cloudNotice()}</div>
+            <div><p class="eyebrow">Área privada</p><h1>Acceso de equipo</h1><p>Administradores y líderes de comité pueden entrar con su correo autorizado.</p>${cloudNotice()}</div>
             <form id="loginForm" class="form-grid" novalidate>
               <label>Correo electrónico<input id="loginUser" type="email" autocomplete="username" required></label>
               <label>Contraseña<input id="loginPass" type="password" autocomplete="current-password" required></label>
@@ -2216,9 +2246,10 @@ const TYPES = {
           message.textContent = "Escribe tu correo y contraseña para continuar.";
           return;
         }
-        const email = resolveAdminEmail(user);
-        if (!email) {
-          message.textContent = "Este correo no está autorizado para el panel de administración.";
+          const normalizedUser = String(user || "").trim().toLowerCase();
+          const email = resolveAdminEmail(user) || (normalizedUser.includes("@") ? normalizedUser : "");
+          if (!email) {
+           message.textContent = "Escribe un correo autorizado de administrador o líder de comité.";
           return;
         }
         if (!cloud.enabled || !cloud.ready) {
@@ -2311,12 +2342,61 @@ const TYPES = {
         });
       }
 
+      function setupPrivateCloudListeners() {
+        cloud.privateUnsubscribers.forEach(unsubscribe => unsubscribe?.());
+        cloud.privateUnsubscribers = [];
+        APP_STATE.committeeLeaders = [];
+        APP_STATE.leaderSubmissions = [];
+        if (!cloud.user || !cloud.db || !cloud.dbMod) return;
+        ["committeeLeaders", "leaderSubmissions"].forEach(collectionName => {
+          cloud.privateUnsubscribers.push(cloud.dbMod.onSnapshot(cloud.dbMod.collection(cloud.db, collectionName), snapshot => {
+            const items = snapshot.docs.map(item => normalizeCloudDoc(item.id, item.data()));
+            if (collectionName === "committeeLeaders") APP_STATE.committeeLeaders = items;
+            if (collectionName === "leaderSubmissions") APP_STATE.leaderSubmissions = items.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+            const route = parseRoute();
+            if (route.name === "admin" || route.name === "login") renderRoute();
+          }, error => {
+            cloud.error = error.message;
+            const route = parseRoute();
+            if (route.name === "admin" || route.name === "login") renderRoute();
+          }));
+        });
+      }
+
       async function signOutAdmin() {
         if (cloud.auth && cloud.authMod) {
           await cloud.authMod.signOut(cloud.auth);
         }
         history.pushState({}, "", "/");
         renderRoute();
+      }
+
+      function renderLeaderProfilesModule() {
+        const leaders = (APP_STATE.committeeLeaders || []).slice().sort((a, b) => committeeDisplay(a.committee).localeCompare(committeeDisplay(b.committee)));
+        return `<section class="admin-module" data-admin-module="lideres" ${platform.adminSection === "lideres" ? "" : "hidden"}>
+          <article class="content-card glass admin-card-wide leader-admin-module">
+            <div class="section-title"><p class="eyebrow">Accesos privados</p><h2>Líderes por comité</h2><p>Autoriza el correo del líder. La contraseña se crea aparte en Supabase Auth; nunca se guarda aquí.</p></div>
+            <div class="leader-admin-form form-grid">
+              <label class="full">Correo del líder<input id="leaderEmail" type="email" placeholder="ejemplo@correo.com" autocomplete="off"></label>
+              <label>Comité<select id="leaderCommittee">${COMMITTEES.filter(([key]) => key !== "ipuc").map(([key, label]) => `<option value="${key}">${escapeHtml(label)}</option>`).join("")}</select></label>
+              <button class="primary-link" id="saveLeaderProfile" type="button">Autorizar líder</button>
+            </div>
+            <div class="leader-directory"><h3>Correos autorizados</h3>${leaders.length ? leaders.map(leader => `<article class="leader-directory-row"><div><strong>${escapeHtml(leader.email)}</strong><span>${escapeHtml(committeeDisplay(leader.committee))}</span></div><button class="small-action danger-action" type="button" data-delete-leader="${escapeHtml(leader.id)}">Quitar acceso</button></article>`).join("") : emptyText("Todavía no hay líderes registrados.")}</div>
+          </article>
+        </section>`;
+      }
+
+      function renderLeaderSubmissionsModule() {
+        const submissions = (APP_STATE.leaderSubmissions || []).slice().sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+        return `<section class="admin-module" data-admin-module="solicitudes" ${platform.adminSection === "solicitudes" ? "" : "hidden"}>
+          <article class="content-card glass admin-card-wide leader-admin-module">
+            <div class="section-title"><p class="eyebrow">Comunicación del equipo</p><h2>Solicitudes de líderes</h2><p>Lee lo que necesita cada comité y abre sus archivos privados con un enlace temporal.</p></div>
+            <div class="leader-submission-list">${submissions.length ? submissions.map(submission => {
+              const files = Array.isArray(submission.files) ? submission.files : [];
+              return `<article class="leader-submission-card"><div class="leader-submission-head"><div><span class="eyebrow">${escapeHtml(committeeDisplay(submission.committee))}</span><h3>${escapeHtml(submission.submissionTitle || "Solicitud de material")}</h3><p>${escapeHtml(submission.leaderEmail || "Líder autorizado")} · ${escapeHtml(formatDateShort(String(submission.createdAt || dateKey(today)).slice(0, 10)))}</p></div><span class="submission-status status-${escapeHtml(submission.status || "pendiente")}">${escapeHtml(capitalize(submission.status || "pendiente"))}</span></div>${submission.eventLabel ? `<p><strong>Evento:</strong> ${escapeHtml(submission.eventLabel)}</p>` : submission.submissionEventId ? `<p><strong>Evento:</strong> ${escapeHtml(platformEventById(submission.submissionEventId)?.title || submission.submissionEventId)}</p>` : ""}${submission.message ? `<p class="leader-message">${escapeHtml(submission.message)}</p>` : ""}${files.length ? `<div class="private-assets"><strong>Material privado</strong><div>${files.map((file, index) => `<button class="small-action" type="button" data-open-private-asset data-submission-id="${escapeHtml(submission.id)}" data-file-index="${index}">Abrir ${escapeHtml(file.name || `archivo ${index + 1}`)}</button>`).join("")}</div></div>` : `<p class="file-meta">No adjuntó archivos.</p>`}<div class="button-row submission-actions"><button class="small-action" type="button" data-submission-status="pendiente" data-submission-id="${escapeHtml(submission.id)}">Pendiente</button><button class="small-action" type="button" data-submission-status="atendida" data-submission-id="${escapeHtml(submission.id)}">Marcar atendida</button><button class="small-action" type="button" data-submission-status="rechazada" data-submission-id="${escapeHtml(submission.id)}">Cerrar solicitud</button></div></article>`;
+            }).join("") : emptyText("Todavía no hay solicitudes de líderes.")}</div>
+          </article>
+        </section>`;
       }
 
       function renderAdminPage() {
@@ -2337,7 +2417,7 @@ const TYPES = {
             <article><strong>${APP_STATE.announcements?.length || 0}</strong><span>Anuncios publicados</span></article>
           </section>
           <nav class="admin-tabs glass" aria-label="Módulos de administración">
-            ${[["eventos", "Eventos", "Crear o editar"], ["material", "Material", "Subir archivos"], ["anuncios", "Anuncios", "Publicar aviso"], ["reflexiones", "Reflexiones", "Mensaje diario"], ["decom", "DECOM", "Turnos internos"]].map(([key, label, hint]) => `<button type="button" class="admin-tab ${activeAdminSection === key ? "active" : ""}" data-admin-section="${key}"><strong>${label}</strong><span>${hint}</span></button>`).join("")}
+            ${[["eventos", "Eventos", "Crear o editar"], ["material", "Material", "Subir archivos"], ["anuncios", "Anuncios", "Publicar aviso"], ["reflexiones", "Reflexiones", "Mensaje diario"], ["solicitudes", "Solicitudes", "Mensajes de líderes"], ["lideres", "Líderes", "Correos autorizados"], ["decom", "DECOM", "Turnos internos"]].map(([key, label, hint]) => `<button type="button" class="admin-tab ${activeAdminSection === key ? "active" : ""}" data-admin-section="${key}"><strong>${label}</strong><span>${hint}</span></button>`).join("")}
           </nav>
           <section class="admin-layout admin-workspace">
             <section class="admin-module" data-admin-module="eventos" ${moduleVisibility("eventos")}>
@@ -2397,6 +2477,8 @@ const TYPES = {
             <section class="admin-module" data-admin-module="decom" ${moduleVisibility("decom")}>
             ${renderDecomPanel()}
             </section>
+            ${renderLeaderSubmissionsModule()}
+            ${renderLeaderProfilesModule()}
           </section>
         `;
         bindAdmin();
@@ -2415,6 +2497,28 @@ const TYPES = {
         const logout = view().querySelector("[data-logout]");
         if (logout) logout.onclick = () => signOutAdmin();
         bindDecomControls();
+      }
+
+      function renderLeaderPage() {
+        const profile = leaderProfile();
+        const events = leaderEvents();
+        const email = profile?.email || cloud.user?.email || "";
+        const ownSubmissions = (APP_STATE.leaderSubmissions || []).filter(item => item.createdBy === cloud.user?.id || String(item.leaderEmail || "").toLowerCase() === email.toLowerCase());
+        view().innerHTML = `<section class="page-head glass leader-welcome"><div><p class="eyebrow">Espacio privado de líderes</p><h1>${escapeHtml(committeeDisplay(profile?.committee))}</h1><p>Envía a DECOM las imágenes, videos y solicitudes que necesita tu comité.</p><div class="cloud-ok">Tus archivos son privados: solo tú y el equipo de administración pueden verlos.</div></div><button class="small-action" data-logout type="button">Salir</button></section>
+          <section class="admin-summary leader-summary"><article><strong>${events.length}</strong><span>Eventos disponibles</span></article><article><strong>${ownSubmissions.length}</strong><span>Solicitudes enviadas</span></article><article><strong>${escapeHtml(committeeDisplay(profile?.committee))}</strong><span>Comité autorizado</span></article></section>
+          <section class="admin-layout leader-workspace"><article class="content-card glass leader-form-card"><div class="section-title"><p class="eyebrow">Comunicación con DECOM</p><h2>Enviar material o solicitud</h2><p>Elige el evento, explica lo que necesitas y adjunta imágenes o videos.</p></div><div class="form-grid"><label class="full">Evento relacionado<select id="leaderEventSelect"><option value="">Selecciona un evento</option>${events.map(event => `<option value="${escapeHtml(event.id)}">${escapeHtml(formatDateShort(event.date))} · ${escapeHtml(event.title)}</option>`).join("")}</select></label><label class="full">¿Qué necesitas?<input id="leaderRequestTitle" placeholder="Ej. Invitación para proyectar el domingo"></label><label class="full">Mensaje para DECOM<textarea id="leaderRequestMessage" placeholder="Describe el material o la ayuda que necesitas."></textarea></label><label class="full file-dropzone leader-file-drop">Imágenes o videos<input id="leaderSubmissionFiles" type="file" accept="image/*,video/*,audio/*" multiple><small>Estos archivos quedarán privados hasta que Administración decida publicarlos.</small></label><button class="primary-link full" id="saveLeaderSubmission" type="button">Enviar a DECOM</button></div></article><article class="content-card glass leader-history-card"><div class="section-title"><p class="eyebrow">Seguimiento</p><h2>Mis solicitudes</h2></div><div class="leader-submission-list">${ownSubmissions.length ? ownSubmissions.map(submission => `<article class="leader-submission-card"><div class="leader-submission-head"><div><span class="eyebrow">${escapeHtml(committeeDisplay(submission.committee))}</span><h3>${escapeHtml(submission.submissionTitle || "Solicitud de material")}</h3><p>${escapeHtml(String(submission.createdAt || "").slice(0, 10) || "Enviada recientemente")}</p></div><span class="submission-status status-${escapeHtml(submission.status || "pendiente")}">${escapeHtml(capitalize(submission.status || "pendiente"))}</span></div>${submission.message ? `<p class="leader-message">${escapeHtml(submission.message)}</p>` : ""}${Array.isArray(submission.files) && submission.files.length ? `<div class="private-assets"><strong>Mis archivos</strong><div>${submission.files.map((file, index) => `<button class="small-action" type="button" data-open-private-asset data-submission-id="${escapeHtml(submission.id)}" data-file-index="${index}">Abrir ${escapeHtml(file.name || `archivo ${index + 1}`)}</button>`).join("")}</div></div>` : ""}</article>`).join("") : emptyText("Aún no has enviado solicitudes.")}</div></article></section>`;
+        const logout = view().querySelector("[data-logout]");
+        if (logout) logout.onclick = () => signOutAdmin();
+        bindLeaderPage();
+      }
+
+      function bindLeaderPage() {
+        bindFileDropzones();
+        const saveButton = document.getElementById("saveLeaderSubmission");
+        if (saveButton) saveButton.onclick = runAdminAction(saveLeaderSubmission);
+        view().querySelectorAll("[data-open-private-asset]").forEach(button => {
+          button.onclick = runAdminAction(() => openPrivateSubmissionAsset(button.dataset.submissionId, Number(button.dataset.fileIndex || 0)));
+        });
       }
 
       function bindCalendarControls() {
@@ -3068,6 +3172,17 @@ const TYPES = {
         }
         document.getElementById("saveReflection").onclick = runAdminAction(savePlatformReflection);
         document.getElementById("saveAnnouncement2").onclick = runAdminAction(savePlatformAnnouncement);
+        const saveLeaderButton = document.getElementById("saveLeaderProfile");
+        if (saveLeaderButton) saveLeaderButton.onclick = runAdminAction(saveLeaderProfile);
+        view().querySelectorAll("[data-delete-leader]").forEach(button => {
+          button.onclick = runAdminAction(() => deleteLeaderProfile(button.dataset.deleteLeader));
+        });
+        view().querySelectorAll("[data-submission-status]").forEach(button => {
+          button.onclick = runAdminAction(() => updateLeaderSubmissionStatus(button.dataset.submissionId, button.dataset.submissionStatus));
+        });
+        view().querySelectorAll("[data-open-private-asset]").forEach(button => {
+          button.onclick = runAdminAction(() => openPrivateSubmissionAsset(button.dataset.submissionId, Number(button.dataset.fileIndex || 0)));
+        });
         view().querySelectorAll("[data-remove-asset]").forEach(button => {
           button.onclick = runAdminAction(() => removePlatformAsset(button.dataset.kind, button.dataset.key || "", Number(button.dataset.index || -1)));
         });
@@ -3138,6 +3253,7 @@ const TYPES = {
       function pendingUploadKey(inputId) {
         const input = document.getElementById(inputId);
         if (inputId === "adminEventImage" || inputId === "inlineEventImage") return `event:${input?.dataset.eventId || platform.selectedAdminEvent || "__new__"}:${inputId}`;
+        if (inputId === "leaderSubmissionFiles") return `leader:${cloud.user?.id || "anon"}:${inputId}`;
         const materialId = document.getElementById("materialSelect")?.value || "__new__";
         return `material:${materialId}:${inputId}`;
       }
@@ -3440,6 +3556,46 @@ const TYPES = {
         renderAdminPage();
       }
 
+      async function saveLeaderProfile() {
+        if (!requireCloudAdmin()) return;
+        const email = document.getElementById("leaderEmail")?.value.trim().toLowerCase();
+        const committee = normalizeCommitteeKey(document.getElementById("leaderCommittee")?.value);
+        if (!email || !email.includes("@")) return alert("Escribe un correo válido para el líder.");
+        if (!committee || committee === "ipuc") return alert("Selecciona un comité válido.");
+        const existing = (APP_STATE.committeeLeaders || []).find(item => String(item.email || "").trim().toLowerCase() === email);
+        const id = existing?.id || `leader-${slugify(email)}`;
+        await saveCloudDoc("committeeLeaders", id, { id, email, committee, active: true, createdBy: cloud.user.id });
+        alert("Líder autorizado. Ahora crea o confirma su usuario en Supabase Auth con ese mismo correo.");
+        renderAdminPage();
+      }
+
+      async function deleteLeaderProfile(id) {
+        if (!requireCloudAdmin()) return;
+        const leader = (APP_STATE.committeeLeaders || []).find(item => item.id === id);
+        if (!leader || !confirm(`¿Quitar el acceso de ${leader.email}?`)) return;
+        await cloud.dbMod.deleteDoc(cloud.dbMod.doc(cloud.db, "committeeLeaders", id));
+        APP_STATE.committeeLeaders = APP_STATE.committeeLeaders.filter(item => item.id !== id);
+        alert("Acceso de líder eliminado.");
+        renderAdminPage();
+      }
+
+      async function updateLeaderSubmissionStatus(id, status) {
+        if (!requireCloudAdmin()) return;
+        if (!["pendiente", "atendida", "rechazada"].includes(status)) return;
+        await cloud.dbMod.updateDoc(cloud.dbMod.doc(cloud.db, "leaderSubmissions", id), { status, updatedAt: cloud.dbMod.serverTimestamp() });
+        APP_STATE.leaderSubmissions = APP_STATE.leaderSubmissions.map(item => item.id === id ? { ...item, status } : item);
+        renderAdminPage();
+      }
+
+      async function openPrivateSubmissionAsset(submissionId, fileIndex) {
+        const submission = (APP_STATE.leaderSubmissions || []).find(item => item.id === submissionId);
+        const asset = submission?.files?.[fileIndex];
+        const canOpen = isAdmin() || (isLeader() && submission?.createdBy === cloud.user?.id);
+        if (!asset?.path || !canOpen) return alert("No tienes permiso para abrir este archivo privado.");
+        const url = await cloud.storageMod.getSignedDownloadURL(cloud.storageMod.ref(cloud.storage, asset.path, asset.bucket || SUPABASE_CONFIG.leaderBucket), 3600);
+        window.open(url, "_blank", "noopener");
+      }
+
       async function saveCloudDoc(collectionName, id, data) {
         const payload = stripUndefined({
           ...data,
@@ -3487,6 +3643,46 @@ const TYPES = {
           uploadProgressTimer = window.setTimeout(() => setUploadProgressState({ active: false }), 4500);
           throw error;
         }
+      }
+
+      async function uploadPrivateLeaderFile(file, submissionId) {
+        if (!cloud.leaderStorageReady) throw new Error("El almacenamiento privado de líderes no está disponible todavía.");
+        const safeName = safeFileName(file.name);
+        const path = `${cloud.user.id}/${submissionId}/${Date.now()}-${safeName}`;
+        const fileRef = cloud.storageMod.ref(cloud.storage, path, SUPABASE_CONFIG.leaderBucket);
+        setUploadProgressState({ active: true, label: `Subiendo ${file.name}`, detail: `Material privado · ${humanFileSize(file.size)}`, percent: 0, tone: "loading" });
+        try {
+          await cloud.storageMod.uploadBytes(fileRef, file, { contentType: file.type || "application/octet-stream", onProgress: updateUploadProgress });
+        } catch (error) {
+          setUploadProgressState({ label: "No se pudo completar la carga", detail: cloudActionMessage(error), percent: 0, tone: "error" });
+          window.clearTimeout(uploadProgressTimer);
+          uploadProgressTimer = window.setTimeout(() => setUploadProgressState({ active: false }), 4500);
+          throw error;
+        }
+        return { id: `private-${Date.now()}-${Math.random().toString(16).slice(2)}`, name: file.name, type: file.type || "application/octet-stream", size: file.size, uploadedAt: dateKey(new Date()), path, bucket: SUPABASE_CONFIG.leaderBucket, private: true };
+      }
+
+      async function saveLeaderSubmission() {
+        if (!isLeader()) return alert("Debes entrar con una cuenta de líder autorizada.");
+        if (!cloud.leaderStorageReady) return alert("El almacenamiento privado no está disponible. Recarga la página e inténtalo de nuevo.");
+        const profile = leaderProfile();
+        const eventId = document.getElementById("leaderEventSelect")?.value || null;
+        const selectedEvent = eventId ? leaderEvents().find(event => event.id === eventId) : null;
+        const title = document.getElementById("leaderRequestTitle")?.value.trim();
+        const message = document.getElementById("leaderRequestMessage")?.value.trim();
+        const files = pendingUploadFiles("leaderSubmissionFiles");
+        if (!title && !message && !files.length) return alert("Escribe la solicitud o adjunta al menos un archivo.");
+        const id = `submission-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        const uploaded = [];
+        for (const file of files) {
+          if (!isImage(file) && !isVideo(file) && !isAudio(file)) return alert("Solo se permiten imágenes, videos o audios.");
+          uploaded.push(await uploadPrivateLeaderFile(file, id));
+        }
+        await saveCloudDoc("leaderSubmissions", id, { id, leaderEmail: profile.email, committee: profile.committee, submissionEventId: eventId && APP_STATE.events[eventId] ? eventId : null, eventLabel: selectedEvent ? `${formatDateShort(selectedEvent.date)} · ${selectedEvent.title}` : "", submissionTitle: title || "Solicitud de material", message, files: uploaded, status: "pendiente", createdBy: cloud.user.id });
+        clearPendingUpload("leaderSubmissionFiles");
+        completeUploadProgress("Solicitud enviada correctamente.");
+        alert("Tu solicitud fue enviada a DECOM.");
+        renderLeaderPage();
       }
 
       function setUploadProgressState(next) {
@@ -3827,6 +4023,11 @@ const TYPES = {
           link.href = "/admin";
           return;
         }
+        if (isLeader()) {
+          link.textContent = "Espacio líder";
+          link.href = "/admin";
+          return;
+        }
         if (isDecomMember()) {
           link.textContent = "DECOM";
           link.href = "/admin";
@@ -3838,6 +4039,41 @@ const TYPES = {
 
       function isAdmin() {
         return Boolean(cloud.enabled && cloud.ready && adminEmailAllowed());
+      }
+
+      function normalizeCommitteeKey(value) {
+        const normalized = slugify(value || "");
+        return COMMITTEES.find(([key, label, image, aliases]) => key === normalized || slugify(label) === normalized || aliases.some(alias => slugify(alias) === normalized))?.[0] || normalized;
+      }
+
+      function committeeDisplay(value) {
+        const key = normalizeCommitteeKey(value);
+        return COMMITTEES.find(([committeeKey]) => committeeKey === key)?.[1] || value || "Comité";
+      }
+
+      function leaderProfile() {
+        const email = String(cloud.user?.email || "").trim().toLowerCase();
+        if (!email) return null;
+        const metadata = cloud.user?.app_metadata || {};
+        if (metadata.role === "leader" && metadata.committee) return { email, committee: normalizeCommitteeKey(metadata.committee), source: "metadata" };
+        const saved = (APP_STATE.committeeLeaders || []).find(item => item.active !== false && String(item.email || "").trim().toLowerCase() === email);
+        return saved ? { ...saved, email, committee: normalizeCommitteeKey(saved.committee), source: "directory" } : null;
+      }
+
+      function isLeader() {
+        const profile = leaderProfile();
+        return Boolean(cloud.enabled && cloud.ready && !isAdmin() && profile?.committee);
+      }
+
+      function leaderCanManageEvent(event) {
+        const profile = leaderProfile();
+        if (!profile || !event) return false;
+        if (["ayuno", "vigilia"].includes(event.type)) return true;
+        return selectedCommittee(event) === profile.committee;
+      }
+
+      function leaderEvents() {
+        return platformEventsForYear(today.getFullYear()).filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Cancelado" && leaderCanManageEvent(event)).sort(sortByDate);
       }
 
       function isDecomMember() {
@@ -3993,7 +4229,7 @@ const TYPES = {
         .admin-summary article { display: grid; gap: 3px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(255,255,255,.55); box-shadow: 0 10px 24px rgba(31,55,72,.07); }
         .admin-summary strong { color: #123348; font-size: 1.25rem; font-weight: 950; }
         .admin-summary span { color: var(--muted); font-size: .78rem; font-weight: 850; }
-        .admin-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; padding: 8px; margin-bottom: 16px; }
+        .admin-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; padding: 8px; margin-bottom: 16px; }
         .admin-tab { display: grid; gap: 3px; padding: 11px 12px; border: 1px solid transparent; border-radius: 14px; background: transparent; color: #123348; font: inherit; text-align: left; cursor: pointer; }
         .admin-tab strong { font-size: .9rem; }
         .admin-tab span { color: var(--muted); font-size: .72rem; }
@@ -4190,6 +4426,26 @@ const TYPES = {
         .existing-list article { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px; border-radius: 14px; background: rgba(255,255,255,.50); border: 1px solid rgba(255,255,255,.72); }
         .existing-list span { display: grid; min-width: 0; }
         .existing-list small { color: var(--muted); overflow-wrap: anywhere; }
+        .leader-admin-module, .leader-form-card, .leader-history-card { max-width: 980px; margin: 0 auto; }
+        .leader-admin-form { align-items: end; }
+        .leader-directory, .leader-submission-list { display: grid; gap: 10px; margin-top: 18px; }
+        .leader-directory h3 { margin: 0; color: #123348; font-size: 1rem; }
+        .leader-directory-row, .leader-submission-card { display: grid; gap: 10px; padding: 13px; border: 1px solid rgba(255,255,255,.78); border-radius: 17px; background: rgba(255,255,255,.5); }
+        .leader-directory-row { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+        .leader-directory-row div { display: grid; gap: 3px; min-width: 0; }
+        .leader-directory-row span, .leader-submission-card p { color: var(--muted); font-size: .82rem; }
+        .leader-submission-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+        .leader-submission-head h3 { margin: 3px 0; color: #123348; font-size: 1rem; }
+        .leader-submission-head p { margin: 0; }
+        .submission-status { flex: 0 0 auto; padding: 6px 9px; border-radius: 999px; font-size: .72rem; font-weight: 900; text-transform: capitalize; }
+        .status-pendiente { background: rgba(243,156,18,.14); color: #8a5c05; }
+        .status-atendida { background: rgba(28,139,120,.14); color: #185f53; }
+        .status-rechazada { background: rgba(232,75,95,.13); color: #8f2130; }
+        .leader-message { margin: 0 !important; padding: 10px; border-radius: 12px; background: rgba(255,255,255,.48); white-space: pre-wrap; }
+        .private-assets { display: grid; gap: 7px; }
+        .private-assets > div { display: flex; flex-wrap: wrap; gap: 7px; }
+        .submission-actions { padding-top: 3px; border-top: 1px solid rgba(83,102,117,.12); }
+        .leader-file-drop { min-height: 150px; }
         .media-layer { position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; padding: 18px; background: rgba(10,20,30,.52); backdrop-filter: blur(10px); }
         .media-layer.open { display: flex; }
         .media-layer article { width: min(920px, 100%); max-height: 92vh; overflow: auto; padding: 16px; border-radius: 24px; background: rgba(245,250,248,.97); }
@@ -4240,6 +4496,8 @@ const TYPES = {
           .home-welcome { padding: 14px; border-radius: 18px; }
           .home-quick-links { grid-template-columns: 1fr; }
           .week-list-day { grid-template-columns: 1fr; gap: 9px; }
+          .leader-submission-head, .leader-directory-row { grid-template-columns: 1fr; display: grid; }
+          .submission-status { justify-self: start; }
           .weekly-schedule-card iframe { height: 420px; }
           .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { font-size: 1.9rem; line-height: 1.05; }
           .info-list, .form-grid, .event-grid, .asset-grid-page, .year-view { grid-template-columns: 1fr; }
