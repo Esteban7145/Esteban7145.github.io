@@ -1548,7 +1548,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-menu-simple-7").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-week-clean-8").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
       setupPlatformMusic();
@@ -2893,13 +2893,15 @@ const TYPES = {
       function weekView() {
         const start = startOfWeek(platform.calendarDate);
         let html = `<div class="week-agenda-list">${weeklyScheduleMarkup()}`;
+        const daysWithEvents = [];
         for (let i = 0; i < 7; i += 1) {
           const date = new Date(start);
           date.setDate(start.getDate() + i);
           const dayEvents = eventsForPlatformDate(date);
-          html += `<article class="week-list-day ${sameDay(date, today) ? "is-today" : ""}"><header><h3>${capitalize(weekdays[date.getDay()])}</h3><span>${date.getDate()} de ${months[date.getMonth()]}</span>${sameDay(date, today) ? `<b>Hoy</b>` : ""}</header><div>${agendaList(dayEvents, true)}</div></article>`;
+          if (!dayEvents.length) continue;
+          daysWithEvents.push(`<article class="week-list-day ${sameDay(date, today) ? "is-today" : ""}"><header><h3>${capitalize(weekdays[date.getDay()])}</h3><span>${date.getDate()} de ${months[date.getMonth()]}</span>${sameDay(date, today) ? `<b>Hoy</b>` : ""}</header><div>${agendaList(dayEvents, true)}</div></article>`);
         }
-        return html + "</div>";
+        return html + (daysWithEvents.length ? daysWithEvents.join("") : emptyText("No hay eventos programados en esta semana.")) + "</div>";
       }
 
       function weeklyScheduleMarkup() {
