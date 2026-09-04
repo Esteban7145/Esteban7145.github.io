@@ -1548,7 +1548,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-week-clean-8").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-brand-logo-exact-7").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
       setupPlatformMusic();
@@ -1622,7 +1622,7 @@ const TYPES = {
         const all = (APP_STATE.podcasts || []).filter(item => item.published !== false).sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
         const items = activeCategory === "Todos" ? all : all.filter(item => item.category === activeCategory);
         view().innerHTML = `
-          <section class="page-head glass podcast-hero"><div><p class="eyebrow">Voces de la iglesia</p><h1>Voces que Edifican</h1><p>Testimonios, milagros, predicaciones especiales y experiencias de fe para escuchar y compartir.</p></div><span class="podcast-hero-mark"><img src="/assets/historias-que-edifican.svg" alt="Historias que Edifican"></span></section>
+          <section class="page-head glass podcast-hero"><div><p class="eyebrow">Voces de la iglesia</p><h1>Voces que Edifican</h1><p>Testimonios, milagros, predicaciones especiales y experiencias de fe para escuchar y compartir.</p></div><span class="podcast-hero-mark"><img src="/assets/historias-que-edifican.png" alt="Historias que Edifican"></span></section>
           <section class="podcast-filters glass" aria-label="Categorías del podcast">${["Todos", ...PODCAST_CATEGORIES].map(category => `<button type="button" class="podcast-filter ${activeCategory === category ? "active" : ""}" data-podcast-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join("")}</section>
           <section class="podcast-grid">${items.map(item => `<article class="podcast-card glass ${item.featured ? "is-featured" : ""}"><div class="podcast-media${item.cover && assetSource(item.cover, "display") ? " has-cover" : ""}"${item.cover && assetSource(item.cover, "display") ? ` style="background-image:linear-gradient(145deg,rgba(0,51,141,.72),rgba(8,123,136,.72)),url('${escapeHtml(assetSource(item.cover, "display"))}')"` : ""}>${podcastMediaMarkup(item)}</div><div class="podcast-copy"><div class="podcast-card-head"><span class="status-chip">${escapeHtml(item.category || "Experiencias de fe")}</span>${item.featured ? `<span class="podcast-featured">Destacado</span>` : ""}</div><h2>${escapeHtml(item.title || "Voces que Edifican")}</h2><p>${escapeHtml(item.description || "Una historia que edifica nuestra fe.")}</p><small>${item.createdAt ? `Publicado ${escapeHtml(formatDateShort(String(item.createdAt).slice(0, 10)))}` : "Contenido IPUC Villa del Río"}</small></div></article>`).join("") || emptyText(activeCategory === "Todos" ? "Aún no hay episodios publicados. Pronto encontrarás aquí testimonios y predicaciones de la iglesia." : "No hay episodios en esta categoría.")}</section>`;
         view().querySelectorAll("[data-podcast-category]").forEach(button => {
