@@ -4448,7 +4448,9 @@ const TYPES = {
             if (error?.name === "AbortError") return;
           }
         }
-        window.open(whatsappShare(event), "_blank", "noopener,noreferrer");
+        const whatsappUrl = whatsappShare(event);
+        const opened = window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+        if (!opened) window.location.assign(whatsappUrl);
         showToast(asset ? "WhatsApp se abrió con el mensaje. Si tu dispositivo no adjuntó la imagen, puedes abrirla desde el enlace del evento." : "WhatsApp se abrió con el mensaje y el enlace del evento.", "info");
       }
 
