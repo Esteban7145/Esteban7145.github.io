@@ -1524,8 +1524,9 @@ const TYPES = {
       window.addEventListener("scroll", () => {
         const topbar = document.querySelector(".platform-top");
         if (!topbar) return;
-        // Compactar antes de que el encabezado completo llegue a cubrir el contenido.
-        const shouldCompact = window.scrollY > 42;
+        // Usa histéresis para que el encabezado no alterne entre estados cuando
+        // la rueda queda cerca del inicio de la página.
+        const shouldCompact = compactMenu ? window.scrollY > 24 : window.scrollY > 72;
         if (shouldCompact !== compactMenu) {
           compactMenu = shouldCompact;
           topbar.classList.toggle("is-compact", shouldCompact);
@@ -4633,11 +4634,11 @@ const TYPES = {
         @keyframes platformAtmosphere { from { background-position: 0% 0%; } to { background-position: 100% 70%; } }
         @keyframes platformAtmosphere { from { background-position: 0% 0%; } to { background-position: 100% 70%; } }
         .platform-shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 34px; }
-        .platform-top { position: sticky; top: 10px; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px; border-radius: 24px; transition: width .24s ease, padding .24s ease, border-radius .24s ease, transform .24s ease; }
-        .platform-top.is-compact { position: sticky; top: 12px; width: 54px; height: 54px; margin-left: auto; padding: 6px; justify-content: center; border-radius: 17px; background: rgba(248,252,250,.94); box-shadow: 0 14px 30px rgba(13,52,66,.25); }
+        .platform-top { position: sticky; top: 10px; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px; border-radius: 24px; box-sizing: border-box; transition: width .24s ease, padding .24s ease, border-radius .24s ease, transform .24s ease, margin-bottom .24s ease; }
+        .platform-top.is-compact { position: sticky; top: 12px; width: 48px; height: 48px; margin-bottom: 68px; margin-left: auto; padding: 3px; justify-content: center; border-radius: 14px; background: rgba(248,252,250,.96); box-shadow: 0 14px 30px rgba(13,52,66,.25); }
         .platform-top.is-compact .platform-brand { display: none; }
-        .platform-top.is-compact .nav-toggle { display: inline-flex; width: 42px; height: 42px; padding: 0; border-radius: 13px; font-size: 0; }
-        .platform-top.is-compact .nav-toggle::before { content: "☰"; font-size: 1.45rem; line-height: 1; }
+        .platform-top.is-compact .nav-toggle { display: inline-flex; width: 42px; height: 42px; padding: 0; border-radius: 11px; font-size: 0; }
+        .platform-top.is-compact .nav-toggle::before { content: "☰"; font-size: 1.3rem; line-height: 1; }
         .platform-top.is-compact .platform-nav { position: absolute; top: calc(100% + 8px); right: 0; display: none; flex-direction: column; align-items: stretch; width: min(230px, calc(100vw - 28px)); padding: 10px; border: 1px solid rgba(255,255,255,.78); border-radius: 18px; background: rgba(245,250,248,.97); box-shadow: 0 20px 50px rgba(31,55,72,.22); }
         .platform-top.is-compact .platform-nav.open { display: flex; }
         .platform-brand { display: flex; align-items: center; flex: 0 1 260px; min-width: 0; color: var(--ink); text-decoration: none; }
@@ -4998,9 +4999,12 @@ const TYPES = {
           .week-head, .month-grid { gap: 4px; }
           .week-head { font-size: .62rem; }
           .month-day { min-height: 70px; padding: 5px; border-radius: 12px; }
-          .event-pill { font-size: 0; padding: 3px; }
-          .event-pill img { width: 22px; height: 22px; }
-          .event-pill span { display: none; }
+          .platform-top.is-compact { margin-bottom: 34px; }
+          .event-pill { grid-template-columns: 28px minmax(0, 1fr); min-height: 38px; font-size: inherit; padding: 3px; }
+          .event-pill-thumb { width: 28px; height: 28px; }
+          .event-pill-copy { display: block; }
+          .event-pill-copy strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: .58rem; line-height: 1.1; }
+          .event-pill-copy small { display: block; margin-top: 2px; font-size: .52rem; white-space: nowrap; }
           .mini-card, .agenda-item, .file-public-list article { grid-template-columns: 58px minmax(0, 1fr); }
           .mini-card img, .agenda-item img { width: 58px; height: 48px; }
           .agenda-item .small-action { grid-column: 1 / -1; }
