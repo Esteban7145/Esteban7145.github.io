@@ -2117,6 +2117,7 @@ const TYPES = {
         const reflection = reflectionForDate(today);
         const mainInvitation = main && main.type === "culto" && ((main.image && isImage(main.image)) || (main.invitations?.main && isImage(main.invitations.main)) || isRegularSundayWorship(main));
         const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, true) : "";
+        const bible3DMarkup = !main ? `<aside class="home-bible-3d" aria-label="Biblia 3D interactiva"><div class="home-bible-3d-head"><span class="eyebrow">Palabra viva</span><span class="home-bible-3d-spark" aria-hidden="true">✦</span></div><div class="home-bible-3d-frame"><iframe title="Biblia 3D interactiva" src="https://sketchfab.com/models/bbe98a3005864fec92528f39b4746f7f/embed?autospin=1&autostart=1&preload=1&transparent=1&ui_theme=dark" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-in-view execution-while-not-rendered web-share allowfullscreen loading="eager"></iframe></div><a class="home-bible-3d-credit" href="https://sketchfab.com/3d-models/biblia-bbe98a3005864fec92528f39b4746f7f" target="_blank" rel="noopener noreferrer">Explorar la Biblia en 3D <span aria-hidden="true">↗</span></a></aside>` : "";
         reflectionIsActive = Boolean(reflectionMarkup);
         if (reflectionIsActive) {
           stopRadioIpuc();
@@ -2127,7 +2128,7 @@ const TYPES = {
         }
         const next = platformEventsForYear(today.getFullYear()).filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Realizado").sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
         view().innerHTML = `
-          <section class="home-hero glass ${mainInvitation ? "has-today-invitation" : ""}">
+          <section class="home-hero glass ${mainInvitation ? "has-today-invitation" : "has-bible-3d"}">
             <div class="hero-copy">
               <div class="home-kicker"><span class="home-live-dot"></span><span>IPUC Villa del Río</span><span>•</span><span>${escapeHtml(longPlatformDate(today))}</span></div>
               <p class="eyebrow">${main ? "Lo que vivimos hoy" : "Una palabra para hoy"}</p>
@@ -2138,7 +2139,7 @@ const TYPES = {
               <div class="live-visitors" aria-live="polite"><span class="live-visitors-dot"></span><strong data-online-count>1</strong> personas en la página ahora</div>
               <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="radio-home-action" type="button" data-home-radio>▶ Escuchar Radio IPUC</button>${deferredInstallPrompt ? `<button class="radio-home-action install-home-action" type="button" data-install-app>＋ Instalar app</button>` : ""}</div>
             </div>
-            ${mainInvitation ? `<aside class="home-invitation-card"><div class="home-invitation-head"><span class="eyebrow">Invitación del día</span><span class="home-invitation-dot" aria-hidden="true"></span></div><img class="home-invitation-image" src="${escapeHtml(eventImage(main))}" alt="Invitación de ${escapeHtml(main.title)}"><a class="home-invitation-link" href="#/evento/${encodeURIComponent(main.id)}">Ver invitación completa <span aria-hidden="true">→</span></a></aside>` : ""}
+            ${mainInvitation ? `<aside class="home-invitation-card"><div class="home-invitation-head"><span class="eyebrow">Invitación del día</span><span class="home-invitation-dot" aria-hidden="true"></span></div><img class="home-invitation-image" src="${escapeHtml(eventImage(main))}" alt="Invitación de ${escapeHtml(main.title)}"><a class="home-invitation-link" href="#/evento/${encodeURIComponent(main.id)}">Ver invitación completa <span aria-hidden="true">→</span></a></aside>` : bible3DMarkup}
           </section>
           <section class="home-welcome glass">
             <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta actividades, recursos, horarios y novedades de la congregación desde un solo lugar.</p></div>
@@ -4531,6 +4532,8 @@ const TYPES = {
         .home-hero { grid-template-columns: minmax(0, 1.12fr) minmax(280px, .88fr); min-height: 430px; }
         .home-hero:not(.has-today-invitation) { grid-template-columns: 1fr; }
         .home-hero:not(.has-today-invitation) .hero-copy { width: 100%; }
+        .home-hero.has-bible-3d { grid-template-columns: minmax(0, 1.08fr) minmax(300px, .92fr); }
+        .home-hero.has-bible-3d .hero-copy { min-width: 0; }
         .home-hero, .home-welcome, .type-shortcuts, .split-grid > article { opacity: 0; transform: translateY(18px); animation: homeReveal .65s cubic-bezier(.2,.75,.25,1) var(--reveal-delay, 0ms) forwards; }
         .home-hero.is-visible, .home-welcome.is-visible, .type-shortcuts.is-visible, .split-grid > article.is-visible { opacity: 1; transform: translateY(0); }
         @keyframes homeReveal { to { opacity: 1; transform: translateY(0); } }
@@ -4558,6 +4561,17 @@ const TYPES = {
         .home-invitation-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 4px 3px; color: #123348; font-size: .82rem; font-weight: 900; text-decoration: none; }
         .home-invitation-link span { color: #1c8b78; font-size: 1.2rem; transition: transform .18s ease; }
         .home-invitation-link:hover span { transform: translateX(4px); }
+        .home-bible-3d { position: relative; display: grid; align-content: center; gap: 10px; min-width: 0; min-height: 360px; padding: 15px; border: 1px solid rgba(255,255,255,.56); border-radius: 24px; background: radial-gradient(circle at 50% 42%, rgba(255,255,255,.26), rgba(219,242,239,.12) 52%, rgba(18,51,72,.08)); box-shadow: inset 0 1px 0 rgba(255,255,255,.34), 0 18px 38px rgba(31,55,72,.1); overflow: hidden; }
+        .home-bible-3d::before { content: ""; position: absolute; width: 220px; height: 220px; left: 50%; top: 49%; transform: translate(-50%, -50%); border-radius: 50%; background: rgba(0,159,218,.12); filter: blur(24px); pointer-events: none; }
+        .home-bible-3d-head { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+        .home-bible-3d-head .eyebrow { margin: 0; color: #1c8b78; }
+        .home-bible-3d-spark { color: #f0ab00; font-size: 1.1rem; animation: bibleSpark 2.5s ease-in-out infinite; }
+        @keyframes bibleSpark { 0%, 100% { transform: rotate(0deg) scale(.92); opacity: .62; } 50% { transform: rotate(18deg) scale(1.12); opacity: 1; } }
+        .home-bible-3d-frame { position: relative; z-index: 1; width: 100%; aspect-ratio: 1 / .9; min-height: 280px; overflow: hidden; border-radius: 18px; background: transparent; }
+        .home-bible-3d-frame iframe { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
+        .home-bible-3d-credit { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 8px; padding: 0 4px 2px; color: #123348; font-size: .75rem; font-weight: 900; text-decoration: none; }
+        .home-bible-3d-credit span { color: #1c8b78; font-size: 1rem; transition: transform .18s ease; }
+        .home-bible-3d-credit:hover span { transform: translate(2px, -2px); }
         .event-card-public > img { width: 100%; aspect-ratio: 16 / 10; object-fit: contain; border-radius: 22px; background: rgba(18,51,72,.08); box-shadow: 0 20px 46px rgba(31,55,72,.18); }
         .detail-hero > img { display: block; width: 100%; height: auto; max-height: 680px; min-height: 220px; object-fit: contain; border-radius: 22px; background: rgba(18,51,72,.08); box-shadow: 0 20px 46px rgba(31,55,72,.18); }
         .home-hero .hero-image { animation: heroFloat 7s ease-in-out infinite; }
@@ -4817,6 +4831,7 @@ const TYPES = {
         .radio-widget.is-playing .radio-toggle::before { content: "Ⅱ"; font-size: .8rem; }
         @media (max-width: 900px) {
           .home-hero, .detail-hero, .split-grid, .agenda-grid, .admin-layout, .login-card, .decom-grid, .decom-board { grid-template-columns: 1fr; }
+          .home-hero.has-bible-3d { grid-template-columns: 1fr; }
           .home-welcome { grid-template-columns: 1fr; }
           .admin-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
           .decom-editor { position: static; }
@@ -4836,6 +4851,8 @@ const TYPES = {
           .platform-nav.open { display: flex; }
           .platform-nav a { justify-content: flex-start; }
           .home-hero, .page-head, .content-card, .calendar-page, .view-switch, .month-strip, .filters, .login-card, .detail-hero { padding: 12px; border-radius: 18px; }
+          .home-bible-3d { min-height: 0; padding: 12px; }
+          .home-bible-3d-frame { min-height: 240px; }
           .home-kicker { margin-bottom: 18px; font-size: .68rem; }
           .home-actions { align-items: stretch; flex-direction: column; }
           .home-actions a, .radio-home-action { width: 100%; justify-content: center; text-align: center; }
