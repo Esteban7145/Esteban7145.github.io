@@ -2315,7 +2315,7 @@ const TYPES = {
               <p>${escapeHtml(eventDescription(event))}</p>
               ${eventInfoList(event)}
               <div class="detail-actions">
-                <a class="primary-link" href="${whatsappShare(event)}" target="_blank" rel="noopener">Compartir por WhatsApp</a>
+                <button class="primary-link" type="button" data-share-whatsapp>Compartir por WhatsApp</button>
                 <button class="small-action" type="button" data-add-event="${escapeHtml(event.id)}">Agregar a mi calendario</button>
                 <a class="small-action" href="#/calendario">Ver calendario</a>
               </div>
@@ -2330,6 +2330,7 @@ const TYPES = {
           </section>
         `;
         bindAssetButtons();
+        view().querySelector("[data-share-whatsapp]").onclick = () => shareEventOnWhatsApp(event);
         view().querySelector("[data-add-event]").onclick = () => downloadEventsCalendar([event], `${slugify(event.title)}.ics`);
         bindInlineAdminEditor();
       }
@@ -4404,9 +4405,51 @@ const TYPES = {
         return eventDescription(event);
       }
 
+      function eventPageUrl(event) {
+        return `${location.origin}/evento/${encodeURIComponent(event.id)}`;
+      }
+
+      function whatsappMessage(event) {
+        const typeMessages = {
+          culto: "Te invitamos a compartir un tiempo especial de adoración, Palabra y comunión.",
+          oracion: "Te invitamos a unirnos en oración y enseñanza, creyendo juntos por la obra de Dios.",
+          ayuno: "Te invitamos a apartar este tiempo de ayuno y búsqueda de Dios junto a la iglesia.",
+          vigilia: "Te invitamos a una noche de vigilia, oración y renovación espiritual.",
+          especial: "Te invitamos a participar de este encuentro especial de nuestra iglesia."
+        };
+        const invitation = typeMessages[event.type] || "Te invitamos a participar de esta actividad de nuestra iglesia.";
+        return `Dios les bendiga, familia IPUC Villa del Río. 🙏\n\n${invitation}\n\n✨ ${event.title}\n📅 ${formatDateShort(event.date)}\n🕒 ${event.time}\n📍 ${event.place}\n\n${eventDescription(event)}\n\n🔗 Más información e invitación:\n${eventPageUrl(event)}`;
+      }
+
       function whatsappShare(event) {
-        const text = `${event.title}\n${formatDateShort(event.date)} - ${event.time}\n${event.place}\n${location.origin}${location.pathname}#/evento/${event.id}`;
-        return `https://wa.me/?text=${encodeURIComponent(text)}`;
+        return `https://wa.me/?text=${encodeURIComponent(whatsappMessage(event))}`;
+      }
+
+      function whatsappImageAsset(event) {
+        return event.invitations?.whatsapp || event.invitations?.main || event.image || (isRegularSundayWorship(event) ? DEFAULT_SUNDAY_INVITATION : null);
+      }
+
+      async function shareEventOnWhatsApp(event) {
+        const message = whatsappMessage(event);
+        const asset = whatsappImageAsset(event);
+        if (navigator.share && asset && isImage(asset)) {
+          try {
+            const source = assetSource(asset, "display");
+            const response = await fetch(source, { mode: "cors" });
+            if (!response.ok) throw new Error("No se pudo preparar la imagen.");
+            const blob = await response.blob();
+            const extension = blob.type === "image/png" ? "png" : blob.type === "image/webp" ? "webp" : "jpg";
+            const file = new File([blob], `invitacion-${slugify(event.title)}.${extension}`, { type: blob.type || "image/jpeg" });
+            if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+              await navigator.share({ title: event.title, text: message, files: [file] });
+              return;
+            }
+          } catch (error) {
+            if (error?.name === "AbortError") return;
+          }
+        }
+        window.open(whatsappShare(event), "_blank", "noopener,noreferrer");
+        showToast(asset ? "WhatsApp se abrió con el mensaje. Si tu dispositivo no adjuntó la imagen, puedes abrirla desde el enlace del evento." : "WhatsApp se abrió con el mensaje y el enlace del evento.", "info");
       }
 
       function sortByDate(a, b) {
