@@ -1401,7 +1401,7 @@ const TYPES = {
             <a href="/calendario" data-route-link="calendario">Calendario</a>
             <a href="/agenda" data-route-link="agenda">Agenda</a>
             <a href="/anuncios" data-route-link="anuncios">Anuncios</a>
-            <a href="/podcast" data-route-link="podcast">Podcast</a>
+            <a href="/podcast" data-route-link="podcast">Voces que Edifican</a>
             <a href="/archivo" data-route-link="archivo">Archivo</a>
             <a href="/recursos" data-route-link="recursos">Recursos</a>
             <a href="/ubicacion" data-route-link="ubicacion">Ubicación</a>
@@ -1514,7 +1514,7 @@ const TYPES = {
         if (!media) return `<div class="podcast-empty-media"><span>🎙️</span><small>Próximamente</small></div>`;
         if (media.type === "youtube") {
           const source = youtubeEmbedUrl(media.url).replace("autoplay=1&mute=1", "autoplay=0&mute=0");
-          return source ? `<iframe src="${source}" title="${escapeHtml(item.title || "Podcast IPUC")}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : "";
+          return source ? `<iframe src="${source}" title="${escapeHtml(item.title || "Voces que Edifican")}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : "";
         }
         if (isVideo(media)) return `<video controls playsinline preload="metadata" ${item.cover && assetSource(item.cover) ? `poster="${escapeHtml(assetSource(item.cover))}"` : ""} src="${escapeHtml(assetSource(media))}"></video>`;
         if (isAudio(media)) return `<div class="podcast-audio-box"><span>▶</span><audio controls preload="metadata" src="${escapeHtml(assetSource(media))}"></audio></div>`;
@@ -1526,9 +1526,9 @@ const TYPES = {
         const all = (APP_STATE.podcasts || []).filter(item => item.published !== false).sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
         const items = activeCategory === "Todos" ? all : all.filter(item => item.category === activeCategory);
         view().innerHTML = `
-          <section class="page-head glass podcast-hero"><div><p class="eyebrow">Voces de la iglesia</p><h1>Podcast IPUC</h1><p>Testimonios, milagros, predicaciones especiales y experiencias de fe para escuchar y compartir.</p></div><span class="podcast-hero-mark">◉</span></section>
+          <section class="page-head glass podcast-hero"><div><p class="eyebrow">Voces de la iglesia</p><h1>Voces que Edifican</h1><p>Testimonios, milagros, predicaciones especiales y experiencias de fe para escuchar y compartir.</p></div><span class="podcast-hero-mark">◉</span></section>
           <section class="podcast-filters glass" aria-label="Categorías del podcast">${["Todos", ...PODCAST_CATEGORIES].map(category => `<button type="button" class="podcast-filter ${activeCategory === category ? "active" : ""}" data-podcast-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join("")}</section>
-          <section class="podcast-grid">${items.map(item => `<article class="podcast-card glass ${item.featured ? "is-featured" : ""}"><div class="podcast-media${item.cover && assetSource(item.cover) ? " has-cover" : ""}"${item.cover && assetSource(item.cover) ? ` style="background-image:linear-gradient(145deg,rgba(0,51,141,.72),rgba(8,123,136,.72)),url('${escapeHtml(assetSource(item.cover))}')"` : ""}>${podcastMediaMarkup(item)}</div><div class="podcast-copy"><div class="podcast-card-head"><span class="status-chip">${escapeHtml(item.category || "Experiencias de fe")}</span>${item.featured ? `<span class="podcast-featured">Destacado</span>` : ""}</div><h2>${escapeHtml(item.title || "Podcast IPUC")}</h2><p>${escapeHtml(item.description || "Una historia que edifica nuestra fe.")}</p><small>${item.createdAt ? `Publicado ${escapeHtml(formatDateShort(String(item.createdAt).slice(0, 10)))}` : "Contenido IPUC Villa del Río"}</small></div></article>`).join("") || emptyText(activeCategory === "Todos" ? "Aún no hay episodios publicados. Pronto encontrarás aquí testimonios y predicaciones de la iglesia." : "No hay episodios en esta categoría.")}</section>`;
+          <section class="podcast-grid">${items.map(item => `<article class="podcast-card glass ${item.featured ? "is-featured" : ""}"><div class="podcast-media${item.cover && assetSource(item.cover) ? " has-cover" : ""}"${item.cover && assetSource(item.cover) ? ` style="background-image:linear-gradient(145deg,rgba(0,51,141,.72),rgba(8,123,136,.72)),url('${escapeHtml(assetSource(item.cover))}')"` : ""}>${podcastMediaMarkup(item)}</div><div class="podcast-copy"><div class="podcast-card-head"><span class="status-chip">${escapeHtml(item.category || "Experiencias de fe")}</span>${item.featured ? `<span class="podcast-featured">Destacado</span>` : ""}</div><h2>${escapeHtml(item.title || "Voces que Edifican")}</h2><p>${escapeHtml(item.description || "Una historia que edifica nuestra fe.")}</p><small>${item.createdAt ? `Publicado ${escapeHtml(formatDateShort(String(item.createdAt).slice(0, 10)))}` : "Contenido IPUC Villa del Río"}</small></div></article>`).join("") || emptyText(activeCategory === "Todos" ? "Aún no hay episodios publicados. Pronto encontrarás aquí testimonios y predicaciones de la iglesia." : "No hay episodios en esta categoría.")}</section>`;
         view().querySelectorAll("[data-podcast-category]").forEach(button => {
           button.onclick = () => { platform.podcastCategory = button.dataset.podcastCategory || "Todos"; renderPodcastPage(); };
         });
@@ -2057,7 +2057,7 @@ const TYPES = {
           </section>
           <section class="home-welcome glass">
             <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta actividades, recursos, horarios y novedades de la congregación desde un solo lugar.</p></div>
-            <div class="home-quick-links"><a href="#/calendario"><strong>Calendario</strong><span>Ver la semana completa →</span></a><a href="#/agenda"><strong>Agenda</strong><span>Próximos encuentros →</span></a><a href="#/podcast"><strong>Podcast IPUC</strong><span>Historias que edifican →</span></a><a href="#/recursos"><strong>Recursos</strong><span>Material oficial IPUC →</span></a><a href="#/ubicacion"><strong>Ubicación</strong><span>Cómo llegar →</span></a></div>
+            <div class="home-quick-links"><a href="#/calendario"><strong>Calendario</strong><span>Ver la semana completa →</span></a><a href="#/agenda"><strong>Agenda</strong><span>Próximos encuentros →</span></a><a href="#/podcast"><strong>Voces que Edifican</strong><span>Historias que edifican →</span></a><a href="#/recursos"><strong>Recursos</strong><span>Material oficial IPUC →</span></a><a href="#/ubicacion"><strong>Ubicación</strong><span>Cómo llegar →</span></a></div>
           </section>
           <section class="home-community glass">
             <div class="home-community-head"><div><p class="eyebrow">Familia IPUC</p><h2>Una iglesia que sirve unida</h2><p>Conoce los comités y ministerios que hacen parte de la vida de IPUC Villa del Río.</p></div><a class="small-action" href="#/eventos">Ver actividades</a></div>
@@ -2466,14 +2466,14 @@ const TYPES = {
         const selected = (APP_STATE.podcasts || []).find(item => item.id === platform.selectedPodcast) || null;
         return `<section class="admin-module" data-admin-module="podcast" ${platform.adminSection === "podcast" ? "" : "hidden"}>
           <article class="content-card glass admin-card-wide podcast-admin-module">
-            <div class="section-title"><p class="eyebrow">Voces de la iglesia</p><h2>Podcast IPUC</h2><p>Publica testimonios, milagros, predicaciones especiales y experiencias de fe en audio o video.</p></div>
+            <div class="section-title"><p class="eyebrow">Voces de la iglesia</p><h2>Voces que Edifican</h2><p>Publica testimonios, milagros, predicaciones especiales y experiencias de fe en audio o video.</p></div>
             <div class="form-grid">
               <label class="full">Episodio a editar<select id="podcastSelect"><option value="__new__">+ Crear episodio nuevo</option>${(APP_STATE.podcasts || []).map(item => `<option value="${escapeHtml(item.id)}" ${selected?.id === item.id ? "selected" : ""}>${escapeHtml(item.title || "Sin título")}</option>`).join("")}</select></label>
               <label class="full">Título del episodio<input id="podcastTitle" value="${escapeHtml(selected?.title || "")}" placeholder="Ej. Dios obró un milagro en mi familia"></label>
               <label>Categoría<select id="podcastCategory">${PODCAST_CATEGORIES.map(category => `<option ${selected?.category === category ? "selected" : ""}>${escapeHtml(category)}</option>`).join("")}</select></label>
               <label>Tipo de contenido<select id="podcastMediaType"><option value="youtube" ${selected?.media?.type === "youtube" ? "selected" : ""}>Video de YouTube</option><option value="upload" ${selected?.media?.type !== "youtube" ? "selected" : ""}>Audio o video de la iglesia</option></select></label>
               <label class="full">Enlace de YouTube<input id="podcastYoutube" type="url" value="${escapeHtml(selected?.media?.type === "youtube" ? selected.media.url : "")}" placeholder="https://www.youtube.com/watch?v=..."></label>
-              <label class="full file-dropzone">Audio o video del episodio<input id="podcastMediaFile" type="file" accept="audio/*,video/*"><small>El archivo se guardará en la carpeta de multimedia de Drive cuando la conexión esté activa.</small></label>
+              <label class="full file-dropzone">Audio o video de Voces que Edifican<input id="podcastMediaFile" type="file" accept="audio/*,video/*"><small>El archivo se guardará en la carpeta de multimedia de Drive cuando la conexión esté activa.</small></label>
               <label class="full file-dropzone">Imagen de portada<input id="podcastCoverFile" type="file" accept="image/*"><small>Opcional. Se mostrará como portada del episodio y miniatura del video.</small></label>
               <label class="full">Descripción<textarea id="podcastDescription" placeholder="Cuenta brevemente qué encontrará la iglesia en este episodio.">${escapeHtml(selected?.description || "")}</textarea></label>
               <label class="checkbox-line"><input id="podcastPublished" type="checkbox" ${selected?.published !== false ? "checked" : ""}> Publicar en la web</label>
@@ -2503,7 +2503,7 @@ const TYPES = {
             <article><strong>${APP_STATE.announcements?.length || 0}</strong><span>Anuncios publicados</span></article>
           </section>
           <nav class="admin-tabs glass" aria-label="Módulos de administración">
-            ${[["eventos", "Eventos", "Crear o editar"], ["material", "Material", "Subir archivos"], ["podcast", "Podcast", "Testimonios y predicas"], ["anuncios", "Anuncios", "Publicar aviso"], ["reflexiones", "Reflexiones", "Mensaje diario"], ["solicitudes", "Solicitudes", "Mensajes de líderes"], ["lideres", "Líderes", "Correos autorizados"], ["decom", "DECOM", "Turnos internos"]].map(([key, label, hint]) => `<button type="button" class="admin-tab ${activeAdminSection === key ? "active" : ""}" data-admin-section="${key}"><strong>${label}</strong><span>${hint}</span></button>`).join("")}
+            ${[["eventos", "Eventos", "Crear o editar"], ["material", "Material", "Subir archivos"], ["podcast", "Voces que Edifican", "Testimonios y predicas"], ["anuncios", "Anuncios", "Publicar aviso"], ["reflexiones", "Reflexiones", "Mensaje diario"], ["solicitudes", "Solicitudes", "Mensajes de líderes"], ["lideres", "Líderes", "Correos autorizados"], ["decom", "DECOM", "Turnos internos"]].map(([key, label, hint]) => `<button type="button" class="admin-tab ${activeAdminSection === key ? "active" : ""}" data-admin-section="${key}"><strong>${label}</strong><span>${hint}</span></button>`).join("")}
           </nav>
           <section class="admin-layout admin-workspace">
             <section class="admin-module" data-admin-module="eventos" ${moduleVisibility("eventos")}>
@@ -3667,7 +3667,7 @@ const TYPES = {
         } else if (mediaFile) {
           if (!isAudio(mediaFile) && !isVideo(mediaFile)) return alert("El episodio debe ser un archivo de audio o video.");
           if (selected?.media) await deleteCloudAsset(selected.media);
-          media = await uploadCloudFile(mediaFile, id, "podcasts", "Episodio del Podcast IPUC");
+          media = await uploadCloudFile(mediaFile, id, "podcasts", "Episodio de Voces que Edifican");
         } else if (!media) {
           return alert("Agrega un enlace de YouTube o un audio/video del episodio.");
         }
@@ -3675,7 +3675,7 @@ const TYPES = {
         if (coverFile) {
           if (!isImage(coverFile)) return alert("La portada debe ser una imagen.");
           if (cover) await deleteCloudAsset(cover);
-          cover = await uploadCloudFile(coverFile, id, "podcast-cover", "Portada del Podcast IPUC");
+          cover = await uploadCloudFile(coverFile, id, "podcast-cover", "Portada de Voces que Edifican");
         }
         await saveCloudDoc("podcasts", id, {
           id,
@@ -3692,20 +3692,20 @@ const TYPES = {
         ["podcastMediaFile", "podcastCoverFile"].forEach(clearPendingUpload);
         platform.selectedPodcast = id;
         completeUploadProgress("Episodio guardado correctamente.");
-        alert("Episodio guardado en el Podcast IPUC.");
+        alert("Episodio guardado en Voces que Edifican.");
         renderAdminPage();
       }
 
       async function deletePlatformPodcast() {
         if (!requireCloudAdmin()) return;
         const item = (APP_STATE.podcasts || []).find(podcast => podcast.id === platform.selectedPodcast);
-        if (!item || !confirm(`¿Eliminar “${item.title}” del Podcast IPUC?`)) return;
+        if (!item || !confirm(`¿Eliminar “${item.title}” de Voces que Edifican?`)) return;
         if (item.media) await deleteCloudAsset(item.media);
         if (item.cover) await deleteCloudAsset(item.cover);
         await cloud.dbMod.deleteDoc(cloud.dbMod.doc(cloud.db, "podcasts", item.id));
         APP_STATE.podcasts = APP_STATE.podcasts.filter(podcast => podcast.id !== item.id);
         platform.selectedPodcast = null;
-        alert("Episodio eliminado del Podcast IPUC.");
+        alert("Episodio eliminado de Voces que Edifican.");
         renderAdminPage();
       }
 
