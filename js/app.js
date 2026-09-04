@@ -1555,7 +1555,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-musica-widget-12").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-musica-widget-13").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
       setupChurchMusic();
@@ -4310,12 +4310,12 @@ const TYPES = {
           // Drive redirige la URL /uc a otra dirección. Para <audio> resulta
           // más estable usar directamente el endpoint que soporta rangos y
           // devuelve audio/mpeg sin la página intermedia de Drive.
-          const source = item.id
+          const source = item.audioUrl || (item.id
             ? `https://drive.usercontent.google.com/download?id=${encodeURIComponent(String(item.id))}&export=media`
-            : (item.audioUrl || item.url || "");
+            : (item.url || ""));
           if (source && audio.dataset.trackId !== String(item.id || source)) {
             audio.dataset.trackId = String(item.id || source);
-            audio.dataset.fallbackTried = "";
+            audio.dataset.sourceIndex = "0";
             audio.src = source;
             audio.load();
           }
@@ -4341,12 +4341,15 @@ const TYPES = {
         audio.onerror = () => {
           const currentItem = (APP_STATE.musicPlaylist || [])[APP_STATE.musicIndex];
           const currentId = currentItem?.id ? String(currentItem.id) : "";
-          const fallback = currentId
-            ? `https://drive.google.com/uc?export=media&id=${encodeURIComponent(currentId)}`
-            : "";
-          if (fallback && audio.dataset.fallbackTried !== currentId && audio.src !== fallback) {
-            audio.dataset.fallbackTried = currentId;
-            audio.src = fallback;
+          const candidates = [
+            currentItem?.audioUrl,
+            currentId ? `https://drive.usercontent.google.com/download?id=${encodeURIComponent(currentId)}&export=media` : "",
+            currentId ? `https://drive.google.com/uc?export=media&id=${encodeURIComponent(currentId)}` : "",
+          ].filter((value, index, values) => value && values.indexOf(value) === index);
+          const nextIndex = Number(audio.dataset.sourceIndex || "0") + 1;
+          if (candidates[nextIndex]) {
+            audio.dataset.sourceIndex = String(nextIndex);
+            audio.src = candidates[nextIndex];
             audio.load();
             return;
           }

@@ -15,8 +15,9 @@ function corsHeaders(req: Request) {
   const allowed = origin === SITE_ORIGIN || origin.startsWith("http://localhost:");
   return {
     "Access-Control-Allow-Origin": allowed ? origin : SITE_ORIGIN,
-    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "authorization, apikey, content-type, range, x-client-info",
+    "Access-Control-Allow-Methods": "GET, HEAD, POST, OPTIONS",
+    "Access-Control-Expose-Headers": "Accept-Ranges, Content-Length, Content-Range, Content-Type",
     "Access-Control-Max-Age": "86400",
     "Content-Type": "application/json; charset=utf-8",
   };
@@ -180,15 +181,50 @@ async function listMusicFromDrive(token: string) {
       type: file.mimeType,
       size: Number(file.size || 0),
       modifiedTime: file.modifiedTime,
-      // export=media entrega el archivo en línea (audio/mpeg), no como descarga.
-      audioUrl: `https://drive.google.com/uc?export=media&id=${encodeURIComponent(String(file.id))}`,
+      // El navegador reproduce el audio a través de esta función. Así no
+      // depende de las redirecciones ni de las restricciones del dominio de
+      // descarga de Drive.
+      audioUrl: `${Deno.env.get("SUPABASE_URL") || "https://qgucwxgwehkualhfnckt.supabase.co"}/functions/v1/drive-upload/music?id=${encodeURIComponent(String(file.id))}`,
       webViewLink: file.webViewLink || `https://drive.google.com/file/d/${encodeURIComponent(String(file.id))}/view`,
     })),
   };
 }
 
+async function streamMusic(req: Request) {
+  const fileId = new URL(req.url).searchParams.get("id") || "";
+  if (!/^[A-Za-z0-9_-]+$/.test(fileId)) return response(req, { error: "El archivo de música no es válido." }, 400);
+  const token = await googleAccessToken();
+  const upstreamHeaders = new Headers({ Authorization: `Bearer ${token}` });
+  const range = req.headers.get("Range");
+  if (range) upstreamHeaders.set("Range", range);
+  const upstream = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media`, {
+    method: req.method,
+    headers: upstreamHeaders,
+  });
+  if (!upstream.ok) {
+    const detail = await upstream.text().catch(() => "");
+    return response(req, { error: detail || "No se pudo leer la canción desde Drive." }, upstream.status);
+  }
+  const headers = new Headers(corsHeaders(req));
+  ["Content-Type", "Content-Length", "Content-Range", "Accept-Ranges", "Content-Disposition", "Cache-Control"].forEach(name => {
+    const value = upstream.headers.get(name);
+    if (value) headers.set(name, value);
+  });
+  headers.set("Content-Type", upstream.headers.get("Content-Type") || "audio/mpeg");
+  headers.set("Content-Disposition", "inline");
+  return new Response(req.method === "HEAD" ? null : upstream.body, { status: upstream.status, headers });
+}
+
 Deno.serve(async req => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
+  if (req.method === "GET" || req.method === "HEAD") {
+    try {
+      if (new URL(req.url).pathname.endsWith("/music")) return await streamMusic(req);
+      return response(req, { error: "Ruta no encontrada." }, 404);
+    } catch (error) {
+      return response(req, { error: error instanceof Error ? error.message : "No se pudo reproducir la canción." }, 500);
+    }
+  }
   if (req.method !== "POST") return response(req, { error: "Método no permitido." }, 405);
   try {
     const form = await req.formData();
