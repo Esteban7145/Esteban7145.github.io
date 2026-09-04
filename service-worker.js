@@ -1,4 +1,4 @@
-const CACHE_NAME = "ipuc-villa-del-rio-v37-mobile-layout";
+const CACHE_NAME = "ipuc-villa-del-rio-v38-mobile-priority-layout";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/assets/logo.png", "/assets/favicon.png", "/assets/ipuc-villa-del-rio-brand.png"];
 
 self.addEventListener("install", event => {

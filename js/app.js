@@ -5060,6 +5060,14 @@ const TYPES = {
         body.platform-body .status-chip,
         body.platform-body .live-visitors { border-color: rgba(0, 159, 218, .32); background: rgba(188, 234, 247, .64); color: #00338D; }
         body.platform-body .site-video-backdrop span { background: linear-gradient(135deg, rgba(0, 51, 141, .20), rgba(0, 159, 218, .08) 48%, rgba(0, 25, 67, .24)); }
+        @media (max-width: 620px) {
+          html, body.platform-body { max-width: 100%; overflow-x: hidden !important; }
+          body.platform-body .platform-top.is-compact .platform-nav.open { position: fixed !important; top: 70px !important; right: 8px !important; left: 8px !important; width: auto !important; max-height: calc(100vh - 82px) !important; display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; overflow-y: auto; box-sizing: border-box; }
+          body.platform-body .platform-top.is-compact .platform-nav.open a { min-width: 0; min-height: 44px; justify-content: center; padding: 0 7px; text-align: center; white-space: normal; }
+          body.platform-body .calendar-page, body.platform-body .month-calendar-view, body.platform-body .decom-calendar-shell { width: 100% !important; min-width: 0 !important; max-width: 100% !important; overflow-x: hidden !important; box-sizing: border-box; }
+          body.platform-body .week-head, body.platform-body .month-grid, body.platform-body .decom-week-head, body.platform-body .decom-calendar-grid { width: 100% !important; min-width: 0 !important; max-width: 100% !important; grid-template-columns: repeat(7, minmax(0, 1fr)) !important; box-sizing: border-box; }
+          body.platform-body .month-day, body.platform-body .decom-day { min-width: 0 !important; }
+        }
       `;
       document.head.appendChild(style);
     }
