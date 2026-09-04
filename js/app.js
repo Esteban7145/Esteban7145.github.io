@@ -1523,7 +1523,8 @@ const TYPES = {
       window.addEventListener("scroll", () => {
         const topbar = document.querySelector(".platform-top");
         if (!topbar) return;
-        const shouldCompact = window.scrollY > 120;
+        // Compactar antes de que el encabezado completo llegue a cubrir el contenido.
+        const shouldCompact = window.scrollY > 42;
         if (shouldCompact !== compactMenu) {
           compactMenu = shouldCompact;
           topbar.classList.toggle("is-compact", shouldCompact);
@@ -4517,7 +4518,7 @@ const TYPES = {
         @keyframes platformAtmosphere { from { background-position: 0% 0%; } to { background-position: 100% 70%; } }
         .platform-shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 34px; }
         .platform-top { position: sticky; top: 10px; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px; border-radius: 24px; transition: width .24s ease, padding .24s ease, border-radius .24s ease, transform .24s ease; }
-        .platform-top.is-compact { position: sticky; top: 12px; width: 54px; height: 54px; margin-left: auto; padding: 6px; justify-content: center; border-radius: 17px; box-shadow: 0 14px 30px rgba(13,52,66,.25); }
+        .platform-top.is-compact { position: sticky; top: 12px; width: 54px; height: 54px; margin-left: auto; padding: 6px; justify-content: center; border-radius: 17px; background: rgba(248,252,250,.94); box-shadow: 0 14px 30px rgba(13,52,66,.25); }
         .platform-top.is-compact .platform-brand { display: none; }
         .platform-top.is-compact .nav-toggle { display: inline-flex; width: 42px; height: 42px; padding: 0; border-radius: 13px; font-size: 0; }
         .platform-top.is-compact .nav-toggle::before { content: "☰"; font-size: 1.45rem; line-height: 1; }
