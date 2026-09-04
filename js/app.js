@@ -207,6 +207,7 @@ const TYPES = {
     const STORAGE_KEY = "ipuc-villa-del-rio-event-center-v1";
     const TAGS = ["Jovenes", "Damas", "Caballeros", "Escuela Dominical", "Evangelismo", "Infantil", "Musica", "Multimedia", "Pastoral", "Distrital", "Nacional", "Especial"];
     const PODCAST_CATEGORIES = ["Testimonios", "Milagros", "Predicaciones", "Experiencias de fe", "Especiales IPUC"];
+    const DEFAULT_SUNDAY_INVITATION = { type: "image/svg+xml", name: "invitacion-dominical-general.svg", url: "/assets/invitacion-dominical-general.svg", label: "Invitación dominical" };
     const COMMITTEE_ASSET = "https://raw.githubusercontent.com/Esteban7145/Esteban7145.github.io/main/assets/";
     const COMMITTEES = [
       ["ipuc", "IPUC Villa del Río", `${COMMITTEE_ASSET}committee-ipuc-villa-del-rio.png`, ["pastoral", "ipuc"]],
@@ -495,6 +496,11 @@ const TYPES = {
     }
     function eventIdFor(event) {
       return `${event.date}-${slugify(event.title)}`;
+    }
+    function isRegularSundayWorship(event) {
+      if (!event?.date || event.type !== "culto" || parseDate(event.date).getDay() !== 0) return false;
+      const text = `${event.title || ""} ${event.department || event.organizer || ""}`.toLocaleLowerCase("es");
+      return text.includes("dominical") && !/mision(?:es|era|ero)?/.test(text);
     }
     function slugify(value) {
       return String(value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -3958,6 +3964,7 @@ const TYPES = {
       function eventImage(event) {
         if (event.image && isImage(event.image)) return assetSource(event.image);
         if (event.invitations?.main && isImage(event.invitations.main)) return assetSource(event.invitations.main);
+        if (isRegularSundayWorship(event)) return DEFAULT_SUNDAY_INVITATION.url;
         return autoImage(event.type, event.autoStyle, event.title);
       }
 
@@ -3980,7 +3987,9 @@ const TYPES = {
       }
 
       function invitationAssets(event) {
-        return INVITATION_FIELDS.map(([key, label]) => event.invitations?.[key] ? { ...event.invitations[key], label } : null).filter(Boolean);
+        const assets = INVITATION_FIELDS.map(([key, label]) => event.invitations?.[key] ? { ...event.invitations[key], label } : null).filter(Boolean);
+        if (isRegularSundayWorship(event) && !event.invitations?.main) assets.unshift(DEFAULT_SUNDAY_INVITATION);
+        return assets;
       }
 
       function assetGrid(assets) {
