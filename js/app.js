@@ -1503,11 +1503,12 @@ const TYPES = {
         </footer>
         <div class="media-layer" id="platformMedia" aria-hidden="true"></div>
         <div class="upload-progress" id="uploadProgress" hidden role="status" aria-live="polite"><div class="upload-progress-head"><strong data-upload-progress-label>Preparando archivo…</strong><b data-upload-progress-percent>0%</b></div><div class="upload-progress-track"><span data-upload-progress-bar></span></div><small data-upload-progress-detail></small></div>
-        <aside class="music-widget" aria-label="Música IPUC">
-          <div class="music-widget-head"><span class="music-mark">♫</span><span><strong>Música IPUC</strong><small><i id="musicStatusDot"></i><span id="musicStatus">Cargando lista…</span></small></span></div>
-          <div class="music-widget-track"><strong id="musicTrackTitle">Preparando música</strong><small id="musicTrackCounter">—</small></div>
-          <div class="music-widget-actions"><button id="musicPrevious" type="button" aria-label="Canción anterior">‹</button><button id="musicToggle" type="button" aria-label="Reproducir música">▶</button><button id="musicNext" type="button" aria-label="Siguiente canción">›</button></div>
-          <a class="music-folder-link" href="${MUSIC_DRIVE_FOLDER_URL}" target="_blank" rel="noopener">Abrir carpeta de música</a>
+        <aside class="music-widget" aria-label="Control de música">
+          <span class="music-wave music-wave-one" aria-hidden="true"></span>
+          <span class="music-wave music-wave-two" aria-hidden="true"></span>
+          <span class="music-wave music-wave-three" aria-hidden="true"></span>
+          <button id="musicToggle" class="music-toggle" type="button" aria-label="Reproducir música">▶</button>
+          <span class="music-sr-status" aria-live="polite"><i id="musicStatusDot"></i><span id="musicStatus">Cargando lista…</span><span id="musicTrackTitle">Preparando música</span><span id="musicTrackCounter">—</span></span>
           <audio id="churchMusicAudio" preload="metadata" playsinline></audio>
         </aside>
       `;
@@ -1554,7 +1555,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-musica-drive-9").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-musica-widget-11").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
       setupChurchMusic();
@@ -4299,10 +4300,8 @@ const TYPES = {
       function setupChurchMusic() {
         const audio = document.getElementById("churchMusicAudio");
         const toggle = document.getElementById("musicToggle");
-        const previous = document.getElementById("musicPrevious");
-        const next = document.getElementById("musicNext");
         const widget = document.querySelector(".music-widget");
-        if (!audio || !toggle || !previous || !next || !widget) return;
+        if (!audio || !toggle || !widget) return;
         const playlist = APP_STATE.musicPlaylist || [];
         const hasMusic = playlist.length > 0;
         const item = playlist[APP_STATE.musicIndex] || playlist[0];
@@ -4325,14 +4324,12 @@ const TYPES = {
           document.getElementById("musicStatus").textContent = APP_STATE.musicPlaylistError ? "No disponible" : "Lista de reproducción";
         }
         toggle.disabled = !hasMusic;
-        previous.disabled = !hasMusic;
-        next.disabled = !hasMusic;
         widget.classList.toggle("is-playing", hasMusic && !audio.paused);
-        document.getElementById("musicStatusDot").style.background = hasMusic && !audio.paused ? "#009FDA" : "#9aa8b2";
+        const statusDot = document.getElementById("musicStatusDot");
+        if (statusDot) statusDot.style.background = hasMusic && !audio.paused ? "#009FDA" : "#9aa8b2";
         toggle.textContent = hasMusic && !audio.paused ? "Ⅱ" : "▶";
+        toggle.setAttribute("aria-label", hasMusic && !audio.paused ? "Pausar música" : "Reproducir música");
         toggle.onclick = () => audio.paused ? startChurchMusic() : stopChurchMusic();
-        previous.onclick = () => changeChurchMusic(-1);
-        next.onclick = () => changeChurchMusic(1);
         audio.onplay = () => setupChurchMusic();
         audio.onpause = () => setupChurchMusic();
         audio.onerror = () => {
@@ -4940,24 +4937,18 @@ const TYPES = {
         .media-layer header button { width: 42px; height: 42px; border-radius: 14px; border: 1px solid rgba(83,102,117,.18); background: rgba(255,255,255,.7); font-size: 1.3rem; font-weight: 900; cursor: pointer; }
         .media-layer img, .media-layer video, .media-layer iframe { width: 100%; max-height: 70vh; object-fit: contain; border: 0; border-radius: 18px; background: rgba(255,255,255,.7); }
         .media-layer iframe { min-height: 68vh; }
-        .music-widget { position: fixed; right: 16px; bottom: 16px; z-index: 13; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "head track actions" "folder folder folder"; align-items: center; gap: 7px 10px; width: min(360px, calc(100vw - 32px)); padding: 10px 12px; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(245,250,248,.95); box-shadow: 0 14px 32px rgba(20,52,71,.2); backdrop-filter: blur(16px); }
-        .music-widget.is-playing { animation: musicGlow 2.4s ease-in-out infinite; }
-        @keyframes musicGlow { 0%, 100% { box-shadow: 0 18px 42px rgba(20,52,71,.2); } 50% { box-shadow: 0 18px 42px rgba(0,159,218,.3); } }
-        .music-widget-head { grid-area: head; display: flex; align-items: center; gap: 8px; min-width: 0; color: #123348; }
-        .music-widget-head > span:last-child { display: grid; gap: 2px; min-width: 0; }
-        .music-widget-head small { display: flex; align-items: center; gap: 5px; color: #4f6b78; font-size: .66rem; font-weight: 850; white-space: nowrap; }
-        .music-widget-head i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #9aa8b2; }
-        .music-mark { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto; border-radius: 10px; background: #00338D; color: #F0AB00; font-size: 1.05rem; }
-        .music-widget-head strong { font-size: .82rem; }
-        .music-widget-track { grid-area: track; display: grid; gap: 2px; min-width: 0; }
-        .music-widget-track strong { overflow: hidden; color: #123348; font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
-        .music-widget-track small { color: #4f6b78; font-size: .65rem; font-weight: 800; }
-        .music-widget-actions { grid-area: actions; display: flex; align-items: center; gap: 4px; }
-        .music-widget-actions button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 9px; background: rgba(0,51,141,.1); color: #00338D; font: inherit; font-size: 1.1rem; font-weight: 900; cursor: pointer; }
-        .music-widget-actions button:nth-child(2) { width: 34px; height: 34px; background: #00338D; color: #fff; font-size: .78rem; }
-        .music-widget-actions button:disabled { cursor: not-allowed; opacity: .45; }
-        .music-folder-link { grid-area: folder; color: #007e91; font-size: .64rem; font-weight: 850; text-decoration: none; }
-        .music-folder-link:hover { text-decoration: underline; }
+        .music-widget { position: fixed; right: 18px; bottom: 18px; z-index: 13; display: grid; place-items: center; width: 66px; height: 66px; padding: 0; border: 0; border-radius: 50%; background: transparent; box-shadow: none; backdrop-filter: none; }
+        .music-toggle { position: relative; z-index: 2; display: grid; place-items: center; width: 54px; height: 54px; padding: 0 0 0 2px; border: 2px solid rgba(0,51,141,.88); border-radius: 50%; background: rgba(235,249,253,.32); box-shadow: 0 8px 20px rgba(0,51,141,.18), inset 0 0 0 1px rgba(255,255,255,.45); color: #00338D; font: inherit; font-size: 1.05rem; font-weight: 950; line-height: 1; cursor: pointer; transition: transform .2s ease, background .2s ease, box-shadow .2s ease; }
+        .music-toggle:hover { transform: scale(1.07); background: rgba(235,249,253,.56); box-shadow: 0 10px 24px rgba(0,51,141,.25), inset 0 0 0 1px rgba(255,255,255,.7); }
+        .music-toggle:focus-visible { outline: 3px solid rgba(0,159,218,.55); outline-offset: 4px; }
+        .music-toggle:disabled { cursor: wait; opacity: .55; }
+        .music-wave { position: absolute; inset: 5px; border: 1px solid rgba(0,159,218,.62); border-radius: 50%; opacity: 0; transform: scale(.75); pointer-events: none; }
+        .music-widget.is-playing .music-wave { animation: musicWave 2.4s ease-out infinite; }
+        .music-widget.is-playing .music-wave-two { animation-delay: .8s; }
+        .music-widget.is-playing .music-wave-three { animation-delay: 1.6s; }
+        @keyframes musicWave { 0% { opacity: 0; transform: scale(.78); } 20% { opacity: .7; } 100% { opacity: 0; transform: scale(1.85); } }
+        .music-widget.is-playing .music-toggle { background: rgba(188,234,247,.46); box-shadow: 0 0 0 5px rgba(0,159,218,.08), 0 10px 25px rgba(0,159,218,.25), inset 0 0 0 1px rgba(255,255,255,.64); }
+        .music-sr-status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
         @media (max-width: 900px) {
           .home-hero, .detail-hero, .split-grid, .agenda-grid, .admin-layout, .login-card, .decom-grid, .decom-board { grid-template-columns: 1fr; }
           .home-welcome { grid-template-columns: 1fr; }
@@ -4970,7 +4961,8 @@ const TYPES = {
         }
         @media (max-width: 620px) {
           .platform-shell { width: calc(100% - 14px); padding-top: 8px; }
-          .music-widget { right: 10px; bottom: 10px; width: calc(100vw - 20px); }
+          .music-widget { right: 12px; bottom: 12px; width: 58px; height: 58px; }
+          .music-toggle { width: 48px; height: 48px; font-size: .95rem; }
           .platform-top { align-items: start; border-radius: 18px; }
           .platform-brand { flex: 1 1 auto; }
           .platform-brand img { width: 220px; height: 58px; border-radius: 0; padding: 0; }
@@ -5047,9 +5039,8 @@ const TYPES = {
         body.platform-body .admin-tab.active,
         body.platform-body .decom-months button.active { background: linear-gradient(135deg, #00338D, #005B9F); }
         body.platform-body .home-live-dot,
-        body.platform-body .live-visitors-dot,
-        body.platform-body .music-widget.is-playing .music-widget-head i { background: #009FDA; }
-        body.platform-body .music-mark { background: #00338D; color: #F0AB00; }
+        body.platform-body .live-visitors-dot { background: #009FDA; }
+        body.platform-body .music-toggle { border-color: #00338D; color: #00338D; }
         body.platform-body .committee-option img { background: linear-gradient(145deg, #00338D, #005B9F); }
         body.platform-body .committee-option.selected { border-color: #009FDA; background: rgba(188, 234, 247, .72); }
         body.platform-body .week-list-day.is-today { border-color: rgba(0, 159, 218, .48); box-shadow: inset 5px 0 0 #009FDA; }
