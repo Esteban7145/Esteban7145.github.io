@@ -1248,12 +1248,15 @@ const TYPES = {
         url: "https://qgucwxgwehkualhfnckt.supabase.co",
         publishableKey: "sb_publishable_ZqqjaA95z6fwMSmQ8Rok9g_Wqhgc0ym",
         storageBucket: "event-media",
-        leaderBucket: "leader-submissions"
+        leaderBucket: "leader-submissions",
+        driveFunction: "drive-upload"
       };
       const cloud = {
         enabled: false,
         ready: false,
         storageReady: false,
+        driveReady: false,
+        driveError: "",
         leaderStorageReady: false,
         storageError: "",
         leaderStorageError: "",
@@ -1712,6 +1715,7 @@ const TYPES = {
           cloud.storageMod = supabaseStorageAdapter;
           cloud.enabled = true;
           cloud.ready = true;
+          cloud.driveReady = false;
           cloud.error = "";
           cloud.storageReady = await checkSupabaseStorageAvailability(SUPABASE_CONFIG.storageBucket, "event-media");
           // El bucket privado requiere sesión para consultar su contenido. Su existencia
@@ -1720,6 +1724,7 @@ const TYPES = {
           setupLiveVisitors();
           supabaseAuthAdapter.onAuthStateChanged(cloud.auth, user => {
             cloud.user = user;
+            checkDriveConnection(user);
             setupDecomListener();
             setupPrivateCloudListeners();
             refreshAdminNav();
@@ -1901,6 +1906,23 @@ const TYPES = {
         async getSignedDownloadURL(ref, expiresIn = 3600) { const { data, error } = await cloud.storage.from(ref.bucket || SUPABASE_CONFIG.storageBucket).createSignedUrl(ref.path, expiresIn); if (error) throw error; return data.signedUrl; },
         async deleteObject(ref) { return cloud.storage.from(ref.bucket || SUPABASE_CONFIG.storageBucket).remove([ref.path]); }
       };
+
+      async function checkDriveConnection(user) {
+        cloud.driveReady = false;
+        cloud.driveError = "";
+        if (!user || !SUPABASE_CONFIG.driveFunction || !cloud.app?.functions) return;
+        try {
+          const form = new FormData();
+          form.append("action", "status");
+          const { data, error } = await cloud.app.functions.invoke(SUPABASE_CONFIG.driveFunction, { body: form });
+          if (error || data?.error || !data?.configured) throw new Error(data?.error || error?.message || "Google Drive todavía no está configurado.");
+          cloud.driveReady = true;
+        } catch (error) {
+          cloud.driveError = error.message || "Google Drive todavía no está configurado.";
+        }
+        const route = parseRoute();
+        if (route.name === "admin" || route.name === "login") renderRoute();
+      }
 
       async function checkSupabaseStorageAvailability(bucket = SUPABASE_CONFIG.storageBucket, label = bucket) {
         try {
@@ -2303,7 +2325,7 @@ const TYPES = {
 
       function cloudNotice() {
         if (cloud.enabled && cloud.ready) {
-          const storageNotice = cloud.storageReady ? "" : `<div class="cloud-warning"><strong>Archivos desactivados:</strong> ${escapeHtml(cloud.storageError || "El almacenamiento de archivos de Supabase todavía no está disponible.")}</div>`;
+          const storageNotice = cloud.driveReady ? `<div class="cloud-ok">Archivos públicos: Google Drive conectado. Los envíos privados de líderes permanecen protegidos.</div>` : cloud.storageReady ? `<div class="cloud-ok">Archivos públicos: almacenamiento de respaldo activo. Los envíos privados de líderes permanecen protegidos.</div>` : `<div class="cloud-warning"><strong>Archivos desactivados:</strong> ${escapeHtml(cloud.driveError || cloud.storageError || "El almacenamiento de archivos todavía no está disponible.")}</div>`;
           return `<div class="cloud-ok">Base de datos conectada. Eventos, anuncios, reflexiones y turnos se guardan en la nube.</div>${storageNotice}`;
         }
         return `<div class="cloud-warning"><strong>Supabase pendiente:</strong> ${escapeHtml(cloud.error || "No se pudo conectar con la nube.")}</div>`;
@@ -3163,7 +3185,7 @@ const TYPES = {
         document.getElementById("saveWeeklySchedule").onclick = runAdminAction(saveWeeklySchedule);
         const deleteWeeklyButton = document.getElementById("deleteWeeklySchedule");
         if (deleteWeeklyButton) deleteWeeklyButton.onclick = runAdminAction(deleteWeeklySchedule);
-        if (!cloud.storageReady) {
+        if (!cloud.driveReady && !cloud.storageReady) {
           ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2", "adminSaveMaterial", "uploadWeeklySchedule", "saveWeeklySchedule"].forEach(id => {
             const control = document.getElementById(id);
             if (control) control.disabled = true;
@@ -3328,14 +3350,14 @@ const TYPES = {
         };
         const eventImageFile = pendingUploadFiles("adminEventImage")[0];
         if (eventImageFile) {
-          if (!cloud.storageReady) return alert(cloud.storageError || "El almacenamiento de archivos no está disponible.");
+          if (!cloud.driveReady && !cloud.storageReady) return alert(cloud.storageError || "El almacenamiento de archivos no está disponible.");
           payload.image = await uploadCloudFile(eventImageFile, id, "principal", "Imagen del evento");
         }
         await saveCloudDoc("events", id, payload);
         clearPendingUpload("adminEventImage");
         platform.selectedAdminEvent = id;
         completeUploadProgress("Evento guardado correctamente.");
-        alert("Evento guardado en Supabase.");
+        alert("Evento guardado correctamente.");
         renderAdminPage();
       }
 
@@ -3353,7 +3375,7 @@ const TYPES = {
 
       async function savePlatformMaterial() {
         if (!requireCloudAdmin()) return;
-        if (!cloud.storageReady) return alert(cloud.storageError || "El almacenamiento de archivos no está disponible.");
+        if (!cloud.driveReady && !cloud.storageReady) return alert(cloud.storageError || "El almacenamiento de archivos no está disponible.");
         const id = document.getElementById("materialSelect").value;
         const event = platformEventById(id);
         if (!event) return alert("Selecciona primero un evento.");
@@ -3384,13 +3406,13 @@ const TYPES = {
         ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2"].forEach(clearPendingUpload);
         setupPlatformMusic();
         completeUploadProgress("Todo el material quedó guardado correctamente.");
-        alert("Material guardado en Supabase Storage.");
+        alert("Material guardado correctamente en la biblioteca.");
         renderAdminPage();
       }
 
       async function saveWeeklySchedule() {
         if (!requireCloudAdmin()) return;
-        if (!cloud.storageReady) return alert("El almacenamiento no está disponible.");
+        if (!cloud.driveReady && !cloud.storageReady) return alert("El almacenamiento no está disponible.");
         const file = document.getElementById("uploadWeeklySchedule")?.files[0];
         if (!file) return alert("Selecciona primero una imagen.");
         if (!file.type.startsWith("image/")) return alert("El cronograma semanal debe subirse como imagen (PNG, JPG o WEBP).");
@@ -3499,7 +3521,20 @@ const TYPES = {
       }
 
       async function deleteCloudAsset(asset) {
-        if (!asset?.path) return;
+        if (!asset) return;
+        if (asset.provider === "google-drive" && asset.driveFileId) {
+          try {
+            const form = new FormData();
+            form.append("action", "delete");
+            form.append("driveFileId", asset.driveFileId);
+            const { data, error } = await cloud.app.functions.invoke(SUPABASE_CONFIG.driveFunction, { body: form });
+            if (error || data?.error) throw new Error(data?.error || error?.message || "No se pudo eliminar el archivo de Drive.");
+          } catch (error) {
+            console.warn("No se pudo eliminar el archivo de Google Drive", error);
+          }
+          return;
+        }
+        if (!asset.path) return;
         try {
           await cloud.storageMod.deleteObject(cloud.storageMod.ref(cloud.storage, asset.path));
         } catch (error) {
@@ -3617,6 +3652,7 @@ const TYPES = {
       }
 
       async function uploadCloudFile(file, eventId, section, label) {
+        if (cloud.driveReady) return uploadDriveFile(file, eventId, section, label);
         const safeName = safeFileName(file.name);
         const path = `events/${eventId}/${section}/${Date.now()}-${safeName}`;
         const fileRef = cloud.storageMod.ref(cloud.storage, path);
@@ -4064,6 +4100,30 @@ const TYPES = {
         const profile = leaderProfile();
         const validCommittee = COMMITTEES.some(([key]) => key !== "ipuc" && key === profile?.committee);
         return Boolean(cloud.enabled && cloud.ready && !isAdmin() && validCommittee);
+      }
+
+      async function uploadDriveFile(file, eventId, section, label) {
+        const event = eventId && eventId !== "site" ? APP_STATE.events[eventId] : null;
+        const folderKey = section === "cronograma-semanal" ? "weekly" : (section === "reflexiones" || section === "musica" ? "multimedia" : "event");
+        const form = new FormData();
+        form.append("action", "upload");
+        form.append("file", file, file.name);
+        form.append("folderKey", folderKey);
+        form.append("fileName", file.name);
+        if (folderKey === "event" && event) form.append("eventFolder", `${event.date || "evento"} - ${event.title || eventId}`);
+        setUploadProgressState({ active: true, label: `Subiendo ${file.name}`, detail: `${label} · Google Drive · ${humanFileSize(file.size)}`, percent: 0, tone: "loading" });
+        try {
+          const { data, error } = await cloud.app.functions.invoke(SUPABASE_CONFIG.driveFunction, { body: form });
+          if (error || data?.error) throw new Error(data?.error || error?.message || "No se pudo subir el archivo a Google Drive.");
+          setUploadProgressState({ label: "Archivo cargado", detail: `${label} · guardando el enlace`, percent: 100, tone: "loading" });
+          return { ...data, label, name: data.name || file.name, type: data.type || file.type || "application/octet-stream", size: data.size || file.size };
+        } catch (error) {
+          cloud.storageError = error.message || "No se pudo completar la carga en Google Drive.";
+          setUploadProgressState({ label: "No se pudo completar la carga", detail: cloud.storageError, percent: 0, tone: "error" });
+          window.clearTimeout(uploadProgressTimer);
+          uploadProgressTimer = window.setTimeout(() => setUploadProgressState({ active: false }), 6000);
+          throw error;
+        }
       }
 
       function leaderCanManageEvent(event) {
