@@ -1121,6 +1121,14 @@ const TYPES = {
       return "";
     }
 
+    // Visor 3D reutilizable: permite sumar modelos de Sketchfab sin exponer
+    // tokens y conserva una configuración ligera para la experiencia pública.
+    const SKETCHFAB_3D_MODELS = Object.freeze({ bible: "bbe98a3005864fec92528f39b4746f7f" });
+    function sketchfabViewerUrl(modelId, options = {}) {
+      const params = new URLSearchParams({ autospin: "1", autostart: "1", preload: "1", transparent: "1", ui_theme: "dark", ...options });
+      return `https://sketchfab.com/models/${encodeURIComponent(modelId)}/embed?${params.toString()}`;
+    }
+
     function assetSource(asset, purpose = "download") {
       if (!asset) return "";
       const fallback = asset.url || asset.dataUrl || asset.previewUrl || "";
@@ -2117,7 +2125,7 @@ const TYPES = {
         const reflection = reflectionForDate(today);
         const mainInvitation = main && main.type === "culto" && ((main.image && isImage(main.image)) || (main.invitations?.main && isImage(main.invitations.main)) || isRegularSundayWorship(main));
         const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, true) : "";
-        const bible3DMarkup = !main ? `<aside class="home-bible-3d" aria-label="Biblia 3D interactiva"><div class="home-bible-3d-head"><span class="eyebrow">Palabra viva</span><span class="home-bible-3d-spark" aria-hidden="true">✦</span></div><div class="home-bible-3d-frame"><iframe title="Biblia 3D interactiva" src="https://sketchfab.com/models/bbe98a3005864fec92528f39b4746f7f/embed?autospin=1&autostart=1&preload=1&transparent=1&ui_theme=dark" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-in-view execution-while-not-rendered web-share allowfullscreen loading="eager"></iframe></div><a class="home-bible-3d-credit" href="https://sketchfab.com/3d-models/biblia-bbe98a3005864fec92528f39b4746f7f" target="_blank" rel="noopener noreferrer">Explorar la Biblia en 3D <span aria-hidden="true">↗</span></a></aside>` : "";
+        const bible3DMarkup = !main ? `<aside class="home-bible-3d" aria-label="Biblia 3D interactiva"><div class="home-bible-3d-head"><span class="eyebrow">Palabra viva</span><span class="home-bible-3d-spark" aria-hidden="true">✦</span></div><div class="home-bible-3d-frame"><iframe title="Biblia 3D interactiva" src="${sketchfabViewerUrl(SKETCHFAB_3D_MODELS.bible)}" allow="autoplay; fullscreen; xr-spatial-tracking" xr-spatial-tracking execution-while-out-of-viewport execution-while-not-rendered web-share allowfullscreen loading="eager"></iframe></div><a class="home-bible-3d-credit" href="https://sketchfab.com/3d-models/biblia-bbe98a3005864fec92528f39b4746f7f" target="_blank" rel="noopener noreferrer">Explorar la Biblia en 3D <span aria-hidden="true">↗</span></a></aside>` : "";
         reflectionIsActive = Boolean(reflectionMarkup);
         if (reflectionIsActive) {
           stopRadioIpuc();
