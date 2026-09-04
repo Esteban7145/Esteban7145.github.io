@@ -103,7 +103,13 @@ async function findOrCreateEventFolder(token: string, parentId: string, folderNa
 
 async function uploadToDrive(token: string, file: File, parentId: string, name: string) {
   const boundary = `ipuc_${crypto.randomUUID()}`;
-  const metadata = JSON.stringify({ name, parents: [parentId] });
+  const metadata = JSON.stringify({
+    name,
+    parents: [parentId],
+    // Conservar el tipo MIME evita que Drive entregue las imágenes como
+    // descargas genéricas y permite previsualizarlas directamente.
+    mimeType: file.type || "application/octet-stream",
+  });
   const body = new Blob([
     `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`,
     `--${boundary}\r\nContent-Type: ${file.type || "application/octet-stream"}\r\n\r\n`,

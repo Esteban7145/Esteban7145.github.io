@@ -1046,7 +1046,7 @@ const TYPES = {
       return button;
     }
     function downloadAsset(asset) {
-      const source = assetSource(asset);
+      const source = assetSource(asset, "download");
       if (!source) return alert("Este archivo no tiene URL disponible.");
       const link = document.createElement("a");
       link.href = source;
@@ -1111,8 +1111,29 @@ const TYPES = {
 
     window.alert = showToast;
 
-    function assetSource(asset) {
-      return asset?.url || asset?.dataUrl || "";
+    function driveFileId(asset) {
+      if (asset?.driveFileId) return String(asset.driveFileId);
+      const candidates = [asset?.url, asset?.previewUrl, asset?.webViewLink];
+      for (const value of candidates) {
+        const match = String(value || "").match(/(?:[?&]id=|\/d\/)([a-zA-Z0-9_-]{10,})/);
+        if (match) return match[1];
+      }
+      return "";
+    }
+
+    function assetSource(asset, purpose = "download") {
+      if (!asset) return "";
+      const fallback = asset.url || asset.dataUrl || asset.previewUrl || "";
+      if (purpose === "display" && isImage(asset)) {
+        const id = driveFileId(asset);
+        // Drive puede entregar SVG como application/octet-stream. Su miniatura
+        // es una imagen PNG estable para mostrarla en cualquier navegador.
+        if (id && (asset.provider === "google-drive" || String(fallback).includes("drive.google.com"))) {
+          return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w2400`;
+        }
+        return asset.previewUrl || fallback;
+      }
+      return fallback;
     }
     function isImage(asset) {
       return asset.type && asset.type.startsWith("image/");
@@ -1578,7 +1599,7 @@ const TYPES = {
           const source = youtubeEmbedUrl(media.url).replace("autoplay=1&mute=1", "autoplay=0&mute=0");
           return source ? `<iframe src="${source}" title="${escapeHtml(item.title || "Voces que Edifican")}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : "";
         }
-        if (isVideo(media)) return `<video controls playsinline preload="metadata" ${item.cover && assetSource(item.cover) ? `poster="${escapeHtml(assetSource(item.cover))}"` : ""} src="${escapeHtml(assetSource(media))}"></video>`;
+        if (isVideo(media)) return `<video controls playsinline preload="metadata" ${item.cover && assetSource(item.cover, "display") ? `poster="${escapeHtml(assetSource(item.cover, "display"))}"` : ""} src="${escapeHtml(assetSource(media))}"></video>`;
         if (isAudio(media)) return `<div class="podcast-audio-box"><span>▶</span><audio controls preload="metadata" src="${escapeHtml(assetSource(media))}"></audio></div>`;
         return `<div class="podcast-empty-media"><span>📁</span><small>Archivo disponible</small></div>`;
       }
@@ -1590,7 +1611,7 @@ const TYPES = {
         view().innerHTML = `
           <section class="page-head glass podcast-hero"><div><p class="eyebrow">Voces de la iglesia</p><h1>Voces que Edifican</h1><p>Testimonios, milagros, predicaciones especiales y experiencias de fe para escuchar y compartir.</p></div><span class="podcast-hero-mark">◉</span></section>
           <section class="podcast-filters glass" aria-label="Categorías del podcast">${["Todos", ...PODCAST_CATEGORIES].map(category => `<button type="button" class="podcast-filter ${activeCategory === category ? "active" : ""}" data-podcast-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join("")}</section>
-          <section class="podcast-grid">${items.map(item => `<article class="podcast-card glass ${item.featured ? "is-featured" : ""}"><div class="podcast-media${item.cover && assetSource(item.cover) ? " has-cover" : ""}"${item.cover && assetSource(item.cover) ? ` style="background-image:linear-gradient(145deg,rgba(0,51,141,.72),rgba(8,123,136,.72)),url('${escapeHtml(assetSource(item.cover))}')"` : ""}>${podcastMediaMarkup(item)}</div><div class="podcast-copy"><div class="podcast-card-head"><span class="status-chip">${escapeHtml(item.category || "Experiencias de fe")}</span>${item.featured ? `<span class="podcast-featured">Destacado</span>` : ""}</div><h2>${escapeHtml(item.title || "Voces que Edifican")}</h2><p>${escapeHtml(item.description || "Una historia que edifica nuestra fe.")}</p><small>${item.createdAt ? `Publicado ${escapeHtml(formatDateShort(String(item.createdAt).slice(0, 10)))}` : "Contenido IPUC Villa del Río"}</small></div></article>`).join("") || emptyText(activeCategory === "Todos" ? "Aún no hay episodios publicados. Pronto encontrarás aquí testimonios y predicaciones de la iglesia." : "No hay episodios en esta categoría.")}</section>`;
+          <section class="podcast-grid">${items.map(item => `<article class="podcast-card glass ${item.featured ? "is-featured" : ""}"><div class="podcast-media${item.cover && assetSource(item.cover, "display") ? " has-cover" : ""}"${item.cover && assetSource(item.cover, "display") ? ` style="background-image:linear-gradient(145deg,rgba(0,51,141,.72),rgba(8,123,136,.72)),url('${escapeHtml(assetSource(item.cover, "display"))}')"` : ""}>${podcastMediaMarkup(item)}</div><div class="podcast-copy"><div class="podcast-card-head"><span class="status-chip">${escapeHtml(item.category || "Experiencias de fe")}</span>${item.featured ? `<span class="podcast-featured">Destacado</span>` : ""}</div><h2>${escapeHtml(item.title || "Voces que Edifican")}</h2><p>${escapeHtml(item.description || "Una historia que edifica nuestra fe.")}</p><small>${item.createdAt ? `Publicado ${escapeHtml(formatDateShort(String(item.createdAt).slice(0, 10)))}` : "Contenido IPUC Villa del Río"}</small></div></article>`).join("") || emptyText(activeCategory === "Todos" ? "Aún no hay episodios publicados. Pronto encontrarás aquí testimonios y predicaciones de la iglesia." : "No hay episodios en esta categoría.")}</section>`;
         view().querySelectorAll("[data-podcast-category]").forEach(button => {
           button.onclick = () => { platform.podcastCategory = button.dataset.podcastCategory || "Todos"; renderPodcastPage(); };
         });
@@ -2783,7 +2804,7 @@ const TYPES = {
       function weeklyScheduleMarkup() {
         const asset = APP_STATE.weeklySchedule;
         if (!assetSource(asset)) return "";
-        const source = assetSource(asset);
+        const source = assetSource(asset, "display");
         const isPdf = String(asset.type || asset.name || "").toLowerCase().includes("pdf");
         if (isPdf) return `<section class="weekly-schedule-card"><div><p class="eyebrow">Cronograma para compartir</p><h2>Programación semanal</h2><p>El archivo actual es PDF. Sube una imagen desde Administración para mostrarla aquí.</p></div></section>`;
         return `<section class="weekly-schedule-card"><div><p class="eyebrow">Cronograma para compartir</p><h2>Programación semanal</h2><p>Consulta la imagen oficial de esta semana.</p></div><img src="${escapeHtml(source)}" alt="Cronograma semanal de cultos"></section>`;
@@ -4020,8 +4041,8 @@ const TYPES = {
       }
 
       function eventImage(event) {
-        if (event.image && isImage(event.image)) return assetSource(event.image);
-        if (event.invitations?.main && isImage(event.invitations.main)) return assetSource(event.invitations.main);
+        if (event.image && isImage(event.image)) return assetSource(event.image, "display");
+        if (event.invitations?.main && isImage(event.invitations.main)) return assetSource(event.invitations.main, "display");
         if (isRegularSundayWorship(event)) return DEFAULT_SUNDAY_INVITATION.url;
         return autoImage(event.type, event.autoStyle, event.title);
       }
@@ -4076,7 +4097,7 @@ const TYPES = {
       }
 
       function assetThumb(asset) {
-        if (isImage(asset)) return `<img src="${assetSource(asset)}" alt="">`;
+        if (isImage(asset)) return `<img src="${assetSource(asset, "display")}" alt="">`;
         if (isVideo(asset)) return `<video src="${assetSource(asset)}" muted playsinline></video>`;
         return `<span>${escapeHtml(assetTypeLabel(asset))}</span>`;
       }
@@ -4093,7 +4114,7 @@ const TYPES = {
         const layer = document.getElementById("platformMedia");
         layer.setAttribute("aria-hidden", "false");
         layer.classList.add("open");
-        const body = isImage(asset) ? `<img src="${assetSource(asset)}" alt="">` : isVideo(asset) ? `<video src="${assetSource(asset)}" controls autoplay></video>` : isPdf(asset) ? `<iframe src="${assetSource(asset)}"></iframe>` : `<div class="empty">Este archivo se puede descargar.</div>`;
+        const body = isImage(asset) ? `<img src="${assetSource(asset, "display")}" alt="">` : isVideo(asset) ? `<video src="${assetSource(asset)}" controls autoplay></video>` : isPdf(asset) ? `<iframe src="${assetSource(asset)}"></iframe>` : `<div class="empty">Este archivo se puede descargar.</div>`;
         layer.innerHTML = `<article><header><h2>${escapeHtml(asset.label || asset.name)}</h2><button type="button" data-close-media>&times;</button></header>${body}<button class="primary-link" type="button" data-download-media>Descargar</button></article>`;
         layer.querySelector("[data-close-media]").onclick = () => {
           layer.classList.remove("open");
