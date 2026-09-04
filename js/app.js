@@ -2639,6 +2639,29 @@ const TYPES = {
         </section>`;
       }
 
+      function renderCanvaModule() {
+        const canvaEvents = platformEventsForYear(today.getFullYear()).filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Cancelado").sort(sortByDate);
+        return `<section class="admin-module" data-admin-module="canva" ${platform.adminSection === "canva" ? "" : "hidden"}>
+          <article class="content-card glass admin-card-wide canva-admin-module">
+            <div class="canva-studio-hero">
+              <div><span class="canva-studio-badge">Canva Studio</span><h2>Crea invitaciones para la iglesia</h2><p>Diseña piezas bonitas para cada culto, evento y comité. El espacio es privado y solo aparece para administradores.</p></div>
+              <span class="canva-studio-mark" aria-hidden="true">✦</span>
+            </div>
+            <div class="canva-action-grid">
+              <a class="canva-action-card" href="https://www.canva.com/create/invitations/" target="_blank" rel="noopener noreferrer"><span class="canva-action-icon">✉</span><strong>Invitación</strong><small>Cuadrada o vertical</small><b>Diseñar ↗</b></a>
+              <a class="canva-action-card" href="https://www.canva.com/create/social-media-graphics/" target="_blank" rel="noopener noreferrer"><span class="canva-action-icon">▣</span><strong>Redes sociales</strong><small>Historias y publicaciones</small><b>Diseñar ↗</b></a>
+              <a class="canva-action-card" href="https://www.canva.com/create/posters/" target="_blank" rel="noopener noreferrer"><span class="canva-action-icon">▤</span><strong>Afiches y banners</strong><small>Proyección y anuncios</small><b>Diseñar ↗</b></a>
+            </div>
+            <div class="canva-workflow">
+              <div class="section-title"><p class="eyebrow">Trabaja sobre un evento</p><h3>Ten los datos a mano</h3><p>Selecciona el culto para copiar rápidamente su información en Canva.</p></div>
+              <div class="form-grid"><label class="full">Evento relacionado<select id="canvaEventSelect"><option value="">Selecciona un evento pendiente o próximo</option>${canvaEvents.map(event => `<option value="${escapeHtml(event.id)}">${escapeHtml(formatDateShort(event.date))} · ${escapeHtml(event.title)}</option>`).join("")}</select></label><button class="small-action" id="copyCanvaBrief" type="button">Copiar datos del evento</button><a class="small-action" href="#/admin" data-open-admin-material>Ir a Material para subirlo</a></div>
+              <div class="canva-steps"><div><b>1</b><span>Elige el formato y crea la invitación en Canva.</span></div><div><b>2</b><span>Descarga la pieza como PNG o JPG.</span></div><div><b>3</b><span>En Material, súbela al evento correcto.</span></div></div>
+            </div>
+            <div class="canva-admin-note"><strong>¿Por qué se abre en otra pestaña?</strong><span>Canva no permite mostrar su editor completo dentro de esta web sin una integración de desarrollador y autorización propia. Así el diseño sigue siendo seguro y cada administrador trabaja con su cuenta de Canva.</span></div>
+          </article>
+        </section>`;
+      }
+
       function renderAdminPage() {
         const selected = platform.selectedAdminEvent === "__new__" ? null : platformEventById(platform.selectedAdminEvent);
         const adminEvents = platformEventsForYear(today.getFullYear());
@@ -2657,7 +2680,7 @@ const TYPES = {
             <article><strong>${APP_STATE.announcements?.length || 0}</strong><span>Anuncios publicados</span></article>
           </section>
           <nav class="admin-tabs glass" aria-label="Módulos de administración">
-            ${[["eventos", "Eventos", "Crear o editar"], ["material", "Material", "Subir archivos"], ["podcast", "Voces que Edifican", "Testimonios y predicas"], ["anuncios", "Anuncios", "Publicar aviso"], ["reflexiones", "Reflexiones", "Mensaje diario"], ["solicitudes", "Solicitudes", "Mensajes de líderes"], ["lideres", "Líderes", "Correos autorizados"], ["decom", "DECOM", "Turnos internos"]].map(([key, label, hint]) => `<button type="button" class="admin-tab ${activeAdminSection === key ? "active" : ""}" data-admin-section="${key}"><strong>${label}</strong><span>${hint}</span></button>`).join("")}
+            ${[["eventos", "Eventos", "Crear o editar"], ["material", "Material", "Subir archivos"], ["canva", "Canva Studio", "Crear invitaciones"], ["podcast", "Voces que Edifican", "Testimonios y predicas"], ["anuncios", "Anuncios", "Publicar aviso"], ["reflexiones", "Reflexiones", "Mensaje diario"], ["solicitudes", "Solicitudes", "Mensajes de líderes"], ["lideres", "Líderes", "Correos autorizados"], ["decom", "DECOM", "Turnos internos"]].map(([key, label, hint]) => `<button type="button" class="admin-tab ${activeAdminSection === key ? "active" : ""}" data-admin-section="${key}"><strong>${label}</strong><span>${hint}</span></button>`).join("")}
           </nav>
           <section class="admin-layout admin-workspace">
             <section class="admin-module" data-admin-module="eventos" ${moduleVisibility("eventos")}>
@@ -2704,6 +2727,7 @@ const TYPES = {
             </article>
             </section>
             ${renderPodcastModule()}
+            ${renderCanvaModule()}
             <section class="admin-module" data-admin-module="anuncios" ${moduleVisibility("anuncios")}>
             <article class="content-card glass admin-card-narrow">
               <div class="section-title"><p class="eyebrow">Anuncios</p><h2>Últimos anuncios</h2></div>
@@ -3389,6 +3413,29 @@ const TYPES = {
             renderAdminPage();
           };
         });
+        const canvaEventSelect = document.getElementById("canvaEventSelect");
+        const copyCanvaBrief = document.getElementById("copyCanvaBrief");
+        if (copyCanvaBrief) copyCanvaBrief.onclick = async () => {
+          const event = canvaEventSelect?.value ? platformEventById(canvaEventSelect.value) : null;
+          if (!event) {
+            alert("Selecciona primero el evento para copiar sus datos.");
+            return;
+          }
+          const brief = `${event.title}\nFecha: ${formatDateShort(event.date)}\nHora: ${event.time}\nLugar: ${event.place}\nComité: ${event.department || event.organizer || "IPUC Villa del Río"}`;
+          try {
+            await navigator.clipboard.writeText(brief);
+            copyCanvaBrief.textContent = "Datos copiados ✓";
+            setTimeout(() => { copyCanvaBrief.textContent = "Copiar datos del evento"; }, 1800);
+          } catch {
+            alert("No se pudieron copiar los datos automáticamente. Puedes consultarlos en el evento.");
+          }
+        };
+        const openAdminMaterial = view().querySelector("[data-open-admin-material]");
+        if (openAdminMaterial) openAdminMaterial.onclick = event => {
+          event.preventDefault();
+          platform.adminSection = "material";
+          renderAdminPage();
+        };
         document.getElementById("adminSelect").onchange = event => {
           platform.selectedAdminEvent = event.target.value;
           renderAdminPage();
