@@ -4214,7 +4214,9 @@ const TYPES = {
         .radio-home-action:hover { transform: translateY(-2px); background: white; }
         .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { margin: 0; font-size: clamp(2rem, 4vw, 4.2rem); line-height: .96; }
         .hero-copy p, .page-head p, .detail-hero p, .content-card p { color: var(--muted); line-height: 1.45; }
-        .hero-image, .detail-hero > img, .event-card-public > img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 22px; box-shadow: 0 20px 46px rgba(31,55,72,.18); }
+        .hero-image { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 22px; box-shadow: 0 20px 46px rgba(31,55,72,.18); }
+        .event-card-public > img { width: 100%; aspect-ratio: 16 / 10; object-fit: contain; border-radius: 22px; background: rgba(18,51,72,.08); box-shadow: 0 20px 46px rgba(31,55,72,.18); }
+        .detail-hero > img { display: block; width: 100%; height: auto; max-height: 680px; min-height: 220px; object-fit: contain; border-radius: 22px; background: rgba(18,51,72,.08); box-shadow: 0 20px 46px rgba(31,55,72,.18); }
         .home-hero .hero-image { animation: heroFloat 7s ease-in-out infinite; }
         @keyframes heroFloat { 0%, 100% { transform: rotate(1.4deg) translateY(0); } 50% { transform: rotate(1.4deg) translateY(-7px); } }
         .home-welcome { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 18px; align-items: center; padding: 18px 20px; border-radius: 22px; }
@@ -4272,7 +4274,7 @@ const TYPES = {
         .section-title h2 { margin: 0; font-size: 1.45rem; }
         .card-list, .agenda-list, .file-public-list { display: grid; gap: 10px; }
         .mini-card, .agenda-item, .announcement-public, .file-public-list article { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px; border: 1px solid rgba(255,255,255,.72); border-radius: 16px; background: rgba(255,255,255,.48); color: var(--ink); text-decoration: none; }
-        .mini-card img, .agenda-item img { width: 74px; height: 58px; object-fit: cover; border-radius: 12px; }
+        .mini-card img, .agenda-item img { width: 74px; height: 58px; object-fit: contain; border-radius: 12px; background: rgba(18,51,72,.08); }
         .mini-card span, .agenda-item div, .file-public-list span { display: grid; gap: 3px; min-width: 0; }
         .mini-card small, .agenda-item small, .file-public-list small { color: var(--muted); }
         .announcement-public { grid-template-columns: 1fr; }
@@ -4290,7 +4292,7 @@ const TYPES = {
         .muted-day { opacity: .52; }
         .today-day { box-shadow: inset 0 0 0 2px rgba(28,139,120,.32); }
         .event-pill { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 5px; border-radius: 10px; background: rgba(255,255,255,.66); color: var(--ink); text-decoration: none; font-size: .75rem; font-weight: 850; }
-        .event-pill img { width: 26px; height: 26px; border-radius: 8px; object-fit: cover; flex: 0 0 auto; }
+        .event-pill img { width: 26px; height: 26px; border-radius: 8px; object-fit: contain; background: rgba(18,51,72,.08); flex: 0 0 auto; }
         .event-pill span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .event-pill small { display: block; color: var(--muted); font-size: .66rem; }
         .year-view { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
@@ -4331,7 +4333,7 @@ const TYPES = {
         .asset-grid-page { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
         .asset-public { display: grid; gap: 8px; padding: 10px; border: 1px solid rgba(255,255,255,.72); border-radius: 16px; background: rgba(255,255,255,.48); }
         .asset-public button:first-child { width: 100%; border: 0; padding: 0; border-radius: 14px; background: rgba(18,51,72,.08); overflow: hidden; cursor: pointer; }
-        .asset-public img, .asset-public video { width: 100%; height: 150px; object-fit: cover; display: block; }
+        .asset-public img, .asset-public video { width: 100%; height: 150px; object-fit: contain; background: rgba(18,51,72,.08); display: block; }
         .asset-public span { display: grid; place-items: center; height: 150px; color: var(--muted); font-weight: 900; }
         .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
         .form-grid label { display: grid; gap: 5px; color: #4f6b78; font-size: .78rem; font-weight: 900; text-transform: uppercase; }

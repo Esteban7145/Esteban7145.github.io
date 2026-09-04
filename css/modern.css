@@ -57,6 +57,12 @@ body.platform-body .committee-option.selected {
   background: color-mix(in srgb, var(--brand-teal), white 88%);
 }
 
+body.platform-body .feature-media img,
+body.platform-body .history-media img {
+  object-fit: contain;
+  background: rgba(18, 51, 72, .08);
+}
+
 body.platform-body :focus-visible {
   outline-color: color-mix(in srgb, var(--brand-teal), transparent 25%);
 }
