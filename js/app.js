@@ -4973,6 +4973,7 @@ const TYPES = {
           .platform-brand img { width: 220px; height: 58px; border-radius: 0; padding: 0; }
           .nav-toggle { display: inline-flex; }
           .platform-nav { position: absolute; left: 10px; right: 10px; top: calc(100% + 8px); display: none; flex-direction: column; align-items: stretch; padding: 10px; border-radius: 18px; background: rgba(245,250,248,.96); box-shadow: 0 20px 50px rgba(31,55,72,.22); }
+          .platform-top.is-compact .platform-nav { position: fixed; top: 68px; left: 10px; right: 10px; width: auto; max-height: calc(100vh - 82px); margin: 0; }
           .platform-nav.open { display: flex; }
           .platform-nav a { justify-content: flex-start; }
           .home-hero, .page-head, .content-card, .calendar-page, .view-switch, .month-strip, .filters, .login-card, .detail-hero { padding: 12px; border-radius: 18px; }
@@ -5009,13 +5010,12 @@ const TYPES = {
           .decom-months { overflow-x: auto; flex-wrap: nowrap; }
           .decom-months button { flex: 0 0 auto; }
           .decom-calendar-shell, .decom-editor { padding: 9px; border-radius: 16px; }
-          .decom-week-head, .decom-calendar-grid { gap: 4px; }
-          .decom-week-head, .decom-calendar-grid { min-width: 610px; }
-          .decom-week-head { font-size: .58rem; }
-          .decom-day { min-height: 76px; padding: 6px; border-radius: 10px; }
+          .decom-week-head, .decom-calendar-grid { gap: 3px; min-width: 0; width: 100%; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+          .decom-week-head { font-size: .57rem; }
+          .decom-day { min-width: 0; min-height: 72px; padding: 5px 4px; border-radius: 10px; }
           .decom-day-number { width: 22px; height: 22px; border-radius: 7px; font-size: .82rem; }
-          .decom-day small { font-size: .58rem; }
-          .decom-day strong { font-size: .68rem; line-height: 1; }
+          .decom-day small { overflow: hidden; font-size: .55rem; text-overflow: ellipsis; white-space: nowrap; }
+          .decom-day strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: .61rem; line-height: 1.05; overflow-wrap: anywhere; }
           .decom-day em, .decom-day b { display: none; }
           .decom-month-title { display: grid; gap: 2px; }
           .decom-form { grid-template-columns: 1fr; }
