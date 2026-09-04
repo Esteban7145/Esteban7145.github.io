@@ -1,4 +1,4 @@
-const CACHE_NAME = "ipuc-villa-del-rio-v31-glass-title";
+const CACHE_NAME = "ipuc-villa-del-rio-v32-drive-player";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/assets/logo.png", "/assets/favicon.png", "/assets/ipuc-villa-del-rio-brand.png"];
 
 self.addEventListener("install", event => {

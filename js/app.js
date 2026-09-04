@@ -1606,6 +1606,14 @@ const TYPES = {
           const source = youtubeEmbedUrl(media.url).replace("autoplay=1&mute=1", "autoplay=0&mute=0");
           return source ? `<iframe src="${source}" title="${escapeHtml(item.title || "Voces que Edifican")}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>` : "";
         }
+        // Drive entrega los videos con Content-Disposition: attachment. Ese
+        // enlace sirve para descargar, pero no para que un elemento <video>
+        // lo reproduzca dentro de la página. El visor de Drive sí soporta
+        // streaming, controles y rangos para archivos grandes.
+        if (isVideo(media) && driveFileId(media)) {
+          const source = `https://drive.google.com/file/d/${encodeURIComponent(driveFileId(media))}/preview`;
+          return `<iframe src="${source}" title="${escapeHtml(item.title || "Voces que Edifican")}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+        }
         if (isVideo(media)) return `<video controls playsinline preload="metadata" ${item.cover && assetSource(item.cover, "display") ? `poster="${escapeHtml(assetSource(item.cover, "display"))}"` : ""} src="${escapeHtml(assetSource(media))}"></video>`;
         if (isAudio(media)) return `<div class="podcast-audio-box"><span>▶</span><audio controls preload="metadata" src="${escapeHtml(assetSource(media))}"></audio></div>`;
         return `<div class="podcast-empty-media"><span>📁</span><small>Archivo disponible</small></div>`;
