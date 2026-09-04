@@ -555,6 +555,108 @@ body.platform-body .ipuc-toast-info .ipuc-toast-icon { background: linear-gradie
   body.platform-body .decom-day { min-width: 0 !important; }
 }
 
+/* Corrección definitiva de navegación, calendario y administración. */
+body.platform-body .platform-top.is-compact {
+  position: fixed !important;
+  top: 12px !important;
+  right: 12px !important;
+  left: auto !important;
+  width: 48px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: 3px !important;
+  z-index: 1001 !important;
+}
+
+body.platform-body .platform-top.is-compact .platform-nav.open {
+  position: fixed !important;
+  top: 70px !important;
+  right: 12px !important;
+  left: auto !important;
+  width: min(360px, calc(100vw - 24px)) !important;
+  max-height: calc(100vh - 84px) !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+body.platform-body .platform-top.is-compact .platform-nav.open a {
+  min-width: 0 !important;
+  min-height: 46px !important;
+  justify-content: center !important;
+  padding: 0 8px !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+body.platform-body .admin-workspace,
+body.platform-body .admin-module,
+body.platform-body .admin-card-wide,
+body.platform-body .admin-card-narrow,
+body.platform-body .admin-form-section,
+body.platform-body .form-grid,
+body.platform-body .admin-grid,
+body.platform-body .admin-field,
+body.platform-body .committee-picker { min-width: 0; max-width: 100%; box-sizing: border-box; }
+body.platform-body .admin-workspace { grid-template-columns: minmax(0, 1fr) !important; align-items: start; }
+body.platform-body .admin-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
+body.platform-body .admin-tab { min-width: 0; min-height: 64px; align-content: center; overflow-wrap: anywhere; }
+body.platform-body .admin-tab strong,
+body.platform-body .admin-tab span { min-width: 0; overflow-wrap: anywhere; }
+body.platform-body .admin-field input,
+body.platform-body .admin-field select,
+body.platform-body .admin-field textarea,
+body.platform-body .form-grid input,
+body.platform-body .form-grid select,
+body.platform-body .form-grid textarea { box-sizing: border-box; max-width: 100%; }
+body.platform-body .form-grid > *, body.platform-body .admin-grid > * { min-width: 0; }
+body.platform-body .admin-field > button,
+body.platform-body .button-row > button { min-width: 140px; }
+
+@media (max-width: 620px) {
+  body.platform-body .platform-top.is-compact { top: 8px !important; right: 8px !important; }
+  body.platform-body .platform-top.is-compact .platform-nav.open {
+    top: 64px !important;
+    right: 8px !important;
+    left: 8px !important;
+    width: auto !important;
+    max-height: calc(100vh - 76px) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  body.platform-body .admin-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 7px; padding: 7px; }
+  body.platform-body .admin-tab { min-height: 58px; padding: 9px 7px; text-align: center; }
+  body.platform-body .admin-tab strong { font-size: .8rem; }
+  body.platform-body .admin-tab span { font-size: .66rem; line-height: 1.15; }
+  body.platform-body .admin-summary,
+  body.platform-body .admin-layout,
+  body.platform-body .admin-grid,
+  body.platform-body .form-grid,
+  body.platform-body .leader-admin-form { grid-template-columns: minmax(0, 1fr) !important; }
+  body.platform-body .admin-field,
+  body.platform-body .admin-field.full,
+  body.platform-body .form-grid .full,
+  body.platform-body .button-row.full { grid-column: 1 / -1 !important; }
+  body.platform-body .admin-field > button,
+  body.platform-body .button-row > button,
+  body.platform-body .admin-form-section button { width: 100%; min-width: 0; }
+  body.platform-body .committee-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.platform-body .committee-option { min-width: 0; min-height: 104px; }
+  body.platform-body .month-calendar-view,
+  body.platform-body .month-grid,
+  body.platform-body .week-head,
+  body.platform-body .decom-calendar-shell,
+  body.platform-body .decom-week-head,
+  body.platform-body .decom-calendar-grid { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; }
+  body.platform-body .month-grid,
+  body.platform-body .decom-calendar-grid { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
+  body.platform-body .month-day,
+  body.platform-body .decom-day { min-width: 0 !important; overflow: hidden; }
+}
+
 body.platform-body .resource-hero { align-items: flex-end; }
 body.platform-body .resource-hero h1 { max-width: 760px; }
 body.platform-body .resource-hero-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
