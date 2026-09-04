@@ -489,7 +489,7 @@ const TYPES = {
       return [...bySignature.values()];
     }
     function loadState() {
-      return { events: {}, announcements: DEFAULT_ANNOUNCEMENTS, reflections: {}, podcasts: [], music: null };
+      return { events: {}, announcements: DEFAULT_ANNOUNCEMENTS, reflections: {}, podcasts: [], music: null, musicPlaylist: [] };
     }
     function saveState() {
       window.dispatchEvent(new CustomEvent("ipuc-state-updated"));
@@ -1307,6 +1307,11 @@ const TYPES = {
       APP_STATE.reflections = APP_STATE.reflections || {};
       APP_STATE.podcasts = Array.isArray(APP_STATE.podcasts) ? APP_STATE.podcasts : [];
       APP_STATE.music = APP_STATE.music || null;
+      APP_STATE.musicPlaylist = Array.isArray(APP_STATE.musicPlaylist) ? APP_STATE.musicPlaylist : [];
+      APP_STATE.musicPlaylistLoaded = false;
+      APP_STATE.musicPlaylistLoading = false;
+      APP_STATE.musicPlaylistError = "";
+      APP_STATE.musicIndex = 0;
       APP_STATE.weeklySchedule = APP_STATE.weeklySchedule || null;
       APP_STATE.decomTurns = APP_STATE.decomTurns || {};
       APP_STATE.committeeLeaders = APP_STATE.committeeLeaders || [];
@@ -1336,6 +1341,7 @@ const TYPES = {
         leaderBucket: "leader-submissions",
         driveFunction: "drive-upload"
       };
+      const MUSIC_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1TQTIz_Vi7BN8CMkBIIMp2U98GF7dnbs6";
       const cloud = {
         enabled: false,
         ready: false,
@@ -1496,13 +1502,13 @@ const TYPES = {
           <a href="/calendario">Ver calendario</a>
         </footer>
         <div class="media-layer" id="platformMedia" aria-hidden="true"></div>
-        <audio id="platformMusic" loop preload="auto"></audio>
-        <button class="music-pill" id="musicPill" type="button" hidden>Activar ambiente</button>
         <div class="upload-progress" id="uploadProgress" hidden role="status" aria-live="polite"><div class="upload-progress-head"><strong data-upload-progress-label>Preparando archivo…</strong><b data-upload-progress-percent>0%</b></div><div class="upload-progress-track"><span data-upload-progress-bar></span></div><small data-upload-progress-detail></small></div>
-        <aside class="radio-widget" aria-label="Radio IPUC en vivo">
-          <div class="radio-widget-head"><span class="radio-mark">◉</span><span><strong>Radio IPUC</strong><small><i></i> En vivo</small></span></div>
-          <button class="radio-toggle" id="radioToggle" type="button">Escuchar ahora</button>
-          <audio id="radioIpucAudio" preload="none" playsinline></audio>
+        <aside class="music-widget" aria-label="Música IPUC">
+          <div class="music-widget-head"><span class="music-mark">♫</span><span><strong>Música IPUC</strong><small><i id="musicStatusDot"></i><span id="musicStatus">Cargando lista…</span></small></span></div>
+          <div class="music-widget-track"><strong id="musicTrackTitle">Preparando música</strong><small id="musicTrackCounter">—</small></div>
+          <div class="music-widget-actions"><button id="musicPrevious" type="button" aria-label="Canción anterior">‹</button><button id="musicToggle" type="button" aria-label="Reproducir música">▶</button><button id="musicNext" type="button" aria-label="Siguiente canción">›</button></div>
+          <a class="music-folder-link" href="${MUSIC_DRIVE_FOLDER_URL}" target="_blank" rel="noopener">Abrir carpeta de música</a>
+          <audio id="churchMusicAudio" preload="metadata" playsinline></audio>
         </aside>
       `;
 
@@ -1548,11 +1554,11 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-historias-que-edifican-8").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-musica-drive-9").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
-      setupPlatformMusic();
-      setupRadioIpuc();
+      setupChurchMusic();
+      loadDriveMusic();
       if (location.hash) history.replaceState({}, "", location.hash.replace(/^#\/?/, "/") || "/");
       renderRoute();
       initializeCloud();
@@ -1569,7 +1575,7 @@ const TYPES = {
           requestReflectionPlaybackPosition();
           stopReflectionMedia();
           reflectionIsActive = false;
-          startRadioIpuc();
+          startChurchMusic();
         }
         trackLiveVisitorPage();
         updateActiveNavigation(route.name);
@@ -1879,7 +1885,7 @@ const TYPES = {
                 const data = snapshot.docs.find(item => item.id === "site")?.data() || {};
                 APP_STATE.music = data.music || null;
                 APP_STATE.weeklySchedule = data.weeklySchedule || null;
-                setupPlatformMusic();
+                setupChurchMusic();
               }
               renderRoute();
             }, error => { cloud.error = error.message; renderRoute(); }));
@@ -2142,11 +2148,9 @@ const TYPES = {
         const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, !options.pauseReflection, { start: reflectionStart }) : "";
         reflectionIsActive = Boolean(reflectionMarkup);
         if (reflectionIsActive) {
-          stopRadioIpuc();
-          stopPlatformMusic();
+          stopChurchMusic();
         } else {
-          stopPlatformMusic();
-          startRadioIpuc();
+          startChurchMusic();
         }
         const next = platformEventsForYear(today.getFullYear()).filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Realizado").sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
         view().innerHTML = `
@@ -2159,7 +2163,7 @@ const TYPES = {
               ${main ? eventInfoList(main) : `<div class="today-line">${escapeHtml(longPlatformDate(today))}</div>`}
               ${reflectionMarkup}
               <div class="live-visitors" aria-live="polite"><span class="live-visitors-dot"></span><strong data-online-count>1</strong> personas en la página ahora</div>
-              <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="radio-home-action" type="button" data-home-radio>▶ Escuchar Radio IPUC</button>${deferredInstallPrompt ? `<button class="radio-home-action install-home-action" type="button" data-install-app>＋ Instalar app</button>` : ""}</div>
+              <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="music-home-action" type="button" data-home-music>▶ Escuchar música IPUC</button>${deferredInstallPrompt ? `<button class="music-home-action install-home-action" type="button" data-install-app>＋ Instalar app</button>` : ""}</div>
             </div>
             ${mainInvitation ? `<aside class="home-invitation-card"><div class="home-invitation-head"><span class="eyebrow">Invitación del día</span><span class="home-invitation-dot" aria-hidden="true"></span></div><img class="home-invitation-image" src="${escapeHtml(eventImage(main))}" alt="Invitación de ${escapeHtml(main.title)}"><a class="home-invitation-link" href="#/evento/${encodeURIComponent(main.id)}">Ver invitación completa <span aria-hidden="true">→</span></a></aside>` : ""}
           </section>
@@ -2188,13 +2192,13 @@ const TYPES = {
         `;
         bindTypeShortcuts();
         bindHomeCommitteeShortcuts();
-        const homeRadio = view().querySelector("[data-home-radio]");
-        if (homeRadio) homeRadio.onclick = () => {
+        const homeMusic = view().querySelector("[data-home-music]");
+        if (homeMusic) homeMusic.onclick = () => {
           if (reflectionIsActive) {
             stopReflectionMedia();
             reflectionIsActive = false;
           }
-          if (document.getElementById("radioIpucAudio")?.paused) document.getElementById("radioToggle")?.click();
+          startChurchMusic();
         };
         const installApp = view().querySelector("[data-install-app]");
         if (installApp) installApp.onclick = async () => {
@@ -2711,7 +2715,7 @@ const TYPES = {
                 <div class="upload-guide full"><strong>2. Agrega solo lo que tengas</strong><span>Puedes seleccionar varios archivos en cada grupo y guardar todo una sola vez.</span></div>
                 <details class="upload-group full" open><summary>Imágenes principales e invitaciones</summary><div class="form-grid"><label>Imagen del evento<input id="uploadMainImage" type="file" accept="image/*"></label><label>Invitación principal<input id="uploadInviteMain" type="file" accept="image/*"></label><label>WhatsApp<input id="uploadInviteWhatsapp" type="file" accept="image/*"></label><label>Historia redes<input id="uploadInviteStory" type="file" accept="image/*"></label><label>Banner proyección<input id="uploadInviteBanner" type="file" accept="image/*"></label></div></details>
                 <details class="upload-group full"><summary>Video, galería y documentos</summary><div class="form-grid"><label>Video promocional<input id="uploadInviteVideo" type="file" accept="video/*"></label><label>Fotos o videos<input id="uploadGallery" type="file" accept="image/*,video/*" multiple></label><label>PDF o archivos<input id="uploadFiles" type="file" multiple></label></div></details>
-                <details class="upload-group full"><summary>Audio de fondo del sitio</summary><div class="form-grid"><label class="full">Música autorizada<input id="uploadMusic2" type="file" accept="audio/*"></label></div></details>
+                <details class="upload-group full"><summary>Música de la iglesia</summary><div class="music-drive-guide"><strong>Lista de reproducción desde Drive</strong><span>Sube allí las canciones en MP3, M4A u otro formato de audio. La web las ordenará por nombre y pasará automáticamente a la siguiente.</span><a class="small-action" href="${MUSIC_DRIVE_FOLDER_URL}" target="_blank" rel="noopener">Abrir carpeta Música IPUC Villa del Río</a></div></details>
                 <button class="primary-link full" id="adminSaveMaterial" type="button">Guardar todo el material</button>
                 <div class="full admin-existing-material">${adminMaterialList(selected)}</div>
                 <div class="upload-group full weekly-upload"><strong>Cronograma semanal</strong><p>Sube la imagen oficial que resume los cultos de la semana. Se mostrará directamente en la vista semanal.</p><label>Imagen de esta semana<input id="uploadWeeklySchedule" type="file" accept="image/*"></label><div class="button-row"><button class="small-action" id="saveWeeklySchedule" type="button">Guardar imagen semanal</button>${APP_STATE.weeklySchedule ? `<button class="small-action danger-action" id="deleteWeeklySchedule" type="button">Eliminar imagen actual</button>` : ""}</div>${APP_STATE.weeklySchedule ? `<small>Archivo actual: ${escapeHtml(APP_STATE.weeklySchedule.name || "Cronograma semanal")}</small>` : ""}</div>
@@ -3479,7 +3483,7 @@ const TYPES = {
         const deleteWeeklyButton = document.getElementById("deleteWeeklySchedule");
         if (deleteWeeklyButton) deleteWeeklyButton.onclick = runAdminAction(deleteWeeklySchedule);
         if (!cloud.driveReady && !cloud.storageReady) {
-          ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2", "adminSaveMaterial", "uploadWeeklySchedule", "saveWeeklySchedule"].forEach(id => {
+          ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "adminSaveMaterial", "uploadWeeklySchedule", "saveWeeklySchedule"].forEach(id => {
             const control = document.getElementById(id);
             if (control) control.disabled = true;
           });
@@ -3690,14 +3694,9 @@ const TYPES = {
         }
         for (const file of pendingUploadFiles("uploadGallery")) saved.gallery.push(await uploadCloudFile(file, id, "galeria", "Galeria"));
         for (const file of pendingUploadFiles("uploadFiles")) saved.attachments.push(await uploadCloudFile(file, id, "archivos", "Archivo"));
-        const music = pendingUploadFiles("uploadMusic2")[0];
-        if (music) {
-          const musicAsset = await uploadCloudFile(music, "site", "musica", "Música ambiente");
-          await saveCloudDoc("settings", "site", { music: musicAsset });
-        }
         await saveCloudDoc("events", id, saved);
-        ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles", "uploadMusic2"].forEach(clearPendingUpload);
-        setupPlatformMusic();
+        ["uploadMainImage", "uploadInviteMain", "uploadInviteWhatsapp", "uploadInviteStory", "uploadInviteBanner", "uploadInviteVideo", "uploadGallery", "uploadFiles"].forEach(clearPendingUpload);
+                setupChurchMusic();
         completeUploadProgress("Todo el material quedó guardado correctamente.");
         alert("Material guardado correctamente en la biblioteca.");
         renderAdminPage();
@@ -4269,111 +4268,104 @@ const TYPES = {
         window.requestAnimationFrame(() => window.setTimeout(close, window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 180 : 650));
       }
 
-      function setupPlatformMusic() {
-        const audio = document.getElementById("platformMusic");
-        const pill = document.getElementById("musicPill");
-        if (!audio || !pill) return;
-        const source = assetSource(APP_STATE.music);
-        if (!source) {
-          pill.hidden = true;
-          audio.removeAttribute("src");
-          return;
+      async function loadDriveMusic() {
+        if (APP_STATE.musicPlaylistLoaded || APP_STATE.musicPlaylistLoading) return;
+        APP_STATE.musicPlaylistLoading = true;
+        setupChurchMusic();
+        try {
+          const form = new FormData();
+          form.append("action", "list-music");
+          const response = await fetch(`${SUPABASE_CONFIG.url}/functions/v1/${SUPABASE_CONFIG.driveFunction}`, {
+            method: "POST",
+            headers: { apikey: SUPABASE_CONFIG.publishableKey },
+            body: form
+          });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok || data?.error) throw new Error(data?.error || "No se pudo cargar la música de Drive.");
+          APP_STATE.musicPlaylist = Array.isArray(data.files) ? data.files : [];
+          APP_STATE.musicPlaylistLoaded = true;
+          APP_STATE.musicPlaylistError = "";
+          APP_STATE.musicIndex = 0;
+        } catch (error) {
+          APP_STATE.musicPlaylist = [];
+          APP_STATE.musicPlaylistLoaded = true;
+          APP_STATE.musicPlaylistError = error.message || "No se pudo cargar la música de Drive.";
+        } finally {
+          APP_STATE.musicPlaylistLoading = false;
+          setupChurchMusic();
         }
-        if (audio.src !== source) {
-          audio.src = source;
-          audio.load();
-        }
-        audio.volume = 0.35;
-        pill.hidden = false;
-        pill.textContent = audio.paused ? "▶ Escuchar música ambiente" : "⏸ Pausar música ambiente";
-        pill.onclick = () => audio.paused ? startPlatformMusic() : stopPlatformMusic();
       }
 
-      function startPlatformMusic() {
-        const audio = document.getElementById("platformMusic");
-        if (!audio || !assetSource(APP_STATE.music)) return;
+      function setupChurchMusic() {
+        const audio = document.getElementById("churchMusicAudio");
+        const toggle = document.getElementById("musicToggle");
+        const previous = document.getElementById("musicPrevious");
+        const next = document.getElementById("musicNext");
+        const widget = document.querySelector(".music-widget");
+        if (!audio || !toggle || !previous || !next || !widget) return;
+        const playlist = APP_STATE.musicPlaylist || [];
+        const hasMusic = playlist.length > 0;
+        const item = playlist[APP_STATE.musicIndex] || playlist[0];
+        if (hasMusic) {
+          APP_STATE.musicIndex = Math.max(0, playlist.indexOf(item));
+          const source = item.audioUrl || item.url || "";
+          if (source && audio.dataset.trackId !== String(item.id || source)) {
+            audio.dataset.trackId = String(item.id || source);
+            audio.src = source;
+            audio.load();
+          }
+          document.getElementById("musicTrackTitle").textContent = item.name || "Canción de la iglesia";
+          document.getElementById("musicTrackCounter").textContent = `${APP_STATE.musicIndex + 1} de ${playlist.length}`;
+          document.getElementById("musicStatus").textContent = `${playlist.length} ${playlist.length === 1 ? "canción" : "canciones"}`;
+        } else {
+          audio.removeAttribute("src");
+          audio.removeAttribute("data-track-id");
+          document.getElementById("musicTrackTitle").textContent = APP_STATE.musicPlaylistLoading ? "Cargando canciones…" : "Añade canciones en Drive";
+          document.getElementById("musicTrackCounter").textContent = "—";
+          document.getElementById("musicStatus").textContent = APP_STATE.musicPlaylistError ? "No disponible" : "Lista de reproducción";
+        }
+        toggle.disabled = !hasMusic;
+        previous.disabled = !hasMusic;
+        next.disabled = !hasMusic;
+        widget.classList.toggle("is-playing", hasMusic && !audio.paused);
+        document.getElementById("musicStatusDot").style.background = hasMusic && !audio.paused ? "#009FDA" : "#9aa8b2";
+        toggle.textContent = hasMusic && !audio.paused ? "Ⅱ" : "▶";
+        toggle.onclick = () => audio.paused ? startChurchMusic() : stopChurchMusic();
+        previous.onclick = () => changeChurchMusic(-1);
+        next.onclick = () => changeChurchMusic(1);
+        audio.onplay = () => setupChurchMusic();
+        audio.onpause = () => setupChurchMusic();
+        audio.onended = () => changeChurchMusic(1, true);
+      }
+
+      function changeChurchMusic(step, autoplay = false) {
+        const playlist = APP_STATE.musicPlaylist || [];
+        const audio = document.getElementById("churchMusicAudio");
+        if (!playlist.length || !audio) return;
+        const wasPlaying = autoplay || !audio.paused;
+        APP_STATE.musicIndex = (APP_STATE.musicIndex + step + playlist.length) % playlist.length;
+        setupChurchMusic();
+        if (wasPlaying) startChurchMusic();
+      }
+
+      function startChurchMusic() {
+        const audio = document.getElementById("churchMusicAudio");
+        if (!audio || !(APP_STATE.musicPlaylist || []).length) return;
         if (reflectionIsActive) {
           stopReflectionMedia();
           reflectionIsActive = false;
         }
-        stopRadioIpuc();
-        audio.play().then(setupPlatformMusic).catch(() => {
-          const pill = document.getElementById("musicPill");
-          if (pill) pill.textContent = "La música requiere activar el botón";
+        audio.play().then(setupChurchMusic).catch(() => {
+          const status = document.getElementById("musicStatus");
+          if (status) status.textContent = "Pulsa ▶ para escuchar";
         });
       }
 
-      function stopPlatformMusic() {
-        const audio = document.getElementById("platformMusic");
+      function stopChurchMusic() {
+        const audio = document.getElementById("churchMusicAudio");
         if (!audio) return;
         audio.pause();
-        setupPlatformMusic();
-      }
-
-      function setupRadioIpuc() {
-        const audio = document.getElementById("radioIpucAudio");
-        const toggle = document.getElementById("radioToggle");
-        const widget = document.querySelector(".radio-widget");
-        if (!audio || !toggle || !widget) return;
-        audio.src = `https://radio-envivo.ipuc.org.co?nocache=${Date.now()}`;
-        audio.volume = 0.55;
-        audio.muted = false;
-        const setState = (playing, muted = audio.muted) => {
-          widget.classList.toggle("is-playing", playing);
-          toggle.textContent = playing && muted ? "Activar sonido" : playing ? "Pausar radio" : "Escuchar ahora";
-        };
-        toggle.onclick = () => {
-          if (audio.paused) {
-            if (reflectionIsActive) {
-              stopReflectionMedia();
-              reflectionIsActive = false;
-            }
-            stopPlatformMusic();
-            audio.muted = false;
-            audio.play().then(() => setState(true, false)).catch(() => setState(false));
-          } else if (audio.muted) {
-            audio.muted = false;
-            setState(true, false);
-          } else {
-            audio.pause();
-            setState(false);
-          }
-        };
-        audio.addEventListener("playing", () => setState(true));
-        audio.addEventListener("pause", () => setState(false));
-        if (parseRoute().name === "inicio" && !eventsForPlatformDate(today).length && reflectionMediaMarkup(reflectionForDate(today), true)) {
-          reflectionIsActive = true;
-          return;
-        }
-        audio.play().then(() => setState(true, false)).catch(() => {
-          audio.muted = true;
-          audio.play().then(() => setState(true, true)).catch(() => {
-            setState(false);
-            toggle.textContent = "Escuchar Radio IPUC";
-          });
-        });
-      }
-
-      function stopRadioIpuc() {
-        const audio = document.getElementById("radioIpucAudio");
-        const toggle = document.getElementById("radioToggle");
-        const widget = document.querySelector(".radio-widget");
-        if (!audio) return;
-        audio.pause();
-        audio.muted = true;
-        widget?.classList.remove("is-playing");
-        if (toggle) toggle.textContent = "Escuchar ahora";
-      }
-
-      function startRadioIpuc() {
-        const audio = document.getElementById("radioIpucAudio");
-        if (!audio || reflectionIsActive || !audio.paused) return;
-        stopPlatformMusic();
-        audio.muted = false;
-        audio.play().catch(() => {
-          audio.muted = true;
-          audio.play().catch(() => {});
-        });
+        setupChurchMusic();
       }
 
       function stopReflectionMedia() {
@@ -4680,8 +4672,8 @@ const TYPES = {
         .reflection-media { width: min(100%, 1040px); margin: 20px auto 0; overflow: hidden; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(7,28,43,.28); box-shadow: 0 14px 30px rgba(13,52,66,.16); }
         .reflection-media iframe, .reflection-media video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; object-fit: cover; }
         .reflection-media audio { display: block; width: 100%; min-height: 48px; }
-        .radio-home-action { min-height: 44px; padding: 0 15px; border: 1px solid rgba(11,59,76,.12); border-radius: 13px; background: rgba(255,255,255,.7); color: #123348; font: inherit; font-weight: 900; cursor: pointer; transition: transform .18s ease, background .18s ease; }
-        .radio-home-action:hover { transform: translateY(-2px); background: white; }
+        .music-home-action { min-height: 44px; padding: 0 15px; border: 1px solid rgba(11,59,76,.12); border-radius: 13px; background: rgba(255,255,255,.7); color: #123348; font: inherit; font-weight: 900; cursor: pointer; transition: transform .18s ease, background .18s ease; }
+        .music-home-action:hover { transform: translateY(-2px); background: white; }
         .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { margin: 0; font-size: clamp(2rem, 4vw, 4.2rem); line-height: .96; }
         .hero-copy .home-hero-title { display: block; width: 100%; max-width: none; color: transparent; font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif; font-size: clamp(2.6rem, 5.6vw, 6.7rem); font-style: normal; font-weight: 950; letter-spacing: -.075em; line-height: .95; white-space: nowrap; text-wrap: nowrap; perspective: 900px; text-shadow: 0 2px 0 rgba(255,255,255,.34), 0 11px 22px rgba(11,52,72,.16); }
         .hero-letter { position: relative; display: inline-block; color: rgba(236,252,255,.56); background: linear-gradient(165deg, rgba(255,255,255,.98) 0%, rgba(189,245,255,.75) 22%, rgba(55,174,214,.56) 53%, rgba(255,255,255,.84) 78%, rgba(124,227,245,.58) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-stroke: 1px rgba(255,255,255,.64); filter: drop-shadow(0 4px 0 rgba(7,66,91,.12)) drop-shadow(0 14px 16px rgba(7,66,91,.13)); transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) scale(1); transform-origin: 50% 72%; transition: transform .34s cubic-bezier(.2,.85,.22,1), filter .34s ease, color .34s ease; will-change: transform; }
@@ -4738,6 +4730,9 @@ const TYPES = {
         .admin-card-narrow { max-width: 760px; margin: 0 auto; }
         .upload-guide { display: grid; gap: 3px; padding: 12px 14px; border-radius: 14px; background: rgba(28,139,120,.1); color: #185f53; }
         .upload-guide span { color: #4f6b78; font-size: .82rem; font-weight: 700; text-transform: none; }
+        .music-drive-guide { display: grid; gap: 7px; padding: 12px 14px; border-radius: 14px; background: rgba(0,51,141,.08); color: #123348; }
+        .music-drive-guide span { color: #4f6b78; font-size: .82rem; font-weight: 700; line-height: 1.45; text-transform: none; }
+        .music-drive-guide a { width: fit-content; }
         .upload-group { border: 1px solid rgba(83,102,117,.14); border-radius: 16px; background: rgba(255,255,255,.34); padding: 0 12px 12px; }
         .upload-group summary { padding: 12px 2px; color: #123348; font-weight: 950; cursor: pointer; }
         .upload-group .form-grid { padding-top: 2px; }
@@ -4939,22 +4934,24 @@ const TYPES = {
         .media-layer header button { width: 42px; height: 42px; border-radius: 14px; border: 1px solid rgba(83,102,117,.18); background: rgba(255,255,255,.7); font-size: 1.3rem; font-weight: 900; cursor: pointer; }
         .media-layer img, .media-layer video, .media-layer iframe { width: 100%; max-height: 70vh; object-fit: contain; border: 0; border-radius: 18px; background: rgba(255,255,255,.7); }
         .media-layer iframe { min-height: 68vh; }
-        .music-pill { position: fixed; right: 16px; bottom: 16px; z-index: 12; min-height: 40px; padding: 0 14px; border: 1px solid rgba(255,255,255,.75); border-radius: 999px; background: rgba(18,51,72,.88); color: white; font-weight: 900; cursor: pointer; box-shadow: 0 14px 34px rgba(20,52,71,.22); }
-        .radio-widget { position: fixed; right: 16px; bottom: 16px; z-index: 13; display: flex; align-items: center; gap: 9px; width: auto; min-width: 188px; padding: 8px 9px; border: 1px solid rgba(255,255,255,.72); border-radius: 16px; background: rgba(245,250,248,.94); box-shadow: 0 14px 32px rgba(20,52,71,.2); backdrop-filter: blur(16px); }
-        .radio-widget-head { display: flex; align-items: center; gap: 10px; color: #123348; }
-        .radio-widget-head span:last-child { display: grid; gap: 3px; }
-        .radio-widget-head small { color: #4f6b78; font-weight: 850; }
-        .radio-widget-head i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #9aa8b2; }
-        .radio-widget.is-playing .radio-widget-head i { background: #1c8b78; box-shadow: 0 0 0 4px rgba(28,139,120,.12); }
-        .radio-widget.is-playing { animation: radioGlow 2.4s ease-in-out infinite; }
-        @keyframes radioGlow { 0%, 100% { box-shadow: 0 18px 42px rgba(20,52,71,.2); } 50% { box-shadow: 0 18px 42px rgba(28,139,120,.3); } }
-        .radio-mark { display: grid; place-items: center; width: 31px; height: 31px; flex: 0 0 auto; border-radius: 10px; background: #123348; color: #f6d365; font-size: .9rem; }
-        .radio-widget-head { flex: 1 1 auto; min-width: 0; }
-        .radio-widget-head strong { font-size: .85rem; }
-        .radio-widget-head small { font-size: .7rem; }
-        .radio-toggle { display: grid; place-items: center; width: 34px; height: 34px; min-height: 34px; padding: 0; border: 0; border-radius: 10px; background: #123348; color: #fff; font: inherit; font-weight: 900; cursor: pointer; font-size: 0; }
-        .radio-toggle::before { content: "▶"; font-size: .85rem; }
-        .radio-widget.is-playing .radio-toggle::before { content: "Ⅱ"; font-size: .8rem; }
+        .music-widget { position: fixed; right: 16px; bottom: 16px; z-index: 13; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "head track actions" "folder folder folder"; align-items: center; gap: 7px 10px; width: min(360px, calc(100vw - 32px)); padding: 10px 12px; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(245,250,248,.95); box-shadow: 0 14px 32px rgba(20,52,71,.2); backdrop-filter: blur(16px); }
+        .music-widget.is-playing { animation: musicGlow 2.4s ease-in-out infinite; }
+        @keyframes musicGlow { 0%, 100% { box-shadow: 0 18px 42px rgba(20,52,71,.2); } 50% { box-shadow: 0 18px 42px rgba(0,159,218,.3); } }
+        .music-widget-head { grid-area: head; display: flex; align-items: center; gap: 8px; min-width: 0; color: #123348; }
+        .music-widget-head > span:last-child { display: grid; gap: 2px; min-width: 0; }
+        .music-widget-head small { display: flex; align-items: center; gap: 5px; color: #4f6b78; font-size: .66rem; font-weight: 850; white-space: nowrap; }
+        .music-widget-head i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #9aa8b2; }
+        .music-mark { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 auto; border-radius: 10px; background: #00338D; color: #F0AB00; font-size: 1.05rem; }
+        .music-widget-head strong { font-size: .82rem; }
+        .music-widget-track { grid-area: track; display: grid; gap: 2px; min-width: 0; }
+        .music-widget-track strong { overflow: hidden; color: #123348; font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
+        .music-widget-track small { color: #4f6b78; font-size: .65rem; font-weight: 800; }
+        .music-widget-actions { grid-area: actions; display: flex; align-items: center; gap: 4px; }
+        .music-widget-actions button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 9px; background: rgba(0,51,141,.1); color: #00338D; font: inherit; font-size: 1.1rem; font-weight: 900; cursor: pointer; }
+        .music-widget-actions button:nth-child(2) { width: 34px; height: 34px; background: #00338D; color: #fff; font-size: .78rem; }
+        .music-widget-actions button:disabled { cursor: not-allowed; opacity: .45; }
+        .music-folder-link { grid-area: folder; color: #007e91; font-size: .64rem; font-weight: 850; text-decoration: none; }
+        .music-folder-link:hover { text-decoration: underline; }
         @media (max-width: 900px) {
           .home-hero, .detail-hero, .split-grid, .agenda-grid, .admin-layout, .login-card, .decom-grid, .decom-board { grid-template-columns: 1fr; }
           .home-welcome { grid-template-columns: 1fr; }
@@ -4967,7 +4964,7 @@ const TYPES = {
         }
         @media (max-width: 620px) {
           .platform-shell { width: calc(100% - 14px); padding-top: 8px; }
-          .radio-widget { right: 10px; bottom: 10px; }
+          .music-widget { right: 10px; bottom: 10px; width: calc(100vw - 20px); }
           .platform-top { align-items: start; border-radius: 18px; }
           .platform-brand { flex: 1 1 auto; }
           .platform-brand img { width: 220px; height: 58px; border-radius: 0; padding: 0; }
@@ -4979,7 +4976,7 @@ const TYPES = {
           .home-hero, .page-head, .content-card, .calendar-page, .view-switch, .month-strip, .filters, .login-card, .detail-hero { padding: 12px; border-radius: 18px; }
           .home-kicker { margin-bottom: 18px; font-size: .68rem; }
           .home-actions { align-items: stretch; flex-direction: column; }
-          .home-actions a, .radio-home-action { width: 100%; justify-content: center; text-align: center; }
+          .home-actions a, .music-home-action { width: 100%; justify-content: center; text-align: center; }
           .home-welcome { padding: 14px; border-radius: 18px; }
           .home-quick-links { grid-template-columns: 1fr; }
           .week-list-day { grid-template-columns: 1fr; gap: 9px; }
@@ -5045,11 +5042,8 @@ const TYPES = {
         body.platform-body .decom-months button.active { background: linear-gradient(135deg, #00338D, #005B9F); }
         body.platform-body .home-live-dot,
         body.platform-body .live-visitors-dot,
-        body.platform-body .radio-widget.is-playing .radio-widget-head i { background: #009FDA; }
-        body.platform-body .radio-mark,
-        body.platform-body .radio-toggle,
-        body.platform-body .music-pill { background: #00338D; }
-        body.platform-body .radio-mark { color: #F0AB00; }
+        body.platform-body .music-widget.is-playing .music-widget-head i { background: #009FDA; }
+        body.platform-body .music-mark { background: #00338D; color: #F0AB00; }
         body.platform-body .committee-option img { background: linear-gradient(145deg, #00338D, #005B9F); }
         body.platform-body .committee-option.selected { border-color: #009FDA; background: rgba(188, 234, 247, .72); }
         body.platform-body .week-list-day.is-today { border-color: rgba(0, 159, 218, .48); box-shadow: inset 5px 0 0 #009FDA; }

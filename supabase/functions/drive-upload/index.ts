@@ -7,6 +7,7 @@ const DEFAULT_FOLDERS = {
   event: "1Z3C25CEZT_spPTYfe9ktHHwbcRWIUjcn",
   multimedia: "1Av4jSQaDTimZwSIOcX58JyhCf2uLUo69",
   biblical: "1CQouw6irDWXEzlSHkbJM5NQlf7jPKwA1",
+  music: "1TQTIz_Vi7BN8CMkBIIMp2U98GF7dnbs6",
 };
 
 function corsHeaders(req: Request) {
@@ -149,13 +150,53 @@ async function deleteFromDrive(token: string, fileId: string) {
   return { deleted: true, driveFileId: fileId };
 }
 
+async function listMusicFromDrive(token: string) {
+  const folders = readFolders();
+  const query = `'${quoteDriveValue(folders.music)}' in parents and trashed = false`;
+  const params = new URLSearchParams({
+    q: query,
+    orderBy: "name_natural",
+    pageSize: "100",
+    fields: "files(id,name,mimeType,size,modifiedTime,webViewLink)",
+  });
+  const result = await driveRequest(token, `https://www.googleapis.com/drive/v3/files?${params}`);
+  const files = (result.files || []).filter((file: Record<string, unknown>) => String(file.mimeType || "").startsWith("audio/"));
+  await Promise.all(files.map(async (file: Record<string, unknown>) => {
+    try {
+      await driveRequest(token, `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(String(file.id))}/permissions?sendNotificationEmail=false`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "anyone", role: "reader", allowFileDiscovery: false }),
+      });
+    } catch (error) {
+      console.warn("No se pudo habilitar la reproducción pública de", file.name, error);
+    }
+  }));
+  return {
+    folderId: folders.music,
+    files: files.map((file: Record<string, unknown>) => ({
+      id: file.id,
+      name: file.name,
+      type: file.mimeType,
+      size: Number(file.size || 0),
+      modifiedTime: file.modifiedTime,
+      audioUrl: `https://drive.google.com/uc?export=download&id=${encodeURIComponent(String(file.id))}`,
+      webViewLink: file.webViewLink || `https://drive.google.com/file/d/${encodeURIComponent(String(file.id))}/view`,
+    })),
+  };
+}
+
 Deno.serve(async req => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (req.method !== "POST") return response(req, { error: "Método no permitido." }, 405);
   try {
-    await getAuthenticatedUser(req);
     const form = await req.formData();
     const action = String(form.get("action") || "upload");
+    if (action === "list-music") {
+      const token = await googleAccessToken();
+      return response(req, await listMusicFromDrive(token));
+    }
+    await getAuthenticatedUser(req);
     if (action === "status") {
       await googleAccessToken();
       return response(req, { configured: true });
