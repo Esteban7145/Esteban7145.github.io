@@ -598,3 +598,56 @@
     transition-duration: .01ms !important;
   }
 }
+
+/* Navegación única: evita que reglas antiguas cambien el menú durante el scroll. */
+body.platform-body .platform-top,
+body.platform-body .platform-top.is-scrolled {
+  position: sticky;
+  top: max(10px, env(safe-area-inset-top));
+  width: 100%;
+  min-height: var(--nav-height);
+  margin: 0;
+  padding: 12px;
+  transform: none;
+  border-radius: 24px;
+  box-sizing: border-box;
+}
+body.platform-body .platform-top.is-scrolled { box-shadow: 0 12px 28px rgba(13,52,66,.16); }
+body.platform-body .platform-top.is-scrolled .platform-brand { display: flex; }
+body.platform-body .platform-top.is-scrolled .platform-brand img { width: 250px; height: 68px; }
+body.platform-body .platform-nav { position: static; display: flex; opacity: 1; pointer-events: auto; transform: none; }
+body.platform-body .nav-toggle { display: none; }
+@media (max-width: 1024px) {
+  body.platform-body .nav-toggle { display: inline-flex; }
+  body.platform-body .platform-nav {
+    position: fixed;
+    top: calc(var(--nav-height) + max(10px, env(safe-area-inset-top)));
+    right: 14px;
+    left: auto;
+    z-index: 60;
+    display: grid;
+    width: min(340px, calc(100vw - 28px));
+    max-height: calc(100dvh - 90px);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px) scale(.98);
+  }
+  body.platform-body .platform-nav.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+}
+@media (max-width: 620px) {
+  body.platform-body .platform-top,
+  body.platform-body .platform-top.is-scrolled {
+    top: max(8px, env(safe-area-inset-top));
+    min-height: 60px;
+    padding: 8px;
+    border-radius: 18px;
+  }
+  body.platform-body .platform-top.is-scrolled .platform-brand img { width: min(220px, 72vw); height: 58px; }
+  body.platform-body .platform-nav {
+    top: calc(60px + max(8px, env(safe-area-inset-top)));
+    right: 8px;
+    left: 8px;
+    width: auto;
+    max-height: calc(100dvh - 82px);
+  }
+}

@@ -1531,14 +1531,6 @@ const TYPES = {
       navBackdrop?.addEventListener("click", () => setNavOpen(false));
       nav?.addEventListener("click", event => { if (event.target.closest("a")) setNavOpen(false); });
       document.addEventListener("keydown", event => { if (event.key === "Escape") setNavOpen(false); });
-      let scrollFrame = 0;
-      window.addEventListener("scroll", () => {
-        if (scrollFrame) return;
-        scrollFrame = requestAnimationFrame(() => {
-          document.querySelector(".platform-top")?.classList.toggle("is-scrolled", window.scrollY > 16);
-          scrollFrame = 0;
-        });
-      }, { passive: true });
       const decorativeVideo = document.querySelector("[data-decorative-video]");
       const staticMedia = window.matchMedia("(prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData;
       if (staticMedia && decorativeVideo) {
@@ -4666,7 +4658,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260906-shell-3";
+      link.href = "/css/platform-runtime.css?v=20260906-shell-4";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
