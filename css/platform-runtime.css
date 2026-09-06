@@ -420,17 +420,15 @@
   top: max(10px, env(safe-area-inset-top));
   z-index: 50;
   min-height: var(--nav-height);
-  transition: min-height .22s ease, padding .22s ease, border-radius .22s ease, box-shadow .22s ease;
+  transition: box-shadow .22s ease;
 }
 .platform-top.is-scrolled {
-  min-height: 62px;
-  padding-block: 8px;
-  border-radius: 18px;
+  min-height: var(--nav-height);
   box-shadow: 0 12px 28px rgba(13,52,66,.16);
 }
 .platform-top.is-scrolled .platform-brand img {
-  width: 218px;
-  height: 56px;
+  width: 250px;
+  height: 68px;
 }
 .platform-brand img {
   width: 250px;
@@ -550,14 +548,8 @@
     width: min(220px, 72vw);
     height: 58px;
   }
-  .platform-top.is-scrolled {
-    min-height: 54px;
-    padding: 6px 8px;
-  }
-  .platform-top.is-scrolled .platform-brand img {
-    width: min(190px, 65vw);
-    height: 48px;
-  }
+  .platform-top.is-scrolled { min-height: 60px; padding: 8px; }
+  .platform-top.is-scrolled .platform-brand img { width: min(220px, 72vw); height: 58px; }
   .platform-nav {
     top: calc(60px + max(8px, env(safe-area-inset-top)));
     right: 8px;

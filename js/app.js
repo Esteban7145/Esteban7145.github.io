@@ -4666,7 +4666,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260906-shell-2";
+      link.href = "/css/platform-runtime.css?v=20260906-shell-3";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
