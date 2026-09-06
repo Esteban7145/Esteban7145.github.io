@@ -1555,7 +1555,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260906-week-images-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260906-card-visuals-2").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
       setupChurchMusic();
@@ -4705,15 +4705,20 @@ const TYPES = {
         .hero-space { width: .24em; -webkit-text-stroke: 0; filter: none; }
         .hero-copy p, .page-head p, .detail-hero p, .content-card p { color: var(--muted); line-height: 1.45; }
         .hero-image { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 22px; box-shadow: 0 20px 46px rgba(31,55,72,.18); }
-        .home-invitation-card { position: relative; display: grid; align-content: center; gap: 11px; min-width: 0; padding: 14px; border: 1px solid rgba(255,255,255,.78); border-radius: 24px; background: linear-gradient(145deg, rgba(255,255,255,.62), rgba(236,248,246,.48)); box-shadow: 0 18px 38px rgba(31,55,72,.14); }
+        .home-invitation-card { position: relative; display: grid; align-content: center; gap: 11px; min-width: 0; padding: 14px; border: 1px solid rgba(255,255,255,.78); border-radius: 24px; background: linear-gradient(145deg, rgba(255,255,255,.62), rgba(236,248,246,.48)); box-shadow: 0 18px 38px rgba(31,55,72,.14); overflow: hidden; transition: transform .24s ease, box-shadow .24s ease; }
+        .home-invitation-card:hover { transform: translateY(-3px); box-shadow: 0 24px 46px rgba(31,55,72,.18); }
         .home-invitation-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px; }
         .home-invitation-head .eyebrow { margin: 0; color: #1c8b78; }
         .home-invitation-dot { width: 9px; height: 9px; border-radius: 50%; background: #f0ab00; box-shadow: 0 0 0 5px rgba(240,171,0,.14); }
-        .home-invitation-image { display: block; width: 100%; max-height: 350px; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 17px; background: rgba(255,255,255,.62); box-shadow: 0 12px 26px rgba(31,55,72,.12); }
+        .home-invitation-image { display: block; width: 100%; max-height: none; aspect-ratio: 16 / 9; object-fit: cover; object-position: center; border-radius: 17px; background: rgba(18,51,72,.08); box-shadow: 0 12px 26px rgba(31,55,72,.12); transition: transform .28s ease, box-shadow .28s ease; }
+        .home-invitation-card:hover .home-invitation-image { transform: scale(1.012); box-shadow: 0 16px 30px rgba(31,55,72,.17); }
         .home-invitation-link { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 4px 3px; color: #123348; font-size: .82rem; font-weight: 900; text-decoration: none; }
         .home-invitation-link span { color: #1c8b78; font-size: 1.2rem; transition: transform .18s ease; }
         .home-invitation-link:hover span { transform: translateX(4px); }
-        .event-card-public > img { width: 100%; aspect-ratio: 16 / 10; object-fit: contain; border-radius: 22px; background: rgba(18,51,72,.08); box-shadow: 0 20px 46px rgba(31,55,72,.18); }
+        .event-card-public { overflow: hidden; transition: transform .24s ease, box-shadow .24s ease; }
+        .event-card-public:hover { transform: translateY(-3px); box-shadow: 0 25px 50px rgba(31,55,72,.18); }
+        .event-card-public > img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: center; border-radius: 22px; background: rgba(18,51,72,.08); box-shadow: 0 20px 46px rgba(31,55,72,.18); transition: transform .28s ease, filter .28s ease; }
+        .event-card-public:hover > img { transform: scale(1.018); filter: saturate(1.04); }
         .detail-hero > img { display: block; width: 100%; height: auto; max-height: 680px; min-height: 220px; object-fit: contain; border-radius: 22px; background: rgba(18,51,72,.08); box-shadow: 0 20px 46px rgba(31,55,72,.18); }
         .home-hero .hero-image { animation: heroFloat 7s ease-in-out infinite; }
         @keyframes heroFloat { 0%, 100% { transform: rotate(1.4deg) translateY(0); } 50% { transform: rotate(1.4deg) translateY(-7px); } }
@@ -4774,8 +4779,9 @@ const TYPES = {
         .section-title { margin-bottom: 12px; }
         .section-title h2 { margin: 0; font-size: 1.45rem; }
         .card-list, .agenda-list, .file-public-list { display: grid; gap: 10px; }
-        .mini-card, .agenda-item, .announcement-public, .file-public-list article { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px; border: 1px solid rgba(255,255,255,.72); border-radius: 16px; background: rgba(255,255,255,.48); color: var(--ink); text-decoration: none; }
-        .mini-card img, .agenda-item img { width: 74px; height: 58px; object-fit: contain; border-radius: 12px; background: rgba(18,51,72,.08); }
+        .mini-card, .agenda-item, .announcement-public, .file-public-list article { display: grid; grid-template-columns: 74px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px; border: 1px solid rgba(255,255,255,.72); border-radius: 16px; background: rgba(255,255,255,.48); color: var(--ink); text-decoration: none; transition: transform .2s ease, background .2s ease, box-shadow .2s ease; }
+        .mini-card:hover, .agenda-item:hover, .file-public-list article:hover { transform: translateY(-2px); background: rgba(255,255,255,.7); box-shadow: 0 12px 24px rgba(31,55,72,.1); }
+        .mini-card img, .agenda-item img { width: 74px; height: 58px; object-fit: cover; object-position: center; border-radius: 12px; background: rgba(18,51,72,.08); box-shadow: 0 5px 12px rgba(31,55,72,.1); }
         .mini-card span, .agenda-item div, .file-public-list span { display: grid; gap: 3px; min-width: 0; }
         .mini-card small, .agenda-item small, .file-public-list small { color: var(--muted); }
         .announcement-public { grid-template-columns: 1fr; }
@@ -4834,7 +4840,7 @@ const TYPES = {
         .asset-grid-page { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
         .asset-public { display: grid; gap: 8px; padding: 10px; border: 1px solid rgba(255,255,255,.72); border-radius: 16px; background: rgba(255,255,255,.48); }
         .asset-public button:first-child { width: 100%; border: 0; padding: 0; border-radius: 14px; background: rgba(18,51,72,.08); overflow: hidden; cursor: pointer; }
-        .asset-public img, .asset-public video { width: 100%; height: 150px; object-fit: contain; background: rgba(18,51,72,.08); display: block; }
+        .asset-public img, .asset-public video { width: 100%; height: 150px; object-fit: cover; object-position: center; background: rgba(18,51,72,.08); display: block; }
         .asset-public span { display: grid; place-items: center; height: 150px; color: var(--muted); font-weight: 900; }
         .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
         .form-grid label { display: grid; gap: 5px; color: #4f6b78; font-size: .78rem; font-weight: 900; text-transform: uppercase; }
