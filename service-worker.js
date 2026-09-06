@@ -1,5 +1,5 @@
-const CACHE_NAME = "ipuc-villa-del-rio-v49-card-visuals";
-const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/assets/logo.png", "/assets/favicon.png", "/assets/ipuc-villa-del-rio-brand.png", "/assets/historias-que-edifican.png"];
+const CACHE_NAME = "ipuc-villa-del-rio-v50-shell";
+const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/css/platform-runtime.css", "/js/app.js", "/assets/logo.png", "/assets/favicon.png", "/assets/ipuc-villa-del-rio-brand.png", "/assets/historias-que-edifican.png", "/assets/og.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
@@ -13,9 +13,28 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET" || !event.request.url.startsWith(self.location.origin)) return;
-  event.respondWith(fetch(event.request).then(response => {
-    const copy = response.clone();
-    caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-    return response;
-  }).catch(() => caches.match(event.request).then(response => response || caches.match("/"))));
+  const request = event.request;
+  const url = new URL(request.url);
+  if (request.destination === "video" || request.destination === "audio") return;
+  const isStatic = ["style", "script", "font", "manifest", "image"].includes(request.destination) || /\/assets\/(?:favicon|logo|og|historias|ipuc-villa-del-rio-brand)/.test(url.pathname);
+  event.respondWith(isStatic ? cacheFirst(request) : networkFirst(request));
 });
+
+async function cacheFirst(request) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (response.ok) (await caches.open(CACHE_NAME)).put(request, response.clone());
+  return response;
+}
+
+async function networkFirst(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok && response.type === "basic") (await caches.open(CACHE_NAME)).put(request, response.clone());
+    return response;
+  } catch {
+    return (await caches.match(request)) || (await caches.match("/"));
+  }
+}
+

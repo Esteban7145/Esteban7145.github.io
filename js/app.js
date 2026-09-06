@@ -275,6 +275,7 @@ const TYPES = {
     const backgroundAudio = document.getElementById("backgroundAudio");
     const musicText = document.getElementById("musicText");
 
+    if (document.getElementById("grid")) {
     document.getElementById("prev").onclick = () => {
       active = new Date(active.getFullYear(), active.getMonth() - 1, Math.min(active.getDate(), 28));
       render();
@@ -343,6 +344,7 @@ const TYPES = {
     renderMusic();
     updateClock();
     setInterval(updateClock, 1000);
+    }
 
     function render() {
       monthName.textContent = months[active.getMonth()];
@@ -1479,8 +1481,9 @@ const TYPES = {
         <div class="site-loader" data-site-loader role="status" aria-live="polite">
           <div class="site-loader-card"><img src="/assets/favicon.png" alt=""><span class="site-loader-mark">IPUC Villa del Río</span><span class="site-loader-line">Preparando la página…</span><span class="site-loader-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
         </div>
-        <div class="site-video-backdrop" aria-hidden="true"><video autoplay muted loop playsinline preload="metadata"><source src="/assets/ipuc-villa-del-rio.mp4" type="video/mp4"></video><span></span></div>
+        <div class="site-video-backdrop" aria-hidden="true"><video muted loop playsinline preload="none" poster="/assets/og.png" data-decorative-video><source src="/assets/ipuc-villa-del-rio-bg.mp4" type="video/mp4"></video><span></span></div>
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
+        <button class="nav-backdrop" type="button" data-nav-backdrop aria-label="Cerrar menú" tabindex="-1" hidden></button>
         <header class="platform-top glass">
           <a class="platform-brand" href="/" aria-label="Inicio IPUC Villa del Río">
             <img src="/assets/ipuc-villa-del-rio-brand.png" alt="IPUC Villa del Río · Distrito 4">
@@ -1513,22 +1516,40 @@ const TYPES = {
         </aside>
       `;
 
-      document.querySelector("[data-toggle-nav]").onclick = event => {
-        const open = document.getElementById("platformNav").classList.toggle("open");
-        event.currentTarget.setAttribute("aria-expanded", String(open));
+      const nav = document.getElementById("platformNav");
+      const navToggle = document.querySelector("[data-toggle-nav]");
+      const navBackdrop = document.querySelector("[data-nav-backdrop]");
+      const setNavOpen = open => {
+        nav?.classList.toggle("open", open);
+        navToggle?.setAttribute("aria-expanded", String(open));
+        navToggle?.setAttribute("aria-label", open ? "Cerrar menú" : "Abrir menú");
+        navBackdrop?.classList.toggle("is-visible", open);
+        if (navBackdrop) navBackdrop.hidden = !open;
+        document.body.classList.toggle("nav-open", open);
       };
-      let compactMenu = false;
+      navToggle?.addEventListener("click", () => setNavOpen(!nav?.classList.contains("open")));
+      navBackdrop?.addEventListener("click", () => setNavOpen(false));
+      nav?.addEventListener("click", event => { if (event.target.closest("a")) setNavOpen(false); });
+      document.addEventListener("keydown", event => { if (event.key === "Escape") setNavOpen(false); });
+      let scrollFrame = 0;
       window.addEventListener("scroll", () => {
-        const topbar = document.querySelector(".platform-top");
-        if (!topbar) return;
-        // Usa histéresis para que el encabezado no alterne entre estados cuando
-        // la rueda queda cerca del inicio de la página.
-        const shouldCompact = compactMenu ? window.scrollY > 24 : window.scrollY > 72;
-        if (shouldCompact !== compactMenu) {
-          compactMenu = shouldCompact;
-          topbar.classList.toggle("is-compact", shouldCompact);
-        }
+        if (scrollFrame) return;
+        scrollFrame = requestAnimationFrame(() => {
+          document.querySelector(".platform-top")?.classList.toggle("is-scrolled", window.scrollY > 16);
+          scrollFrame = 0;
+        });
       }, { passive: true });
+      const decorativeVideo = document.querySelector("[data-decorative-video]");
+      const staticMedia = window.matchMedia("(max-width: 900px), (prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData;
+      if (staticMedia && decorativeVideo) {
+        decorativeVideo.pause();
+        decorativeVideo.querySelectorAll("source").forEach(source => source.remove());
+        decorativeVideo.removeAttribute("src");
+      } else if (decorativeVideo) {
+        const startDecorativeVideo = () => { decorativeVideo.load(); decorativeVideo.play().catch(() => {}); };
+        if ("requestIdleCallback" in window) requestIdleCallback(startDecorativeVideo, { timeout: 1200 });
+        else setTimeout(startDecorativeVideo, 300);
+      }
       window.addEventListener("hashchange", renderRoute);
       window.addEventListener("popstate", renderRoute);
       document.addEventListener("click", event => {
@@ -1567,9 +1588,10 @@ const TYPES = {
       function renderRoute(event) {
         if (event?.type === "hashchange") window.scrollTo({ top: 0, left: 0, behavior: "auto" });
         refreshAdminNav();
-        document.getElementById("platformNav").classList.remove("open");
-        document.querySelector("[data-toggle-nav]").setAttribute("aria-expanded", "false");
+        setNavOpen(false);
         const route = parseRoute();
+        const routeTitles = { inicio: "Inicio", calendario: "Calendario", anuncios: "Anuncios", podcast: "Historias que Edifican", recursos: "Recursos", ubicacion: "Ubicación", admin: "Administración", login: "Iniciar sesión", eventos: "Eventos", archivo: "Archivo" };
+        document.title = `${routeTitles[route.name] || "IPUC Villa del Río"} | IPUC Villa del Río`;
         const returningHome = route.name === "inicio" && lastRouteName && lastRouteName !== "inicio";
         lastRouteName = route.name;
         if (route.name !== "inicio" && reflectionIsActive) {
@@ -4641,7 +4663,15 @@ const TYPES = {
     }
 
     function installPlatformStyles() {
-      if (document.getElementById("platformStyles")) return;
+      if (document.querySelector('link[data-platform-runtime]')) return;
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "/css/platform-runtime.css?v=20260906-shell-1";
+      link.dataset.platformRuntime = "true";
+      document.head.appendChild(link);
+      return;
+      if (false) {
+      /* Legacy inline styles kept below only as historical reference. */
       const style = document.createElement("style");
       style.id = "platformStyles";
       style.textContent = `
@@ -5115,4 +5145,5 @@ const TYPES = {
         }
       `;
       document.head.appendChild(style);
+      }
     }
