@@ -470,9 +470,7 @@
 .platform-body.nav-open {
   overflow: hidden;
 }
-.site-video-backdrop {
-  background: #123348 url("/assets/ipuc-villa-del-rio-bg-poster.jpg") center / cover no-repeat;
-}
+.site-video-backdrop { background: #123348; }
 .site-video-backdrop video {
   display: block;
 }

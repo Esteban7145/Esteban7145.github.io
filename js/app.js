@@ -1481,7 +1481,7 @@ const TYPES = {
         <div class="site-loader" data-site-loader role="status" aria-live="polite">
           <div class="site-loader-card"><img src="/assets/favicon.png" alt=""><span class="site-loader-mark">IPUC Villa del Río</span><span class="site-loader-line">Preparando la página…</span><span class="site-loader-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
         </div>
-        <div class="site-video-backdrop" aria-hidden="true"><video muted loop autoplay playsinline preload="metadata" poster="/assets/ipuc-villa-del-rio-bg-poster.jpg" data-decorative-video><source src="/assets/ipuc-villa-del-rio-bg.mp4" type="video/mp4"></video><span></span></div>
+        <div class="site-video-backdrop" aria-hidden="true"><video muted loop autoplay playsinline preload="auto" data-decorative-video><source src="/assets/ipuc-villa-del-rio-bg.mp4" type="video/mp4"></video><span></span></div>
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
         <button class="nav-backdrop" type="button" data-nav-backdrop aria-label="Cerrar menú" tabindex="-1" hidden></button>
         <header class="platform-top glass">
@@ -4666,7 +4666,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260906-shell-1";
+      link.href = "/css/platform-runtime.css?v=20260906-shell-2";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
