@@ -471,7 +471,7 @@
   overflow: hidden;
 }
 .site-video-backdrop {
-  background: #123348 url("/assets/og.png") center / cover no-repeat;
+  background: #123348 url("/assets/ipuc-villa-del-rio-bg-poster.jpg") center / cover no-repeat;
 }
 .site-video-backdrop video {
   display: block;
@@ -528,9 +528,7 @@
   .platform-shell {
     width: min(100% - 20px, var(--platform-max));
   }
-  .site-video-backdrop video {
-    display: none;
-  }
+  .site-video-backdrop video { opacity: .48; }
   .home-hero, .detail-hero, .split-grid, .agenda-grid, .admin-layout, .login-card, .decom-grid, .decom-board {
     grid-template-columns: 1fr;
   }
@@ -610,4 +608,3 @@
     transition-duration: .01ms !important;
   }
 }
-
