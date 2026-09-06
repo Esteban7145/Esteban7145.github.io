@@ -1555,7 +1555,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260904-musica-widget-13").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260906-week-images-1").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
       setupChurchMusic();
@@ -4820,7 +4820,7 @@ const TYPES = {
         .week-column { min-width: 0; overflow: hidden; }
         .agenda-list-compact { gap: 10px; }
         .week-event-item { display: grid; grid-template-columns: 1fr; gap: 8px; align-items: start; padding: 9px; overflow: hidden; }
-        .week-event-item img { width: 100%; height: 72px; border-radius: 11px; }
+        .week-event-item > img { display: block; width: 100%; height: auto; min-height: 0; max-height: none; aspect-ratio: auto; object-fit: contain; border-radius: 11px; background: transparent; }
         .week-event-item div { min-width: 0; }
         .week-event-item div span, .week-event-item div small { display: block; overflow-wrap: anywhere; word-break: break-word; }
         .week-event-item div span { line-height: 1.15; }
