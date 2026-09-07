@@ -168,14 +168,20 @@
 .year-month, .week-column, .day-view { padding: 12px; border-radius: 18px; background: rgba(255,255,255,.45); border: 1px solid rgba(255,255,255,.68); }
 .year-month h3, .week-column h3 { margin: 0 0 10px; }
 .week-view { display: grid; grid-template-columns: repeat(7, minmax(150px, 1fr)); gap: 10px; overflow-x: auto; }
-.week-agenda-list { display: grid; gap: 12px; max-width: 920px; margin: 0 auto; }
-.week-list-day { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; padding: 14px; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(255,255,255,.46); }
-.week-list-day.is-today { border-color: rgba(28,139,120,.42); box-shadow: inset 5px 0 0 #1c8b78; background: rgba(235,249,245,.7); }
-.week-list-day > header { display: grid; align-content: start; gap: 4px; }
-.week-list-day > header h3 { margin: 0; color: #123348; font-size: 1.15rem; }
-.week-list-day > header span { color: var(--muted); font-weight: 800; }
-.week-list-day > header b { justify-self: start; padding: 4px 8px; border-radius: 999px; background: rgba(28,139,120,.13); color: #185f53; font-size: .7rem; }
-.week-list-day .agenda-list { gap: 8px; }
+.week-agenda-list { display: grid; gap: 12px; max-width: 1080px; margin: 0 auto; }
+.week-compact-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.week-list-day { display: grid; align-content: start; gap: 9px; min-width: 0; padding: 11px; border: 1px solid rgba(255,255,255,.72); border-radius: 17px; background: rgba(255,255,255,.46); }
+.week-list-day.is-today { border-color: rgba(28,139,120,.42); box-shadow: inset 0 4px 0 #1c8b78; background: rgba(235,249,245,.7); }
+.week-list-day > header { display: flex; align-items: start; justify-content: space-between; gap: 7px; min-width: 0; }
+.week-list-day > header h3 { margin: 0; color: #123348; font-size: 1rem; line-height: 1.05; }
+.week-list-day > header span { display: block; margin-top: 3px; color: var(--muted); font-size: .76rem; font-weight: 800; }
+.week-list-day > header b { flex: 0 0 auto; padding: 4px 7px; border-radius: 999px; background: rgba(28,139,120,.13); color: #185f53; font-size: .65rem; }
+.week-card-events { display: grid; gap: 6px; min-width: 0; }
+.week-compact-grid > .empty-state { grid-column: 1 / -1; }
+.week-card-events .event-pill { margin-top: 0; min-width: 0; padding: 5px; font-size: .72rem; }
+.week-card-events .event-pill-thumb { width: 30px; height: 30px; }
+.week-card-events .event-pill-copy strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.1; }
+.week-card-events .event-pill-copy small { margin-top: 2px; font-size: .64rem; }
 .weekly-schedule-card { display: grid; gap: 12px; padding: 16px; border: 1px solid rgba(255,255,255,.78); border-radius: 20px; background: rgba(255,255,255,.58); }
 .weekly-schedule-card h2 { color: #123348; }
 .weekly-schedule-card p:not(.eyebrow) { margin: 5px 0 0; color: var(--muted); }
@@ -342,7 +348,7 @@
   .home-welcome { grid-template-columns: 1fr; }
   .admin-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .decom-editor { position: static; }
-  .week-list-day { grid-template-columns: 130px minmax(0, 1fr); }
+  .week-compact-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .event-grid, .year-view, .asset-grid-page { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .announcement-page-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .page-head { display: grid; }
@@ -368,7 +374,10 @@
   .home-actions a, .music-home-action { width: 100%; justify-content: center; text-align: center; }
   .home-welcome { padding: 14px; border-radius: 18px; }
   .home-quick-links { grid-template-columns: 1fr; }
-  .week-list-day { grid-template-columns: 1fr; gap: 9px; }
+  body.platform-body .week-compact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  body.platform-body .week-list-day { gap: 8px; padding: 9px; }
+  body.platform-body .week-list-day > header h3 { font-size: .9rem; }
+  body.platform-body .week-list-day > header span { font-size: .68rem; }
   .leader-submission-head, .leader-directory-row { grid-template-columns: 1fr; display: grid; }
   .submission-status { justify-self: start; }
   .weekly-schedule-card iframe { height: 420px; }

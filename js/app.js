@@ -2960,16 +2960,15 @@ const TYPES = {
 
       function weekView() {
         const start = startOfWeek(platform.calendarDate);
-        let html = `<div class="week-agenda-list">${calendarPeriodNav(calendarTitle(), "Vista semanal")}${weeklyScheduleMarkup()}`;
         const daysWithEvents = [];
         for (let i = 0; i < 7; i += 1) {
           const date = new Date(start);
           date.setDate(start.getDate() + i);
           const dayEvents = eventsForPlatformDate(date);
           if (!dayEvents.length) continue;
-          daysWithEvents.push(`<article class="week-list-day ${sameDay(date, today) ? "is-today" : ""}"><header><h3>${capitalize(weekdays[date.getDay()])}</h3><span>${date.getDate()} de ${months[date.getMonth()]}</span>${sameDay(date, today) ? `<b>Hoy</b>` : ""}</header><div>${agendaList(dayEvents, true)}</div></article>`);
+          daysWithEvents.push(`<article class="week-list-day ${sameDay(date, today) ? "is-today" : ""}"><header><div><h3>${capitalize(weekdays[date.getDay()])}</h3><span>${date.getDate()} de ${months[date.getMonth()]}</span></div>${sameDay(date, today) ? `<b>Hoy</b>` : ""}</header><div class="week-card-events">${dayEvents.map(eventPill).join("")}</div></article>`);
         }
-        return html + (daysWithEvents.length ? daysWithEvents.join("") : emptyText("No hay eventos programados en esta semana.")) + "</div>";
+        return `<div class="week-agenda-list">${calendarPeriodNav(calendarTitle(), "Vista semanal")}<div class="week-compact-grid">${daysWithEvents.length ? daysWithEvents.join("") : emptyText("No hay eventos programados en esta semana.")}</div>${weeklyScheduleMarkup()}</div>`;
       }
 
       function weeklyScheduleMarkup() {
@@ -4799,7 +4798,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-calendar-nav-1";
+      link.href = "/css/platform-runtime.css?v=20260907-week-grid-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
