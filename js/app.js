@@ -4237,6 +4237,7 @@ const TYPES = {
         if (isMisionesCulto(event)) return "/assets/culto-misiones.png?v=20260907-1";
         if (isObraSocialCulto(event)) return "/assets/culto-obra-social.png?v=20260907-1";
         if (isEscuelaDominicalCulto(event)) return "/assets/culto-escuela-dominical.png?v=20260907-1";
+        if (isOracionEnsenanzaCulto(event)) return "/assets/culto-oracion-ensenanza.png?v=20260907-1";
         if (isDamasDorcasEvent(event)) return "/assets/culto-damas-dorcas.png?v=20260907-2";
         if (isCaballerosEvent(event)) return "/assets/culto-caballeros.png";
         if (isEvangelismoEvent(event)) return "/assets/culto-evangelismo.png?v=20260907-1";
@@ -4273,6 +4274,12 @@ const TYPES = {
         if (String(event?.type || "").toLowerCase() !== "culto") return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("escuela dominical"));
+      }
+
+      function isOracionEnsenanzaCulto(event) {
+        if (String(event?.type || "").toLowerCase() !== "culto") return false;
+        const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
+        return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("oracion y ensenanza"));
       }
 
       function isEvangelismoEvent(event) {
@@ -4748,7 +4755,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-comites-8";
+      link.href = "/css/platform-runtime.css?v=20260907-comites-9";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
