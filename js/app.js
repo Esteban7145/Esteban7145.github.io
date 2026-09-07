@@ -3719,10 +3719,19 @@ const TYPES = {
 
       async function deletePlatformEvent() {
         if (!requireCloudAdmin()) return;
-        if (platform.selectedAdminEvent === "__new__") return;
+        const id = platform.selectedAdminEvent;
+        if (id === "__new__") return;
         if (!confirm("Deseas eliminar este evento del cronograma?")) return;
-        await saveCloudDoc("events", platform.selectedAdminEvent, {
-          id: platform.selectedAdminEvent,
+        const current = platformEventById(id);
+        if (!current) return alert("No encontramos el evento seleccionado.");
+        await saveCloudDoc("events", id, {
+          ...(current || {}),
+          ...(APP_STATE.events[id] || {}),
+          id,
+          title: current.title,
+          date: current.date,
+          time: current.time,
+          type: current.type,
           deleted: true
         });
         platform.selectedAdminEvent = "__new__";
@@ -4762,7 +4771,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-comites-10";
+      link.href = "/css/platform-runtime.css?v=20260907-comites-11";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
