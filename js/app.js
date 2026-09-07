@@ -4249,6 +4249,7 @@ const TYPES = {
         if (isOracionEnsenanzaCulto(event)) return "/assets/culto-oracion-ensenanza.png?v=20260907-1";
         if (isRedFamiliasCulto(event)) return "/assets/culto-red-de-familias.png?v=20260907-1";
         if (isEdadDoradaCulto(event)) return "/assets/culto-edad-dorada.png?v=20260907-1";
+        if (isMusicaCulto(event)) return "/assets/culto-musica.png?v=20260907-1";
         if (isDamasDorcasEvent(event)) return "/assets/culto-damas-dorcas.png?v=20260907-2";
         if (isCaballerosEvent(event)) return "/assets/culto-caballeros.png";
         if (isEvangelismoEvent(event)) return "/assets/culto-evangelismo.png?v=20260907-1";
@@ -4301,13 +4302,22 @@ const TYPES = {
       function isRedFamiliasCulto(event) {
         if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
-        return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("red de familias"));
+        return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("red de familia"));
       }
 
       function isEdadDoradaCulto(event) {
         if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("edad dorada"));
+      }
+
+      function isMusicaCulto(event) {
+        if (!isCultoEvent(event)) return false;
+        const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
+        return values.some(value => {
+          const normalized = String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          return normalized.includes("musica") || normalized.includes("alabanza");
+        });
       }
 
       function isEvangelismoEvent(event) {
@@ -4785,7 +4795,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-comites-13";
+      link.href = "/css/platform-runtime.css?v=20260907-comites-14";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
