@@ -1,5 +1,14 @@
 .platform-body { position: relative; background: #123348; }
 .platform-shell { position: relative; isolation: isolate; }
+.calendar-period-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.calendar-period-nav > div { min-width: 0; }
+.calendar-period-nav .eyebrow { margin: 0 0 3px; color: var(--brand-teal); }
+.calendar-period-nav h2 { margin: 0; overflow: hidden; color: var(--brand-deep); font-size: clamp(1.05rem, 2vw, 1.45rem); letter-spacing: -.025em; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-period-arrow { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 1px solid rgba(0,51,141,.18); border-radius: 14px; background: rgba(255,255,255,.72); color: var(--brand-deep); font: inherit; font-size: 1.55rem; font-weight: 900; line-height: 1; cursor: pointer; transition: transform .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease; }
+.calendar-period-arrow:hover { transform: translateY(-2px); background: #fff; color: var(--brand-teal); box-shadow: 0 8px 18px rgba(0,51,141,.14); }
+.calendar-period-arrow:focus-visible { outline: 3px solid rgba(0,159,218,.5); outline-offset: 3px; }
+.year-period-nav { grid-column: 1 / -1; }
+.month-calendar-bar .calendar-period-nav { flex: 1 1 auto; }
 .site-video-backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; background: #123348; pointer-events: none; }
 .site-video-backdrop video { width: 100%; height: 100%; object-fit: cover; opacity: .68; filter: saturate(.9) contrast(1.04); }
 .site-video-backdrop span { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(7,28,43,.38), rgba(14,71,77,.16) 48%, rgba(6,26,42,.38)); pointer-events: none; }
@@ -343,6 +352,9 @@
   .music-widget { right: 12px; bottom: 12px; width: 58px; height: 58px; }
   .music-toggle { width: 48px; height: 48px; font-size: .95rem; }
   .platform-top { align-items: start; border-radius: 18px; }
+  .calendar-period-nav { width: 100%; }
+  .calendar-period-nav > div { flex: 1 1 auto; text-align: center; }
+  .calendar-period-nav h2 { font-size: 1rem; line-height: 1.15; white-space: normal; }
   .platform-brand { flex: 1 1 auto; }
   .platform-brand img { width: 220px; height: 58px; border-radius: 0; padding: 0; }
   .nav-toggle { display: inline-flex; }

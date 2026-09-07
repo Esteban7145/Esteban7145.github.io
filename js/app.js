@@ -2848,8 +2848,8 @@ const TYPES = {
       }
 
       function bindCalendarControls() {
-        view().querySelector("[data-cal-prev]").onclick = () => moveCalendar(-1);
-        view().querySelector("[data-cal-next]").onclick = () => moveCalendar(1);
+        view().querySelectorAll("[data-cal-prev]").forEach(button => { button.onclick = () => moveCalendar(-1); });
+        view().querySelectorAll("[data-cal-next]").forEach(button => { button.onclick = () => moveCalendar(1); });
         view().querySelector("[data-cal-today]").onclick = () => {
           platform.calendarDate = cleanDate(new Date());
           renderCalendarPage();
@@ -2917,10 +2917,14 @@ const TYPES = {
       }
 
       function calendarMarkup(events) {
-        if (platform.calendarView === "anio") return `<div class="year-view">${months.map((month, index) => monthBlock(month, index, events)).join("")}</div>`;
+        if (platform.calendarView === "anio") return `<div class="year-view"><div class="year-period-nav">${calendarPeriodNav(calendarTitle(), "Vista anual")}</div>${months.map((month, index) => monthBlock(month, index, events)).join("")}</div>`;
         if (platform.calendarView === "semana") return weekView(events);
         if (platform.calendarView === "dia") return dayView(eventsForPlatformDate(platform.calendarDate));
         return monthView(events);
+      }
+
+      function calendarPeriodNav(label, eyebrow) {
+        return `<div class="calendar-period-nav"><button class="calendar-period-arrow" data-cal-prev type="button" aria-label="Periodo anterior" title="Periodo anterior"><span aria-hidden="true">←</span></button><div><p class="eyebrow">${escapeHtml(eyebrow)}</p><h2>${escapeHtml(label)}</h2></div><button class="calendar-period-arrow" data-cal-next type="button" aria-label="Periodo siguiente" title="Periodo siguiente"><span aria-hidden="true">→</span></button></div>`;
       }
 
       function monthView(events) {
@@ -2939,7 +2943,7 @@ const TYPES = {
           const eventDate = parseDate(event.date);
           return eventDate.getFullYear() === year && eventDate.getMonth() === month;
         });
-        let html = `<div class="month-calendar-view"><div class="month-calendar-bar"><div><p class="eyebrow">Vista mensual</p><h2>${capitalize(months[month])} ${year}</h2></div><span class="month-summary">${monthEvents.length} ${monthEvents.length === 1 ? "actividad programada" : "actividades programadas"}</span></div><div class="week-head">${["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(day => `<span>${day}</span>`).join("")}</div><div class="month-grid">`;
+        let html = `<div class="month-calendar-view"><div class="month-calendar-bar">${calendarPeriodNav(`${capitalize(months[month])} ${year}`, "Vista mensual")}<span class="month-summary">${monthEvents.length} ${monthEvents.length === 1 ? "actividad programada" : "actividades programadas"}</span></div><div class="week-head">${["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(day => `<span>${day}</span>`).join("")}</div><div class="month-grid">`;
         for (let i = 0; i < 42; i += 1) {
           const date = new Date(start);
           date.setDate(start.getDate() + i);
@@ -2956,7 +2960,7 @@ const TYPES = {
 
       function weekView() {
         const start = startOfWeek(platform.calendarDate);
-        let html = `<div class="week-agenda-list">${weeklyScheduleMarkup()}`;
+        let html = `<div class="week-agenda-list">${calendarPeriodNav(calendarTitle(), "Vista semanal")}${weeklyScheduleMarkup()}`;
         const daysWithEvents = [];
         for (let i = 0; i < 7; i += 1) {
           const date = new Date(start);
@@ -2978,7 +2982,7 @@ const TYPES = {
       }
 
       function dayView(events) {
-        return `<div class="day-view"><h2>${longPlatformDate(platform.calendarDate)}</h2>${agendaList(events)}</div>`;
+        return `<div class="day-view">${calendarPeriodNav(longPlatformDate(platform.calendarDate), "Vista diaria")}${agendaList(events)}</div>`;
       }
 
       function monthBlock(month, index) {
@@ -4795,7 +4799,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-comites-14";
+      link.href = "/css/platform-runtime.css?v=20260907-calendar-nav-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
