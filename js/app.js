@@ -4257,53 +4257,60 @@ const TYPES = {
         return autoImage(event.type, event.autoStyle, event.title);
       }
 
+      function isCultoEvent(event) {
+        return String(event?.type || "").trim().toLowerCase() === "culto";
+      }
+
       function isDamasDorcasEvent(event) {
+        if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("damas dorcas"));
       }
 
       function isJovenesCulto(event) {
-        if (String(event?.type || "").toLowerCase() !== "culto") return false;
+        if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("jovenes"));
       }
 
       function isMisionesCulto(event) {
-        if (String(event?.type || "").toLowerCase() !== "culto") return false;
+        if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("misiones"));
       }
 
       function isObraSocialCulto(event) {
-        if (String(event?.type || "").toLowerCase() !== "culto") return false;
+        if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("obra social"));
       }
 
       function isEscuelaDominicalCulto(event) {
-        if (String(event?.type || "").toLowerCase() !== "culto") return false;
+        if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("escuela dominical"));
       }
 
       function isOracionEnsenanzaCulto(event) {
-        if (String(event?.type || "").toLowerCase() !== "culto") return false;
+        if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("oracion y ensenanza"));
       }
 
       function isRedFamiliasCulto(event) {
-        if (String(event?.type || "").toLowerCase() !== "culto") return false;
+        if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("red de familias"));
       }
 
       function isEvangelismoEvent(event) {
+        if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("evangelismo"));
       }
 
       function isCaballerosEvent(event) {
+        if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("caballeros"));
       }
@@ -4771,7 +4778,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-comites-11";
+      link.href = "/css/platform-runtime.css?v=20260907-comites-12";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
