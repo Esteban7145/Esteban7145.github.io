@@ -2929,12 +2929,21 @@ const TYPES = {
         const first = new Date(year, month, 1);
         const offset = (first.getDay() + 6) % 7;
         const start = new Date(year, month, 1 - offset);
-        const monthEvents = events.filter(event => parseDate(event.date).getMonth() === month);
+        const eventsByDate = new Map();
+        events.forEach(event => {
+          const key = String(event.date || "");
+          if (!eventsByDate.has(key)) eventsByDate.set(key, []);
+          eventsByDate.get(key).push(event);
+        });
+        const monthEvents = events.filter(event => {
+          const eventDate = parseDate(event.date);
+          return eventDate.getFullYear() === year && eventDate.getMonth() === month;
+        });
         let html = `<div class="month-calendar-view"><div class="month-calendar-bar"><div><p class="eyebrow">Vista mensual</p><h2>${capitalize(months[month])} ${year}</h2></div><span class="month-summary">${monthEvents.length} ${monthEvents.length === 1 ? "actividad programada" : "actividades programadas"}</span></div><div class="week-head">${["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(day => `<span>${day}</span>`).join("")}</div><div class="month-grid">`;
         for (let i = 0; i < 42; i += 1) {
           const date = new Date(start);
           date.setDate(start.getDate() + i);
-          const dayEvents = eventsForPlatformDate(date);
+          const dayEvents = eventsByDate.get(dateKey(date)) || [];
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
           html += `<article class="month-day ${date.getMonth() !== month ? "muted-day" : ""} ${isWeekend ? "weekend-day" : ""} ${dayEvents.length ? "has-events" : ""} ${sameDay(date, today) ? "today-day" : ""}">
             <div class="month-day-top"><button class="day-number" type="button" data-calendar-date="${dateKey(date)}" aria-label="Ver ${longPlatformDate(date)}">${date.getDate()}</button>${dayEvents.length ? `<span class="month-event-count">${dayEvents.length}</span>` : ""}</div>
@@ -3000,10 +3009,9 @@ const TYPES = {
       }
 
       function eventCalendarImage(event) {
-        if (event.image && isImage(event.image)) return assetSource(event.image, "display");
-        if (event.invitations?.main && isImage(event.invitations.main)) return assetSource(event.invitations.main, "display");
-        if (isRegularSundayWorship(event)) return DEFAULT_SUNDAY_INVITATION.url;
-        return "";
+        const source = eventImage(event);
+        if (!source || source.startsWith("data:image/")) return "";
+        return source;
       }
 
       function agendaList(events, compact = false) {
@@ -4740,7 +4748,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-comites-7";
+      link.href = "/css/platform-runtime.css?v=20260907-comites-8";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
