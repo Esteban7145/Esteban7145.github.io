@@ -4227,6 +4227,7 @@ const TYPES = {
       function eventImage(event) {
         if (isDamasDorcasEvent(event)) return "/assets/culto-damas-dorcas.png?v=20260907-2";
         if (isCaballerosEvent(event)) return "/assets/culto-caballeros.png";
+        if (isEvangelismoEvent(event)) return "/assets/culto-evangelismo.png?v=20260907-1";
         if (event.image && isImage(event.image)) return assetSource(event.image, "display");
         if (event.invitations?.main && isImage(event.invitations.main)) return assetSource(event.invitations.main, "display");
         if (isRegularSundayWorship(event)) return DEFAULT_SUNDAY_INVITATION.url;
@@ -4236,6 +4237,11 @@ const TYPES = {
       function isDamasDorcasEvent(event) {
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("damas dorcas"));
+      }
+
+      function isEvangelismoEvent(event) {
+        const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
+        return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("evangelismo"));
       }
 
       function isCaballerosEvent(event) {
@@ -4706,7 +4712,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-comites-2";
+      link.href = "/css/platform-runtime.css?v=20260907-comites-3";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
