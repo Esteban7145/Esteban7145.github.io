@@ -4225,7 +4225,7 @@ const TYPES = {
       }
 
       function eventImage(event) {
-        if (isDamasDorcasEvent(event)) return "/assets/culto-damas-dorcas.png";
+        if (isDamasDorcasEvent(event)) return "/assets/culto-damas-dorcas.png?v=20260907-2";
         if (isCaballerosEvent(event)) return "/assets/culto-caballeros.png";
         if (event.image && isImage(event.image)) return assetSource(event.image, "display");
         if (event.invitations?.main && isImage(event.invitations.main)) return assetSource(event.invitations.main, "display");
@@ -4706,7 +4706,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-comites-1";
+      link.href = "/css/platform-runtime.css?v=20260907-comites-2";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
