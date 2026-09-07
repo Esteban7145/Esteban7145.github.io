@@ -4225,10 +4225,16 @@ const TYPES = {
       }
 
       function eventImage(event) {
+        if (isCaballerosEvent(event)) return "/assets/culto-caballeros.png";
         if (event.image && isImage(event.image)) return assetSource(event.image, "display");
         if (event.invitations?.main && isImage(event.invitations.main)) return assetSource(event.invitations.main, "display");
         if (isRegularSundayWorship(event)) return DEFAULT_SUNDAY_INVITATION.url;
         return autoImage(event.type, event.autoStyle, event.title);
+      }
+
+      function isCaballerosEvent(event) {
+        const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
+        return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("caballeros"));
       }
 
       function autoImage(type, style, seedText) {
@@ -4694,7 +4700,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-worship-2";
+      link.href = "/css/platform-runtime.css?v=20260907-caballeros-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
