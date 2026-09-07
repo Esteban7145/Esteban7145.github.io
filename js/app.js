@@ -4225,6 +4225,7 @@ const TYPES = {
       }
 
       function eventImage(event) {
+        if (isJovenesCulto(event)) return "/assets/culto-jovenes.png?v=20260907-1";
         if (isDamasDorcasEvent(event)) return "/assets/culto-damas-dorcas.png?v=20260907-2";
         if (isCaballerosEvent(event)) return "/assets/culto-caballeros.png";
         if (isEvangelismoEvent(event)) return "/assets/culto-evangelismo.png?v=20260907-1";
@@ -4237,6 +4238,12 @@ const TYPES = {
       function isDamasDorcasEvent(event) {
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
         return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("damas dorcas"));
+      }
+
+      function isJovenesCulto(event) {
+        if (String(event?.type || "").toLowerCase() !== "culto") return false;
+        const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
+        return values.some(value => String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes("jovenes"));
       }
 
       function isEvangelismoEvent(event) {
