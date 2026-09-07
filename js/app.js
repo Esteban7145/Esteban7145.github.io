@@ -2157,8 +2157,9 @@ const TYPES = {
       function renderHomePage(options = {}) {
         const events = eventsForPlatformDate(today);
         const main = events[0];
+        const mainImage = main ? eventImage(main) : "";
         const reflection = reflectionForDate(today);
-        const mainInvitation = main && main.type === "culto" && ((main.image && isImage(main.image)) || (main.invitations?.main && isImage(main.invitations.main)) || isRegularSundayWorship(main));
+        const mainInvitation = Boolean(main && mainImage);
         const reflectionStart = !main ? reflectionResumeSeconds(reflection?.media?.url) : 0;
         const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, !options.pauseReflection, { start: reflectionStart }) : "";
         reflectionIsActive = Boolean(reflectionMarkup);
@@ -2180,7 +2181,7 @@ const TYPES = {
               <div class="live-visitors" aria-live="polite"><span class="live-visitors-dot"></span><strong data-online-count>1</strong> personas en la página ahora</div>
               <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="music-home-action" type="button" data-home-music>▶ Escuchar música IPUC</button>${deferredInstallPrompt ? `<button class="music-home-action install-home-action" type="button" data-install-app>＋ Instalar app</button>` : ""}</div>
             </div>
-            ${mainInvitation ? `<aside class="home-invitation-card"><div class="home-invitation-head"><span class="eyebrow">Invitación del día</span><span class="home-invitation-dot" aria-hidden="true"></span></div><img class="home-invitation-image" src="${escapeHtml(eventImage(main))}" alt="Invitación de ${escapeHtml(main.title)}"><a class="home-invitation-link" href="#/evento/${encodeURIComponent(main.id)}">Ver invitación completa <span aria-hidden="true">→</span></a></aside>` : ""}
+            ${mainInvitation ? `<aside class="home-invitation-card"><div class="home-invitation-head"><span class="eyebrow">Imagen del evento</span><span class="home-invitation-dot" aria-hidden="true"></span></div><img class="home-invitation-image" src="${escapeHtml(mainImage)}" alt="Imagen de ${escapeHtml(main.title)}"><a class="home-invitation-link" href="#/evento/${encodeURIComponent(main.id)}">Ver evento completo <span aria-hidden="true">→</span></a></aside>` : ""}
           </section>
           <section class="home-welcome glass">
             <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta actividades, recursos, horarios y novedades de la congregación desde un solo lugar.</p></div>
