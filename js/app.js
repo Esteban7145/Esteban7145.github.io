@@ -2154,6 +2154,39 @@ const TYPES = {
         }).join("");
       }
 
+      const WORSHIP_SCHEDULE = [
+        { day: 2, label: "Martes", time: "7:00 p. m.", title: "Culto de enseñanza", note: "Una noche para crecer en la Palabra." },
+        { day: 4, label: "Jueves", time: "7:00 p. m.", title: "Culto de oración y enseñanza", note: "Un espacio para buscar juntos la presencia de Dios." },
+        { day: 6, label: "Sábados", time: "7:00 p. m.", title: "Culto de jóvenes y comités", note: "Una oportunidad para servir, adorar y compartir." },
+        { day: 0, label: "Domingos", time: "10:00 a. m.", title: "Culto dominical", note: "Celebramos juntos nuestra fe como familia IPUC." }
+      ];
+
+      function worshipScheduleMarkup() {
+        const selected = WORSHIP_SCHEDULE.find(item => item.day === today.getDay()) || WORSHIP_SCHEDULE[0];
+        return `<section class="worship-schedule glass" aria-labelledby="worshipScheduleTitle">
+          <div class="worship-schedule-head"><div><p class="eyebrow">Horarios de cultos</p><h2 id="worshipScheduleTitle">Un tiempo para encontrarnos con Dios</h2><p>Consulta los días y horarios de nuestras reuniones.</p></div><div class="worship-clock" aria-live="polite"><span class="worship-clock-face" aria-hidden="true">◷</span><strong data-worship-clock>--:--:--</strong><small>hora local</small></div></div>
+          <div class="worship-day-list" role="tablist" aria-label="Días de culto">${WORSHIP_SCHEDULE.map(item => `<button class="worship-day${item.day === selected.day ? " is-active" : ""}" type="button" role="tab" aria-selected="${item.day === selected.day}" data-worship-day="${item.day}"><span>${item.label}</span><strong>${item.time}</strong></button>`).join("")}</div>
+          <div class="worship-detail" data-worship-detail><span class="worship-detail-kicker">Próxima reunión</span><strong>${selected.title}</strong><span>${selected.note}</span><b>${selected.label} · ${selected.time}</b></div>
+        </section>`;
+      }
+
+      function bindWorshipSchedule() {
+        const schedule = view().querySelector(".worship-schedule");
+        if (!schedule) return;
+        const detail = schedule.querySelector("[data-worship-detail]");
+        const clock = schedule.querySelector("[data-worship-clock]");
+        const updateClock = () => { if (clock) clock.textContent = new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", second: "2-digit" }); };
+        updateClock();
+        if (window.__ipucWorshipClock) clearInterval(window.__ipucWorshipClock);
+        window.__ipucWorshipClock = window.setInterval(updateClock, 1000);
+        schedule.querySelectorAll("[data-worship-day]").forEach(button => button.addEventListener("click", () => {
+          const item = WORSHIP_SCHEDULE.find(entry => String(entry.day) === button.dataset.worshipDay);
+          if (!item || !detail) return;
+          schedule.querySelectorAll("[data-worship-day]").forEach(dayButton => { const active = dayButton === button; dayButton.classList.toggle("is-active", active); dayButton.setAttribute("aria-selected", String(active)); });
+          detail.innerHTML = `<span class="worship-detail-kicker">Horario seleccionado</span><strong>${item.title}</strong><span>${item.note}</span><b>${item.label} · ${item.time}</b>`;
+        }));
+      }
+
       function renderHomePage(options = {}) {
         const events = eventsForPlatformDate(today);
         const main = events[0];
@@ -2187,6 +2220,7 @@ const TYPES = {
             <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta actividades, recursos, horarios y novedades de la congregación desde un solo lugar.</p></div>
             <div class="home-quick-links"><a href="#/calendario"><strong>Calendario</strong><span>Ver la semana completa →</span></a><a href="#/agenda"><strong>Agenda</strong><span>Próximos encuentros →</span></a><a href="#/podcast"><strong>Historias que Edifican</strong><span>Historias que edifican →</span></a><a href="#/recursos"><strong>Recursos</strong><span>Material oficial IPUC →</span></a><a href="#/ubicacion"><strong>Ubicación</strong><span>Cómo llegar →</span></a></div>
           </section>
+          ${worshipScheduleMarkup()}
           <section class="home-community glass">
             <div class="home-community-head"><div><p class="eyebrow">Familia IPUC</p><h2>Una iglesia que sirve unida</h2><p>Conoce los comités y ministerios que hacen parte de la vida de IPUC Villa del Río.</p></div><a class="small-action" href="#/eventos">Ver actividades</a></div>
             <div class="home-committee-grid">${committeeHomeMarkup()}</div>
@@ -2208,6 +2242,7 @@ const TYPES = {
         `;
         bindTypeShortcuts();
         bindHomeCommitteeShortcuts();
+        bindWorshipSchedule();
         const homeMusic = view().querySelector("[data-home-music]");
         if (homeMusic) homeMusic.onclick = () => {
           if (reflectionIsActive) {
@@ -4659,7 +4694,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-shell-5";
+      link.href = "/css/platform-runtime.css?v=20260907-worship-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;

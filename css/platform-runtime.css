@@ -617,6 +617,26 @@ body.platform-body .platform-top.is-scrolled .platform-brand { display: flex; }
 body.platform-body .platform-top.is-scrolled .platform-brand img { width: 250px; height: 68px; }
 body.platform-body .platform-nav { position: static; display: flex; opacity: 1; pointer-events: auto; transform: none; }
 body.platform-body .nav-toggle { display: none; }
+.worship-schedule { display: grid; gap: 20px; padding: clamp(20px, 3vw, 34px); }
+.worship-schedule-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.worship-schedule-head h2 { margin: 4px 0 6px; color: var(--brand-deep); font-size: clamp(1.55rem, 3vw, 2.35rem); }
+.worship-schedule-head p:not(.eyebrow) { margin: 0; color: var(--muted); }
+.worship-clock { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 10px; min-width: 180px; padding: 12px 16px; border: 1px solid rgba(0,159,218,.28); border-radius: 18px; background: rgba(255,255,255,.55); color: var(--brand-deep); }
+.worship-clock-face { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border: 2px solid var(--brand-teal); border-radius: 50%; color: var(--brand-teal); font-size: 2rem; animation: worshipClockPulse 2.5s ease-in-out infinite; }
+.worship-clock strong { font-variant-numeric: tabular-nums; font-size: 1.05rem; }
+.worship-clock small { color: var(--muted); }
+.worship-day-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.worship-day { display: grid; gap: 5px; min-height: 76px; padding: 13px 14px; border: 1px solid rgba(255,255,255,.8); border-radius: 16px; background: rgba(255,255,255,.56); color: var(--ink); text-align: left; cursor: pointer; transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease; }
+.worship-day:hover, .worship-day:focus-visible { transform: translateY(-2px); border-color: rgba(0,159,218,.6); outline: none; }
+.worship-day.is-active { border-color: var(--brand-teal); background: linear-gradient(135deg, rgba(0,51,141,.95), rgba(0,123,136,.9)); color: #fff; box-shadow: 0 12px 24px rgba(0,51,141,.18); }
+.worship-day span { font-weight: 800; }
+.worship-day strong { font-size: 1.02rem; }
+.worship-detail { display: grid; gap: 4px; padding: 16px 18px; border-left: 4px solid var(--brand-gold); border-radius: 12px; background: rgba(255,255,255,.48); }
+.worship-detail-kicker { color: var(--brand-teal); font-size: .7rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.worship-detail strong { color: var(--brand-deep); font-size: 1.15rem; }
+.worship-detail span:not(.worship-detail-kicker) { color: var(--muted); }
+.worship-detail b { color: var(--brand-deep); font-size: .9rem; }
+@keyframes worshipClockPulse { 50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(0,159,218,.1); } }
 @media (max-width: 1024px) {
   body.platform-body .nav-toggle { display: inline-flex; }
   body.platform-body .platform-nav {
@@ -633,6 +653,18 @@ body.platform-body .nav-toggle { display: none; }
     transform: translateY(-8px) scale(.98);
   }
   body.platform-body .platform-nav.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
+}
+@media (max-width: 620px) {
+  .worship-schedule-head { align-items: stretch; flex-direction: column; gap: 14px; }
+  .worship-clock { width: fit-content; }
+  .worship-day-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .worship-day { min-height: 70px; padding: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .worship-clock-face { animation: none; }
+}
+@media (max-width: 380px) {
+  .worship-day-list { grid-template-columns: 1fr; }
 }
 @media (max-width: 620px) {
   body.platform-body .platform-top,
