@@ -4659,7 +4659,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260906-shell-4";
+      link.href = "/css/platform-runtime.css?v=20260907-shell-5";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
