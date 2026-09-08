@@ -2968,7 +2968,7 @@ const TYPES = {
           if (!dayEvents.length) continue;
           daysWithEvents.push(`<article class="week-list-day ${sameDay(date, today) ? "is-today" : ""}"><header><div><h3>${capitalize(weekdays[date.getDay()])}</h3><span>${date.getDate()} de ${months[date.getMonth()]}</span></div>${sameDay(date, today) ? `<b>Hoy</b>` : ""}</header><div class="week-card-events">${dayEvents.map(eventPill).join("")}</div></article>`);
         }
-        return `<div class="week-agenda-list">${calendarPeriodNav(calendarTitle(), "Vista semanal")}<div class="week-compact-grid">${daysWithEvents.length ? daysWithEvents.join("") : emptyText("No hay eventos programados en esta semana.")}</div>${weeklyScheduleMarkup()}</div>`;
+        return `<div class="week-agenda-list">${calendarPeriodNav(calendarTitle(), "Vista semanal")}${weeklyScheduleMarkup()}<div class="week-compact-grid">${daysWithEvents.length ? daysWithEvents.join("") : emptyText("No hay eventos programados en esta semana.")}</div></div>`;
       }
 
       function weeklyScheduleMarkup() {
@@ -4798,7 +4798,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-week-grid-1";
+      link.href = "/css/platform-runtime.css?v=20260907-week-grid-2";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
