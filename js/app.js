@@ -2981,7 +2981,12 @@ const TYPES = {
       }
 
       function dayView(events) {
-        return `<div class="day-view">${calendarPeriodNav(longPlatformDate(platform.calendarDate), "Vista diaria")}${agendaList(events)}</div>`;
+        const detailCards = events.length ? `<div class="day-events-detail">${events.slice().sort(sortByDate).map(dayEventDetail).join("")}</div>` : emptyText("No hay eventos programados para este día.");
+        return `<div class="day-view">${calendarPeriodNav(longPlatformDate(platform.calendarDate), "Vista diaria")}${detailCards}</div>`;
+      }
+
+      function dayEventDetail(event) {
+        return `<article class="day-event-detail detail-hero glass"><img src="${eventImage(event)}" alt="Imagen de ${escapeHtml(event.title)}" loading="lazy" decoding="async"><div><p class="eyebrow">${escapeHtml(platformStatus(event))}</p><h2>${escapeHtml(event.title)}</h2><p>${escapeHtml(eventDescription(event))}</p>${eventInfoList(event)}<a class="primary-link" href="#/evento/${encodeURIComponent(event.id)}">Ver detalles completos</a></div></article>`;
       }
 
       function monthBlock(month, index) {
@@ -4798,7 +4803,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-week-grid-2";
+      link.href = "/css/platform-runtime.css?v=20260907-day-detail-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
