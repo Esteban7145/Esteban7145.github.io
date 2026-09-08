@@ -2976,8 +2976,8 @@ const TYPES = {
         if (!assetSource(asset)) return "";
         const source = assetSource(asset, "display");
         const isPdf = String(asset.type || asset.name || "").toLowerCase().includes("pdf");
-        if (isPdf) return `<section class="weekly-schedule-card"><div><p class="eyebrow">Cronograma para compartir</p><h2>Programación semanal</h2><p>El archivo actual es PDF. Sube una imagen desde Administración para mostrarla aquí.</p></div></section>`;
-        return `<section class="weekly-schedule-card" aria-label="Cronograma semanal"><img src="${escapeHtml(source)}" alt="Cronograma semanal de cultos" loading="lazy" decoding="async"></section>`;
+        if (isPdf) return `<section class="weekly-schedule-card is-pdf"><div><p class="eyebrow">Cronograma para compartir</p><h2>Programación semanal</h2><p>El archivo actual es PDF. Sube una imagen desde Administración para mostrarla aquí.</p></div></section>`;
+        return `<section class="weekly-schedule-card is-image" aria-label="Cronograma semanal"><img src="${escapeHtml(source)}" alt="Cronograma semanal de cultos" loading="lazy" decoding="async"></section>`;
       }
 
       function weekEventCard(event) {
@@ -4807,7 +4807,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-week-cards-1";
+      link.href = "/css/platform-runtime.css?v=20260907-week-cards-2";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
