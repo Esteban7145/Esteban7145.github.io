@@ -2966,7 +2966,7 @@ const TYPES = {
           date.setDate(start.getDate() + i);
           const dayEvents = eventsForPlatformDate(date);
           if (!dayEvents.length) continue;
-          daysWithEvents.push(`<article class="week-list-day ${sameDay(date, today) ? "is-today" : ""}"><header><div><h3>${capitalize(weekdays[date.getDay()])}</h3><span>${date.getDate()} de ${months[date.getMonth()]}</span></div>${sameDay(date, today) ? `<b>Hoy</b>` : ""}</header><div class="week-card-events">${dayEvents.map(eventPill).join("")}</div></article>`);
+          daysWithEvents.push(`<article class="week-list-day ${sameDay(date, today) ? "is-today" : ""}"><header><div><h3>${capitalize(weekdays[date.getDay()])}</h3><span>${date.getDate()} de ${months[date.getMonth()]}</span></div>${sameDay(date, today) ? `<b>Hoy</b>` : ""}</header><div class="week-card-events">${dayEvents.map(weekEventCard).join("")}</div></article>`);
         }
         return `<div class="week-agenda-list">${calendarPeriodNav(calendarTitle(), "Vista semanal")}${weeklyScheduleMarkup()}<div class="week-compact-grid">${daysWithEvents.length ? daysWithEvents.join("") : emptyText("No hay eventos programados en esta semana.")}</div></div>`;
       }
@@ -2977,7 +2977,11 @@ const TYPES = {
         const source = assetSource(asset, "display");
         const isPdf = String(asset.type || asset.name || "").toLowerCase().includes("pdf");
         if (isPdf) return `<section class="weekly-schedule-card"><div><p class="eyebrow">Cronograma para compartir</p><h2>Programación semanal</h2><p>El archivo actual es PDF. Sube una imagen desde Administración para mostrarla aquí.</p></div></section>`;
-        return `<section class="weekly-schedule-card"><div><p class="eyebrow">Cronograma para compartir</p><h2>Programación semanal</h2><p>Consulta la imagen oficial de esta semana.</p></div><img src="${escapeHtml(source)}" alt="Cronograma semanal de cultos"></section>`;
+        return `<section class="weekly-schedule-card" aria-label="Cronograma semanal"><img src="${escapeHtml(source)}" alt="Cronograma semanal de cultos" loading="lazy" decoding="async"></section>`;
+      }
+
+      function weekEventCard(event) {
+        return `<a class="week-event-card" href="#/evento/${encodeURIComponent(event.id)}" title="${escapeHtml(event.title)}" aria-label="Ver detalles de ${escapeHtml(event.title)}"><img src="${eventImage(event)}" alt="" loading="lazy" decoding="async"><span class="week-event-card-copy"><strong>${escapeHtml(event.title)}</strong><small>${escapeHtml(event.time)}</small></span></a>`;
       }
 
       function dayView(events) {
@@ -4803,7 +4807,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-day-detail-1";
+      link.href = "/css/platform-runtime.css?v=20260907-week-cards-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
