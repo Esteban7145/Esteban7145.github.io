@@ -1472,7 +1472,20 @@ const TYPES = {
       shell.className = "platform-shell";
       shell.innerHTML = `
         <div class="site-loader" data-site-loader role="status" aria-live="polite">
-          <div class="site-loader-card"><img src="/assets/favicon.png" alt=""><span class="site-loader-mark">IPUC Villa del Río</span><span class="site-loader-line">Preparando la página…</span><span class="site-loader-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+          <div class="site-loader-scene" aria-hidden="true">
+            <div class="site-loader-book">
+              <div class="site-loader-cover site-loader-cover-back"></div>
+              <div class="site-loader-pages site-loader-pages-left"><i></i><i></i><i></i></div>
+              <div class="site-loader-pages site-loader-pages-right"><i></i><i></i><i></i></div>
+              <div class="site-loader-page-flip site-loader-page-flip-one"></div>
+              <div class="site-loader-page-flip site-loader-page-flip-two"></div>
+              <div class="site-loader-page-flip site-loader-page-flip-three"></div>
+              <div class="site-loader-binding"></div>
+              <div class="site-loader-cover site-loader-cover-front"><span class="site-loader-cover-rule"></span><strong>BIBLIA</strong><small>IPUC</small></div>
+            </div>
+            <span class="site-loader-light"></span>
+          </div>
+          <div class="site-loader-copy"><strong>IPUC Villa del Río</strong><span>Abriendo un espacio para crecer juntos</span></div>
         </div>
         <div class="site-video-backdrop" aria-hidden="true"><video muted loop autoplay playsinline preload="auto" data-decorative-video><source src="/assets/ipuc-villa-del-rio-bg.mp4" type="video/mp4"></video><span></span></div>
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
@@ -1561,7 +1574,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-home-story-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-bible-loader-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -4530,9 +4543,13 @@ const TYPES = {
         const close = () => {
           if (loader.classList.contains("is-hidden")) return;
           loader.classList.add("is-hidden");
-          window.setTimeout(() => loader.remove(), 500);
+          window.setTimeout(() => loader.remove(), 720);
         };
-        window.requestAnimationFrame(() => window.setTimeout(close, window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 180 : 650));
+        const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        const wait = duration => new Promise(resolve => window.setTimeout(resolve, duration));
+        const fontsReady = document.fonts?.ready || Promise.resolve();
+        const essentialReady = Promise.all([fontsReady.catch?.(() => {}) || fontsReady, wait(reducedMotion ? 90 : 1700)]);
+        Promise.race([essentialReady, wait(reducedMotion ? 180 : 2850)]).then(close);
       }
 
       async function loadDriveMusic() {
@@ -4906,7 +4923,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260909-home-story-1";
+      link.href = "/css/platform-runtime.css?v=20260909-bible-loader-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
