@@ -19,12 +19,6 @@
 @keyframes platformAtmosphere { from { background-position: 0% 0%; } to { background-position: 100% 70%; } }
 .platform-shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 18px 0 34px; }
 .platform-top { position: sticky; top: 10px; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 12px; border-radius: 24px; box-sizing: border-box; transition: width .24s ease, padding .24s ease, border-radius .24s ease, transform .24s ease, margin-bottom .24s ease; }
-.platform-top.is-compact { position: sticky; top: 12px; width: 48px; height: 48px; margin-bottom: 68px; margin-left: auto; padding: 3px; justify-content: center; border-radius: 14px; background: rgba(248,252,250,.96); box-shadow: 0 14px 30px rgba(13,52,66,.25); }
-.platform-top.is-compact .platform-brand { display: none; }
-.platform-top.is-compact .nav-toggle { display: inline-flex; width: 42px; height: 42px; padding: 0; border-radius: 11px; font-size: 0; }
-.platform-top.is-compact .nav-toggle::before { content: "☰"; font-size: 1.3rem; line-height: 1; }
-.platform-top.is-compact .platform-nav { position: absolute; top: calc(100% + 8px); right: 0; display: none; flex-direction: column; align-items: stretch; width: min(230px, calc(100vw - 28px)); padding: 10px; border: 1px solid rgba(255,255,255,.78); border-radius: 18px; background: rgba(245,250,248,.97); box-shadow: 0 20px 50px rgba(31,55,72,.22); }
-.platform-top.is-compact .platform-nav.open { display: flex; }
 .platform-brand { display: flex; align-items: center; flex: 0 1 260px; min-width: 0; color: var(--ink); text-decoration: none; }
 .platform-brand img { width: 250px; height: 68px; object-fit: contain; border: 0; border-radius: 0; background: transparent; padding: 0; box-shadow: none; }
 .platform-brand span { display: grid; gap: 3px; min-width: 0; }
@@ -432,7 +426,7 @@
   *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
 }
 
-/* Platform shell: navigation, media and responsive layout */
+/* Platform shell: media and responsive layout */
 :root {
   --platform-max: 1180px;
   --nav-height: 76px;
@@ -445,37 +439,6 @@
   width: min(var(--platform-max), calc(100% - 28px));
   margin-inline: auto;
   padding: 18px 0 34px;
-}
-.platform-top {
-  position: sticky;
-  top: max(10px, env(safe-area-inset-top));
-  z-index: 50;
-  min-height: var(--nav-height);
-  transition: box-shadow .22s ease;
-}
-.platform-top.is-scrolled {
-  min-height: var(--nav-height);
-  box-shadow: 0 12px 28px rgba(13,52,66,.16);
-}
-.platform-top.is-scrolled .platform-brand img {
-  width: 250px;
-  height: 68px;
-}
-.platform-brand img {
-  width: 250px;
-  height: 68px;
-  object-fit: contain;
-}
-.platform-nav {
-  flex-wrap: nowrap;
-}
-.platform-nav a {
-  min-height: 44px;
-  white-space: nowrap;
-}
-.platform-nav a:last-child {
-  margin-left: 8px;
-  border-left-color: rgba(0,51,141,.24);
 }
 .nav-toggle {
   display: none;
@@ -502,54 +465,6 @@
 .site-video-backdrop { background: #123348; }
 .site-video-backdrop video {
   display: block;
-}
-@media (max-width: 1024px) {
-  .nav-toggle {
-    display: inline-flex;
-    font-size: 0;
-  }
-  .nav-toggle::before {
-    content: "☰";
-    font-size: 1.3rem;
-    line-height: 1;
-  }
-  .platform-nav {
-    position: fixed;
-    top: calc(var(--nav-height) + max(10px, env(safe-area-inset-top)));
-    right: 14px;
-    left: auto;
-    z-index: 60;
-    display: grid;
-    grid-template-columns: 1fr;
-    width: min(340px, calc(100vw - 28px));
-    max-height: calc(100dvh - 90px);
-    padding: 10px;
-    overflow-y: auto;
-    border: 1px solid rgba(255,255,255,.82);
-    border-radius: 20px;
-    background: rgba(248,252,250,.96);
-    box-shadow: 0 22px 60px rgba(8,28,44,.3);
-    opacity: 0;
-    transform: translateY(-8px) scale(.98);
-    pointer-events: none;
-    transition: opacity .2s ease, transform .2s ease;
-  }
-  .platform-nav.open {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-  }
-  .platform-nav a {
-    justify-content: flex-start;
-    width: 100%;
-    min-height: 48px;
-    box-sizing: border-box;
-  }
-  .platform-nav a:last-child {
-    margin: 8px 0 0;
-    border-top: 1px solid rgba(0,51,141,.14);
-    border-left: 0;
-  }
 }
 @media (max-width: 900px) {
   .platform-shell {
@@ -630,24 +545,6 @@
   }
 }
 
-/* Navegación única: evita que reglas antiguas cambien el menú durante el scroll. */
-body.platform-body .platform-top,
-body.platform-body .platform-top.is-scrolled {
-  position: sticky;
-  top: max(10px, env(safe-area-inset-top));
-  width: 100%;
-  min-height: var(--nav-height);
-  margin: 0;
-  padding: 12px;
-  transform: none;
-  border-radius: 24px;
-  box-sizing: border-box;
-}
-body.platform-body .platform-top.is-scrolled { box-shadow: 0 12px 28px rgba(13,52,66,.16); }
-body.platform-body .platform-top.is-scrolled .platform-brand { display: flex; }
-body.platform-body .platform-top.is-scrolled .platform-brand img { width: 250px; height: 68px; }
-body.platform-body .platform-nav { position: static; display: flex; opacity: 1; pointer-events: auto; transform: none; }
-body.platform-body .nav-toggle { display: none; }
 .worship-schedule { display: grid; gap: 20px; padding: clamp(20px, 3vw, 34px); }
 .worship-schedule-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .worship-schedule-head h2 { margin: 4px 0 6px; color: var(--brand-deep); font-size: clamp(1.55rem, 3vw, 2.35rem); }
@@ -668,23 +565,6 @@ body.platform-body .nav-toggle { display: none; }
 .worship-detail span:not(.worship-detail-kicker) { color: var(--muted); }
 .worship-detail b { color: var(--brand-deep); font-size: .9rem; }
 @keyframes worshipClockPulse { 50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(0,159,218,.1); } }
-@media (max-width: 1024px) {
-  body.platform-body .nav-toggle { display: inline-flex; }
-  body.platform-body .platform-nav {
-    position: fixed;
-    top: calc(var(--nav-height) + max(10px, env(safe-area-inset-top)));
-    right: 14px;
-    left: auto;
-    z-index: 60;
-    display: grid;
-    width: min(340px, calc(100vw - 28px));
-    max-height: calc(100dvh - 90px);
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(-8px) scale(.98);
-  }
-  body.platform-body .platform-nav.open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); }
-}
 @media (max-width: 620px) {
   .worship-schedule-head { align-items: stretch; flex-direction: column; gap: 14px; }
   .worship-clock { width: fit-content; }
@@ -697,20 +577,416 @@ body.platform-body .nav-toggle { display: none; }
 @media (max-width: 380px) {
   .worship-day-list { grid-template-columns: 1fr; }
 }
-@media (max-width: 620px) {
+/* Responsive final: una sola estructura para navegación y administración. */
+html,
+body.platform-body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body.platform-body .platform-top,
+body.platform-body .platform-top.is-scrolled,
+body.platform-body .platform-top.is-compact {
+  position: sticky;
+  top: max(8px, env(safe-area-inset-top));
+  left: auto;
+  right: auto;
+  width: 100%;
+  height: auto;
+  min-height: var(--nav-height);
+  margin: 0;
+  padding: 12px;
+  transform: none;
+  box-sizing: border-box;
+  z-index: 50;
+}
+
+body.platform-body .platform-top.is-scrolled,
+body.platform-body .platform-top.is-compact {
+  box-shadow: 0 12px 28px rgba(13, 52, 66, .16);
+}
+
+body.platform-body .platform-brand,
+body.platform-body .platform-brand img,
+body.platform-body .platform-nav,
+body.platform-body .route-view,
+body.platform-body .admin-workspace,
+body.platform-body .admin-module,
+body.platform-body .admin-card-wide,
+body.platform-body .admin-card-narrow,
+body.platform-body .admin-form-section,
+body.platform-body .admin-summary,
+body.platform-body .admin-tabs,
+body.platform-body .form-grid,
+body.platform-body .admin-grid,
+body.platform-body .leader-admin-form,
+body.platform-body .committee-picker,
+body.platform-body .upload-group,
+body.platform-body .file-dropzone {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body.platform-body .platform-brand {
+  flex: 1 1 250px;
+  overflow: hidden;
+}
+
+body.platform-body .platform-brand img {
+  width: min(250px, 100%);
+  height: 68px;
+}
+
+body.platform-body .platform-nav {
+  position: static;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+body.platform-body .platform-nav a {
+  min-width: 0;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+body.platform-body .platform-top.is-compact .platform-brand {
+  display: flex;
+}
+
+body.platform-body .nav-toggle {
+  display: none;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+
+body.platform-body .nav-backdrop {
+  z-index: 60;
+}
+
+body.platform-body .platform-nav.open {
+  z-index: 70;
+}
+
+body.platform-body .admin-workspace {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+body.platform-body .admin-module {
+  grid-column: 1 / -1;
+}
+
+body.platform-body .admin-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.platform-body .admin-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+body.platform-body .admin-tab {
+  min-width: 0;
+  min-height: 64px;
+  overflow-wrap: anywhere;
+}
+
+body.platform-body .admin-tab strong,
+body.platform-body .admin-tab span,
+body.platform-body .admin-field,
+body.platform-body .form-grid > *,
+body.platform-body .admin-grid > *,
+body.platform-body .leader-submission,
+body.platform-body .leader-directory-row,
+body.platform-body .asset-actions,
+body.platform-body .file-name-list {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+body.platform-body .admin-field input,
+body.platform-body .admin-field select,
+body.platform-body .admin-field textarea,
+body.platform-body .form-grid input,
+body.platform-body .form-grid select,
+body.platform-body .form-grid textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body.platform-body .admin-field input,
+body.platform-body .admin-field select,
+body.platform-body .form-grid input,
+body.platform-body .form-grid select {
+  min-height: 46px;
+}
+
+body.platform-body .admin-field input,
+body.platform-body .admin-field select,
+body.platform-body .admin-field textarea,
+body.platform-body .form-grid input,
+body.platform-body .form-grid select,
+body.platform-body .form-grid textarea {
+  font-size: 16px;
+}
+
+body.platform-body .committee-option,
+body.platform-body .upload-group,
+body.platform-body .file-dropzone,
+body.platform-body .weekly-schedule-card,
+body.platform-body .decom-editor,
+body.platform-body .decom-board {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+body.platform-body .button-row,
+body.platform-body .admin-form-section .button-row,
+body.platform-body .leader-submission-head,
+body.platform-body .leader-directory-row {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
   body.platform-body .platform-top,
-  body.platform-body .platform-top.is-scrolled {
-    top: max(8px, env(safe-area-inset-top));
+  body.platform-body .platform-top.is-scrolled,
+  body.platform-body .platform-top.is-compact {
+    min-height: 68px;
+  }
+
+  body.platform-body .nav-toggle {
+    display: inline-flex;
+  }
+
+  body.platform-body .platform-nav {
+    position: fixed;
+    top: calc(68px + max(8px, env(safe-area-inset-top)));
+    right: 14px;
+    left: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    width: min(360px, calc(100vw - 28px));
+    max-height: calc(100dvh - 84px);
+    padding: 10px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, .82);
+    border-radius: 20px;
+    background: rgba(248, 252, 250, .97);
+    box-shadow: 0 22px 60px rgba(8, 28, 44, .3);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px) scale(.98);
+    transition: opacity .2s ease, transform .2s ease;
+  }
+
+  body.platform-body .platform-nav.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  body.platform-body .platform-nav a {
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 48px;
+    padding-inline: 14px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  body.platform-body .platform-nav a:last-child {
+    margin: 8px 0 0;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 51, 141, .14);
+    border-left: 0;
+  }
+
+  body.platform-body .admin-layout,
+  body.platform-body .decom-grid,
+  body.platform-body .decom-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.platform-body .admin-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  body.platform-body .platform-shell {
+    width: calc(100% - 16px);
+    padding-top: 8px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+
+  body.platform-body .platform-top,
+  body.platform-body .platform-top.is-scrolled,
+  body.platform-body .platform-top.is-compact {
     min-height: 60px;
     padding: 8px;
     border-radius: 18px;
   }
-  body.platform-body .platform-top.is-scrolled .platform-brand img { width: min(220px, 72vw); height: 58px; }
+
+  body.platform-body .platform-brand {
+    flex-basis: auto;
+  }
+
+  body.platform-body .platform-brand img {
+    width: min(220px, 72vw);
+    height: 58px;
+  }
+
   body.platform-body .platform-nav {
     top: calc(60px + max(8px, env(safe-area-inset-top)));
     right: 8px;
     left: 8px;
     width: auto;
-    max-height: calc(100dvh - 82px);
+    max-height: calc(100dvh - 76px);
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  body.platform-body .admin-summary,
+  body.platform-body .admin-layout,
+  body.platform-body .admin-grid,
+  body.platform-body .form-grid,
+  body.platform-body .leader-admin-form,
+  body.platform-body .decom-form,
+  body.platform-body .decom-readonly {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.platform-body .admin-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 8px;
+  }
+
+  body.platform-body .admin-tab {
+    min-height: 64px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+
+  body.platform-body .admin-tab strong {
+    font-size: .8rem;
+    line-height: 1.12;
+  }
+
+  body.platform-body .admin-tab span {
+    font-size: .68rem;
+    line-height: 1.15;
+  }
+
+  body.platform-body .admin-field,
+  body.platform-body .admin-field.full,
+  body.platform-body .form-grid .full,
+  body.platform-body .button-row.full,
+  body.platform-body .decom-form .full,
+  body.platform-body .decom-readonly .full {
+    grid-column: 1 / -1;
+  }
+
+  body.platform-body .page-head,
+  body.platform-body .content-card,
+  body.platform-body .admin-card-wide,
+  body.platform-body .admin-card-narrow,
+  body.platform-body .admin-form-section {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  body.platform-body .admin-form-section,
+  body.platform-body .admin-card-wide,
+  body.platform-body .admin-card-narrow,
+  body.platform-body .upload-group,
+  body.platform-body .weekly-schedule-card,
+  body.platform-body .decom-editor {
+    overflow: hidden;
+  }
+
+  body.platform-body .admin-form-section button,
+  body.platform-body .button-row > button,
+  body.platform-body .admin-field > button,
+  body.platform-body .asset-actions > *,
+  body.platform-body .leader-submission-actions > * {
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+  }
+
+  body.platform-body .committee-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  body.platform-body .committee-option {
+    min-height: 98px;
+    padding: 9px;
+  }
+
+  body.platform-body .leader-submission-head,
+  body.platform-body .leader-directory-row,
+  body.platform-body .asset-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  body.platform-body .month-grid,
+  body.platform-body .decom-calendar-grid,
+  body.platform-body .week-head,
+  body.platform-body .decom-week-head {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  body.platform-body .calendar-page,
+  body.platform-body .month-calendar-view,
+  body.platform-body .decom-calendar-shell {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  body.platform-body .month-day,
+  body.platform-body .decom-day {
+    min-width: 0;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 380px) {
+  body.platform-body .admin-tabs {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  body.platform-body .admin-tab {
+    min-height: 60px;
+    padding-inline: 6px;
+  }
+
+  body.platform-body .admin-tab strong {
+    font-size: .74rem;
+  }
+
+  body.platform-body .committee-option {
+    min-height: 90px;
+    padding: 7px;
   }
 }

@@ -4807,7 +4807,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260907-week-cards-3";
+      link.href = "/css/platform-runtime.css?v=20260909-mobile-admin-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
