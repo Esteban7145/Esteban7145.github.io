@@ -1574,7 +1574,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-bible-loader-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-home-video-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -2299,7 +2299,7 @@ const TYPES = {
         if (!item) return `<article class="home-story-card home-story-empty"><div><span class="home-story-kicker">Historias que Edifican</span><h2>Muy pronto encontrarás una nueva historia</h2><p>Testimonios, predicaciones y experiencias de fe publicados por nuestra iglesia.</p><a class="small-action" href="#/podcast">Ver Historias que Edifican</a></div></article>`;
         const cover = item.cover && assetSource(item.cover, "display");
         const coverStyle = cover ? ` style="background-image:linear-gradient(145deg,rgba(0,51,141,.28),rgba(8,123,136,.18)),url('${escapeHtml(cover)}')"` : "";
-        return `<article class="home-story-card"><div class="home-story-media${cover ? " has-cover" : ""}"${coverStyle}>${podcastMediaMarkup(item)}</div><div class="home-story-copy"><span class="home-story-kicker">Desde Historias que Edifican</span><span class="status-chip">${escapeHtml(item.category || "Experiencias de fe")}</span><h2>${escapeHtml(item.title || "Historia que Edifica")}</h2><p>${escapeHtml(item.description || "Una historia de fe para escuchar y compartir.")}</p><a class="small-action" href="#/podcast">Ver más historias <span aria-hidden="true">→</span></a></div></article>`;
+        return `<article class="home-story-card" aria-label="${escapeHtml(item.title || "Historia que Edifica")}"><div class="home-story-media${cover ? " has-cover" : ""}"${coverStyle}>${podcastMediaMarkup(item)}</div></article>`;
       }
 
       function bindHomeStoryPlayback() {
@@ -4923,7 +4923,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260909-bible-loader-1";
+      link.href = "/css/platform-runtime.css?v=20260909-home-video-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
