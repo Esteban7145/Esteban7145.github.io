@@ -1131,24 +1131,53 @@ body.platform-body .tag-admin .field-caption {
   margin-bottom: 0;
 }
 
-body.platform-body .tag-admin label {
-  display: flex;
+body.platform-body .form-grid .tag-admin > label {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
   align-items: center;
-  width: 100%;
+  width: auto;
   min-width: 0;
-  min-height: 44px;
+  min-height: 54px;
   box-sizing: border-box;
-  padding: 8px 10px;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 51, 141, .12);
   border-radius: 14px;
+  background: rgba(255, 255, 255, .62);
+  color: var(--ink);
+  font-size: .78rem;
+  font-weight: 850;
+  text-align: left;
+  text-transform: none;
   white-space: normal;
   word-break: normal;
   overflow-wrap: normal;
   hyphens: none;
 }
 
-body.platform-body .tag-admin label input {
-  flex: 0 0 auto;
-  margin: 0 7px 0 0;
+body.platform-body .form-grid .tag-admin > label:hover {
+  border-color: rgba(0, 159, 218, .48);
+  background: rgba(224, 245, 252, .82);
+  transform: translateY(-1px);
+}
+
+body.platform-body .form-grid .tag-admin > label:has(input:checked) {
+  border-color: #00338d;
+  background: linear-gradient(145deg, #00338d, #087b88);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(0, 51, 141, .18);
+}
+
+body.platform-body .form-grid .tag-admin > label input {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  margin: 0;
+  accent-color: #00338d;
+}
+
+body.platform-body .form-grid .tag-admin > label:has(input:checked) input {
+  accent-color: #f1c75b;
 }
 
 body.platform-body .committee-picker.full {
@@ -1204,7 +1233,8 @@ body.platform-body .committee-picker.full .committee-option span {
 
   body.platform-body .tag-admin label {
     min-height: 46px;
-    padding-inline: 9px;
+    padding-inline: 10px;
+    gap: 8px;
   }
 
   body.platform-body .committee-picker.full .committee-option {
@@ -1222,8 +1252,9 @@ body.platform-body .committee-picker.full .committee-option span {
 
   body.platform-body .tag-admin label {
     min-height: 44px;
-    padding-inline: 7px;
-    font-size: .7rem;
+    padding-inline: 8px;
+    gap: 7px;
+    font-size: .72rem;
   }
 
   body.platform-body .committee-picker.full .committee-option {

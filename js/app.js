@@ -1576,7 +1576,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-smooth-motion-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-admin-categories-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -4937,7 +4937,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260909-smooth-motion-1";
+      link.href = "/css/platform-runtime.css?v=20260909-admin-categories-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
