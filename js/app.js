@@ -1568,7 +1568,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260906-card-visuals-2").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-resources-preview-1").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
       setupChurchMusic();
@@ -1676,7 +1676,7 @@ const TYPES = {
             <div><p class="eyebrow">DECOM · Biblioteca oficial</p><h1>Banco de recursos IPUC</h1><p>Encuentra logos, manuales, piezas gráficas y materiales oficiales para apoyar la comunicación de la Iglesia.</p></div>
             <div class="resource-hero-actions"><a class="small-action" href="https://ipuc.org.co/descargas-ipuc#graficos-ipuc" target="_blank" rel="noopener">Ver banco oficial</a><a class="small-action" href="${DRIVE_RESOURCE_FOLDER_URL}" target="_blank" rel="noopener">Abrir carpeta bíblica</a></div>
           </section>
-          <section class="resource-note glass"><span class="resource-note-icon">✓</span><p><strong>Recursos oficiales IPUC</strong><small>Esta biblioteca consulta el repositorio público oficial y conserva la organización por carpetas. Cada archivo se abre desde su fuente original.</small></p></section>
+          <section class="resource-note glass"><span class="resource-note-icon">✓</span><p><strong>Recursos oficiales IPUC</strong><small>Cada archivo muestra una vista previa cuando el formato lo permite. Usa “Descargar” para guardarlo directamente en tu dispositivo.</small></p></section>
           <section class="resource-toolbar glass" aria-label="Buscar recursos">
             <label class="resource-search"><span>Buscar en toda la biblioteca</span><input id="resourceSearch" type="search" placeholder="Buscar por nombre o carpeta" value="${escapeHtml(platform.resourceSearch)}"></label>
             ${platform.resourcesLoaded ? `<div class="resource-navigation">${path && !needle ? `<button class="resource-back" type="button" data-resource-path="${escapeHtml(resourceParentPath(path))}"><span aria-hidden="true">←</span> Volver a ${resourceParentPath(path) ? escapeHtml(resourceCategoryLabel(resourcePathParts(resourceParentPath(path)).pop())) : "la biblioteca"}</button>` : ""}${resourceBreadcrumb(path)}</div>` : ""}
@@ -1684,9 +1684,16 @@ const TYPES = {
           <section class="resource-results-head"><div><p class="eyebrow">${needle ? "Resultados" : "Ubicación actual"}</p><h2>${platform.resourcesLoaded ? (needle ? `${searchResults.length} recursos encontrados` : currentLabel) : "Cargando recursos oficiales"}</h2></div>${platform.resourcesLoaded && !needle ? `<span>${folderCount} carpetas · ${fileCount} archivos</span>` : platform.resourcesLoaded && needle ? `<span>Buscando en toda la biblioteca</span>` : ""}</section>
           <section class="resource-grid" id="resourceGrid">${platform.resourcesError ? `<div class="resource-error">No se pudo cargar el banco ahora. <button type="button" class="small-action" data-resource-retry>Reintentar</button></div>` : platform.resourcesLoading ? `<div class="resource-loading"><span></span><span></span><span></span><p>Consultando la biblioteca oficial…</p></div>` : content}</section>
         `;
-        const search = view().querySelector("#resourceSearch");
-        if (search) search.oninput = event => { platform.resourceSearch = event.target.value; renderResourcesPage(); };
-        view().querySelectorAll("[data-resource-path]").forEach(button => {
+         const search = view().querySelector("#resourceSearch");
+         if (search) search.oninput = event => { platform.resourceSearch = event.target.value; renderResourcesPage(); };
+        view().querySelectorAll("[data-resource-download]").forEach(link => {
+          link.onclick = event => {
+            event.preventDefault();
+            const item = platform.resourceItems.find(resource => resource.key === link.dataset.resourceDownload);
+            if (item) downloadResource(item, link);
+          };
+        });
+         view().querySelectorAll("[data-resource-path]").forEach(button => {
           button.onclick = () => { platform.resourcePath = button.dataset.resourcePath || ""; platform.resourceSearch = ""; renderResourcesPage(); };
         });
         view().querySelector("[data-resource-retry]")?.addEventListener("click", loadResourceCatalog);
@@ -1825,7 +1832,94 @@ const TYPES = {
       }
 
       function resourceCard(item) {
-        return `<article class="resource-card glass"><div class="resource-kind resource-kind-${escapeHtml(item.kind.extension)}">${escapeHtml(item.kind.icon)}</div><div class="resource-card-body"><span class="resource-category-label">${escapeHtml(resourceCategoryLabel(item.category))}</span><h3 title="${escapeHtml(item.name)}">${escapeHtml(resourceNameLabel(item.name))}</h3><p>${escapeHtml(resourceFolderLabel(item.folder || "Carpeta principal"))}</p><small>${escapeHtml(item.source || "Banco oficial IPUC")} · ${escapeHtml(item.kind.label)} · ${humanFileSize(item.size)}</small></div><a class="resource-download" href="${escapeHtml(item.url)}" target="_blank" rel="noopener" download>Descargar<span aria-hidden="true">↓</span></a></article>`;
+        const preview = resourcePreviewMarkup(item);
+        return `<article class="resource-card glass"><div class="resource-preview">${preview}</div><div class="resource-card-body"><span class="resource-category-label">${escapeHtml(resourceCategoryLabel(item.category))}</span><h3 title="${escapeHtml(item.name)}">${escapeHtml(resourceNameLabel(item.name))}</h3><p>${escapeHtml(resourceFolderLabel(item.folder || "Carpeta principal"))}</p><small>${escapeHtml(item.source || "Banco oficial IPUC")} · ${escapeHtml(item.kind.label)} · ${humanFileSize(item.size)}</small></div><div class="resource-actions"><a class="resource-download" href="${escapeHtml(resourceDownloadUrl(item))}" data-resource-download="${escapeHtml(item.key)}" download>Descargar<span aria-hidden="true">↓</span></a><a class="resource-open" href="${escapeHtml(item.url || resourceDisplayUrl(item))}" target="_blank" rel="noopener">Abrir<span aria-hidden="true">↗</span></a></div></article>`;
+      }
+
+      function resourceIsImage(item) {
+        return ["png", "jpg", "jpeg", "webp", "svg"].includes(item?.kind?.extension);
+      }
+
+      function resourceIsVideo(item) {
+        return ["mp4", "mov", "webm"].includes(item?.kind?.extension);
+      }
+
+      function resourceIsAudio(item) {
+        return ["mp3", "wav", "m4a"].includes(item?.kind?.extension);
+      }
+
+      function resourceIsPdf(item) {
+        return item?.kind?.extension === "pdf";
+      }
+
+      function resourceDisplayUrl(item) {
+        const id = driveFileId(item);
+        if (id && item?.source === "Google Drive" && resourceIsImage(item)) {
+          return `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`;
+        }
+        if (id && item?.source === "Google Drive" && resourceIsPdf(item)) {
+          return `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview`;
+        }
+        return item?.url || "";
+      }
+
+      function resourceDownloadUrl(item) {
+        const id = driveFileId(item);
+        if (id && item?.source === "Google Drive") return `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}`;
+        return item?.url || "";
+      }
+
+      function resourcePreviewMarkup(item) {
+        const source = resourceDisplayUrl(item);
+        const label = escapeHtml(resourceNameLabel(item?.name || "Recurso"));
+        if (!source) return `<div class="resource-preview-fallback"><span class="resource-kind">${escapeHtml(item?.kind?.icon || "FILE")}</span><strong>Vista previa no disponible</strong></div>`;
+        if (resourceIsImage(item)) return `<img src="${escapeHtml(source)}" alt="Vista previa de ${label}" loading="lazy" decoding="async">`;
+        if (resourceIsPdf(item)) return `<iframe src="${escapeHtml(source)}" title="Vista previa de ${label}" loading="lazy"></iframe>`;
+        const driveId = driveFileId(item);
+        if (driveId && item?.source === "Google Drive" && (resourceIsVideo(item) || resourceIsAudio(item))) return `<iframe src="https://drive.google.com/file/d/${encodeURIComponent(driveId)}/preview" title="Vista previa de ${label}" loading="lazy" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+        if (resourceIsVideo(item)) return `<video src="${escapeHtml(source)}" muted playsinline controls preload="metadata"></video>`;
+        if (resourceIsAudio(item)) return `<div class="resource-preview-audio"><span class="resource-preview-icon" aria-hidden="true">♫</span><strong>Audio disponible</strong><audio src="${escapeHtml(source)}" controls preload="metadata"></audio></div>`;
+        return `<div class="resource-preview-fallback"><span class="resource-kind resource-kind-${escapeHtml(item?.kind?.extension || "file")}">${escapeHtml(item?.kind?.icon || "FILE")}</span><strong>Archivo ${escapeHtml(item?.kind?.label || "disponible")}</strong></div>`;
+      }
+
+      async function downloadResource(item, trigger) {
+        const source = resourceDownloadUrl(item);
+        if (!source) return showToast("Este recurso no tiene una descarga disponible.", "error");
+        const originalLabel = trigger?.textContent || "Descargar";
+        if (trigger) {
+          trigger.classList.add("is-loading");
+          trigger.setAttribute("aria-busy", "true");
+          trigger.textContent = "Preparando…";
+        }
+        try {
+          const response = await fetch(source, { mode: "cors", credentials: "omit" });
+          if (!response.ok) throw new Error("No se pudo descargar el recurso");
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = objectUrl;
+          link.download = item.name || "recurso";
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(objectUrl), 1200);
+          showToast("La descarga comenzó correctamente.", "success");
+        } catch (error) {
+          const fallback = document.createElement("a");
+          fallback.href = source;
+          fallback.download = item.name || "recurso";
+          fallback.rel = "noopener";
+          document.body.appendChild(fallback);
+          fallback.click();
+          fallback.remove();
+          showToast("La descarga se está preparando.", "info");
+        } finally {
+          if (trigger) {
+            trigger.classList.remove("is-loading");
+            trigger.removeAttribute("aria-busy");
+            trigger.innerHTML = `${escapeHtml(originalLabel.replace(/↓$/, "").trim() || "Descargar")}<span aria-hidden="true">↓</span>`;
+          }
+        }
       }
 
       function renderLocationPage() {
@@ -4807,7 +4901,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260909-mobile-admin-1";
+      link.href = "/css/platform-runtime.css?v=20260909-resources-preview-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
