@@ -1568,7 +1568,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-resources-preview-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-admin-picker-1").catch(() => {});
       setupSiteLoader();
       setupReflectionPlaybackMemory();
       setupChurchMusic();
@@ -4902,7 +4902,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260909-resources-preview-1";
+      link.href = "/css/platform-runtime.css?v=20260909-admin-picker-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
