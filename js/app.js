@@ -1894,6 +1894,7 @@ const TYPES = {
         try {
           const response = await fetch(source, { mode: "cors", credentials: "omit" });
           if (!response.ok) throw new Error("No se pudo descargar el recurso");
+          if ((response.headers.get("content-type") || "").toLowerCase().includes("text/html")) throw new Error("El proveedor requiere una descarga directa");
           const blob = await response.blob();
           const objectUrl = URL.createObjectURL(blob);
           const link = document.createElement("a");
