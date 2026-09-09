@@ -825,6 +825,7 @@ body.platform-body .admin-tab {
   min-width: 0;
   min-height: 64px;
   overflow-wrap: anywhere;
+  align-content: center;
 }
 
 body.platform-body .admin-tab strong,
@@ -1006,6 +1007,7 @@ body.platform-body .leader-directory-row {
     min-height: 64px;
     padding: 10px 8px;
     text-align: center;
+    align-content: center;
   }
 
   body.platform-body .admin-tab strong {
@@ -1154,6 +1156,10 @@ body.platform-body .form-grid .tag-admin > label {
   word-break: normal;
   overflow-wrap: normal;
   hyphens: none;
+}
+
+body.platform-body .form-grid .tag-admin > label > input {
+  flex: 0 0 auto;
 }
 
 body.platform-body .form-grid .tag-admin > label:hover {

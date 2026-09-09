@@ -1576,7 +1576,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-admin-cleanup-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-stability-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -1987,7 +1987,7 @@ const TYPES = {
             setupPrivateCloudListeners();
             refreshAdminNav();
             const route = parseRoute();
-            if (route.name === "admin" || route.name === "login") renderRoute();
+            if (route.name === "admin" || route.name === "login") scheduleRouteRender();
           });
           ["events", "announcements", "reflections", "podcasts", "settings"].forEach(collectionName => {
             cloud.unsubscribers.push(supabaseDbAdapter.onSnapshot(collectionName, snapshot => {
@@ -2009,21 +2009,29 @@ const TYPES = {
                 APP_STATE.weeklySchedule = data.weeklySchedule || null;
                 setupChurchMusic();
               }
-              renderRoute();
-            }, error => { cloud.error = error.message; renderRoute(); }));
+              scheduleRouteRender();
+            }, error => { cloud.error = error.message; scheduleRouteRender(); }));
           });
         } catch (error) {
           cloud.error = `No se pudo iniciar Supabase: ${error.message}`;
-          renderRoute();
+          scheduleRouteRender();
         }
       }
 
       const supabaseAuthAdapter = {
         onAuthStateChanged(client, callback) {
+          let lastUserId = "__unknown__";
+          const emit = session => {
+            const user = session?.user || null;
+            const userId = user?.id || "__signed_out__";
+            if (userId === lastUserId) return;
+            lastUserId = userId;
+            callback(user);
+          };
           client.auth.getSession()
-            .then(({ data }) => callback(data.session?.user || null))
-            .catch(() => callback(null));
-          const { data } = client.auth.onAuthStateChange((_event, session) => callback(session?.user || null));
+            .then(({ data }) => emit(data.session))
+            .catch(() => emit(null));
+          const { data } = client.auth.onAuthStateChange((_event, session) => emit(session));
           return () => data.subscription.unsubscribe();
         },
         async signInWithEmailAndPassword(client, email, password) {
@@ -2035,7 +2043,12 @@ const TYPES = {
       const supabaseDbAdapter = {
         collection: (_client, name) => name,
         doc: (_client, collectionName, id) => ({ collectionName, id }),
-        async setDoc(ref, data) { return cloud.db.from(tableName(ref.collectionName)).upsert({ id: ref.id, ...toSupabaseRow(data) }); },
+        async setDoc(ref, data) {
+          const payload = cleanSupabasePayload(toSupabaseRow(data));
+          const result = await cloud.db.from(tableName(ref.collectionName)).upsert({ id: ref.id, ...payload });
+          if (result.error) throw result.error;
+          return result;
+        },
         async updateDoc(ref, data) {
           const result = await cloud.db.from(tableName(ref.collectionName)).update(toSupabaseRow(cleanSupabasePayload(data))).eq("id", ref.id);
           if (result.error) throw result.error;
@@ -2050,19 +2063,34 @@ const TYPES = {
         serverTimestamp: () => new Date().toISOString(),
         onSnapshot(collectionName, callback, onError) {
           let active = true;
+          let inFlight = null;
+          let queued = false;
           const table = tableName(collectionName);
           const load = async () => {
-            const query = collectionName === "settings" ? cloud.db.from("settings").select("*").eq("id", "site") : cloud.db.from(table).select("*");
-            const { data, error } = await query;
-            if (!active) return;
-            if (error) return onError(error);
-            const docs = (data || []).map(row => ({ id: row.id, data: () => fromSupabaseRow(row) }));
-            callback({ docs, forEach(fn) { docs.forEach(fn); } });
+            queued = true;
+            if (inFlight) return inFlight;
+            inFlight = (async () => {
+              while (active && queued) {
+                queued = false;
+                const query = collectionName === "settings" ? cloud.db.from("settings").select("*").eq("id", "site") : cloud.db.from(table).select("*");
+                const { data, error } = await query;
+                if (!active) return;
+                if (error) {
+                  onError(error);
+                  continue;
+                }
+                const docs = (data || []).map(row => ({ id: row.id, data: () => fromSupabaseRow(row) }));
+                callback({ docs, forEach(fn) { docs.forEach(fn); } });
+              }
+            })().finally(() => { inFlight = null; });
+            return inFlight;
           };
           load();
           const channel = cloud.app?.channel?.(`data-${table}`)
             ?.on("postgres_changes", { event: "*", schema: "public", table }, load)
-            ?.subscribe();
+            ?.subscribe(status => {
+              if (active && (status === "CHANNEL_ERROR" || status === "TIMED_OUT")) onError(new Error(`La actualización en tiempo real no está disponible (${status}).`));
+            });
           return () => {
             active = false;
             if (channel && cloud.app?.removeChannel) cloud.app.removeChannel(channel);
@@ -2353,7 +2381,7 @@ const TYPES = {
           </section>
           <section class="home-welcome glass">
             <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta actividades, recursos, horarios y novedades de la congregación desde un solo lugar.</p></div>
-            <div class="home-quick-links"><a href="#/calendario"><strong>Calendario</strong><span>Ver la semana completa →</span></a><a href="#/agenda"><strong>Agenda</strong><span>Próximos encuentros →</span></a><a href="#/podcast"><strong>Historias que Edifican</strong><span>Historias que edifican →</span></a><a href="#/recursos"><strong>Recursos</strong><span>Material oficial IPUC →</span></a><a href="#/ubicacion"><strong>Ubicación</strong><span>Cómo llegar →</span></a></div>
+            <div class="home-quick-links"><a href="#/calendario"><strong>Calendario</strong><span>Ver la semana completa →</span></a><a href="#/podcast"><strong>Historias que Edifican</strong><span>Historias que edifican →</span></a><a href="#/recursos"><strong>Recursos</strong><span>Material oficial IPUC →</span></a><a href="#/ubicacion"><strong>Ubicación</strong><span>Cómo llegar →</span></a></div>
           </section>
           <section class="home-community glass">
             <div class="home-community-head"><div><p class="eyebrow">Familia IPUC</p><h2>Una iglesia que sirve unida</h2><p>Conoce los comités y ministerios que hacen parte de la vida de IPUC Villa del Río.</p></div><a class="small-action" href="#/eventos">Ver actividades</a></div>
@@ -3820,12 +3848,15 @@ const TYPES = {
         if (!confirm("Deseas eliminar este evento del cronograma?")) return;
         const current = platformEventById(id);
         if (!current) return alert("No encontramos el evento seleccionado.");
+        const eventTitle = String(current.title || APP_STATE.events[id]?.title || "").trim();
+        const eventDate = String(current.date || APP_STATE.events[id]?.date || "").trim();
+        if (!eventTitle || !eventDate) return alert("El evento seleccionado no tiene nombre o fecha válidos y no se puede eliminar de forma segura.");
         await saveCloudDoc("events", id, {
           ...(current || {}),
           ...(APP_STATE.events[id] || {}),
           id,
-          title: current.title,
-          date: current.date,
+          title: eventTitle,
+          date: eventDate,
           time: current.time,
           type: current.type,
           deleted: true
@@ -4153,6 +4184,13 @@ const TYPES = {
           ...data,
           updatedAt: cloud.dbMod.serverTimestamp()
         });
+        if (collectionName === "events") {
+          const title = String(payload.title || "").trim();
+          const date = String(payload.date || "").trim();
+          if (!title || !date) throw new Error("El evento necesita un nombre y una fecha antes de guardarse.");
+          payload.title = title;
+          payload.date = date;
+        }
         if (uploadProgressState.active) setUploadProgressState({ label: "Guardando cambios…", detail: "El archivo ya se cargó; estamos guardando la información.", percent: 100, tone: "loading" });
         try {
           const result = await cloud.dbMod.setDoc(cloud.dbMod.doc(cloud.db, collectionName, id), payload, { merge: true });
@@ -4885,13 +4923,30 @@ const TYPES = {
       function emptyText(text) {
         return `<div class="empty-state">${escapeHtml(text)}</div>`;
       }
+
+      let routeRenderQueued = false;
+      function scheduleRouteRender() {
+        if (routeRenderQueued) return;
+        routeRenderQueued = true;
+        const flush = () => {
+          routeRenderQueued = false;
+          renderRoute();
+        };
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          window.setTimeout(flush, 0);
+        } else if (typeof window.requestAnimationFrame === "function") {
+          window.requestAnimationFrame(flush);
+        } else {
+          window.setTimeout(flush, 16);
+        }
+      }
     }
 
     function installPlatformStyles() {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260909-admin-cleanup-1";
+      link.href = "/css/platform-runtime.css?v=20260909-stability-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
