@@ -51,6 +51,18 @@
 .reflection-media { width: min(100%, 1040px); margin: 20px auto 0; overflow: hidden; border: 1px solid rgba(255,255,255,.72); border-radius: 18px; background: rgba(7,28,43,.28); box-shadow: 0 14px 30px rgba(13,52,66,.16); }
 .reflection-media iframe, .reflection-media video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; object-fit: cover; }
 .reflection-media audio { display: block; width: 100%; min-height: 48px; }
+.home-story-card { display: grid; grid-template-columns: minmax(0, 1.14fr) minmax(260px, .86fr); min-width: 0; margin-top: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,.78); border-radius: 22px; background: rgba(255,255,255,.48); box-shadow: 0 16px 34px rgba(13,52,66,.13); }
+.home-story-media { display: grid; place-items: center; min-width: 0; min-height: 250px; overflow: hidden; background: linear-gradient(145deg, #00338D, #087B88); }
+.home-story-media.has-cover { background-size: cover; background-position: center; }
+.home-story-media iframe, .home-story-media video { display: block; width: 100%; height: 100%; min-height: 250px; aspect-ratio: 16 / 9; border: 0; object-fit: cover; }
+.home-story-media audio { width: calc(100% - 28px); }
+.home-story-copy { display: grid; align-content: center; gap: 9px; min-width: 0; padding: 22px; }
+.home-story-copy h2, .home-story-empty h2 { margin: 0; color: var(--brand-deep); font-size: clamp(1.25rem, 2vw, 1.85rem); line-height: 1.08; }
+.home-story-copy p, .home-story-empty p { margin: 0; color: var(--muted); line-height: 1.5; }
+.home-story-copy .status-chip { justify-self: start; }
+.home-story-kicker { color: var(--brand-teal); font-size: .7rem; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
+.home-story-copy .small-action, .home-story-empty .small-action { justify-self: start; margin-top: 3px; }
+.home-story-empty { display: grid; grid-template-columns: 1fr; padding: 24px; }
 .music-home-action { min-height: 44px; padding: 0 15px; border: 1px solid rgba(11,59,76,.12); border-radius: 13px; background: rgba(255,255,255,.7); color: #123348; font: inherit; font-weight: 900; cursor: pointer; transition: transform .18s ease, background .18s ease; }
 .music-home-action:hover { transform: translateY(-2px); background: white; }
 .hero-copy h1, .page-head h1, .detail-hero h1, .login-card h1 { margin: 0; font-size: clamp(2rem, 4vw, 4.2rem); line-height: .96; }
@@ -349,6 +361,7 @@
 @media (max-width: 900px) {
   .home-hero, .detail-hero, .split-grid, .agenda-grid, .admin-layout, .login-card, .decom-grid, .decom-board { grid-template-columns: 1fr; }
   .home-welcome { grid-template-columns: 1fr; }
+  .home-story-card { grid-template-columns: 1fr; }
   .admin-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .decom-editor { position: static; }
   .week-compact-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

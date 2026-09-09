@@ -1366,8 +1366,6 @@ const TYPES = {
         decomUnsubscribe: null,
         privateUnsubscribers: []
       };
-      let reflectionIsActive = false;
-      let lastRouteName = "";
       let liveVisitorsChannel = null;
       const BASE_TIMES = {
         culto: "7:00 p. m.",
@@ -1388,11 +1386,6 @@ const TYPES = {
         { text: "La iglesia avanza cuando todos servimos con gozo y un mismo sentir.", ref: "Filipenses 2:2", style: "montanas" },
         { text: "La oracion abre caminos cuando el pueblo se reune con fe y perseverancia.", ref: "Hechos 4:31", style: "noche" },
         { text: "Dios fortalece al que espera en El y renueva su animo para servir.", ref: "Isaias 40:31", style: "naturaleza" }
-      ];
-      const DEFAULT_REFLECTION_MEDIA = [
-        "https://www.youtube.com/watch?v=fDSnhTQZQeg",
-        "https://www.youtube.com/watch?v=-AHbznYsaIU",
-        "https://www.youtube.com/watch?v=pwX6jP_olR0"
       ];
       const DECOM_YEAR = 2026;
       const DECOM_MONTHS = months.map((_, index) => index);
@@ -1568,9 +1561,8 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-admin-picker-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-home-story-1").catch(() => {});
       setupSiteLoader();
-      setupReflectionPlaybackMemory();
       setupChurchMusic();
       loadDriveMusic();
       if (location.hash) history.replaceState({}, "", location.hash.replace(/^#\/?/, "/") || "/");
@@ -1584,14 +1576,6 @@ const TYPES = {
         const route = parseRoute();
         const routeTitles = { inicio: "Inicio", calendario: "Calendario", anuncios: "Anuncios", podcast: "Historias que Edifican", recursos: "Recursos", ubicacion: "Ubicación", admin: "Administración", login: "Iniciar sesión", eventos: "Eventos", archivo: "Archivo" };
         document.title = `${routeTitles[route.name] || "IPUC Villa del Río"} | IPUC Villa del Río`;
-        const returningHome = route.name === "inicio" && lastRouteName && lastRouteName !== "inicio";
-        lastRouteName = route.name;
-        if (route.name !== "inicio" && reflectionIsActive) {
-          requestReflectionPlaybackPosition();
-          stopReflectionMedia();
-          reflectionIsActive = false;
-          startChurchMusic();
-        }
         trackLiveVisitorPage();
         updateActiveNavigation(route.name);
         if (route.name === "calendario") return renderCalendarPage();
@@ -1610,7 +1594,7 @@ const TYPES = {
           return renderLoginPage();
         }
         if (route.name === "login") return renderLoginPage();
-        return renderHomePage({ pauseReflection: returningHome });
+        return renderHomePage();
       }
 
       function renderAnnouncementsPage() {
@@ -2283,20 +2267,48 @@ const TYPES = {
         }));
       }
 
-      function renderHomePage(options = {}) {
+      function podcastHasLocalMedia(item) {
+        const media = item?.media;
+        return Boolean(media && media.type !== "youtube" && (isAudio(media) || isVideo(media)));
+      }
+
+      function homePodcastForToday() {
+        const items = (APP_STATE.podcasts || [])
+          .filter(item => item.published !== false && podcastHasLocalMedia(item))
+          .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+        if (!items.length) return null;
+        const firstDay = new Date(today.getFullYear(), 0, 1);
+        const dayOfYear = Math.max(0, Math.floor((cleanDate(today) - firstDay) / 86400000));
+        return items[dayOfYear % items.length];
+      }
+
+      function homePodcastMarkup(item) {
+        if (!item) return `<article class="home-story-card home-story-empty"><div><span class="home-story-kicker">Historias que Edifican</span><h2>Muy pronto encontrarás una nueva historia</h2><p>Testimonios, predicaciones y experiencias de fe publicados por nuestra iglesia.</p><a class="small-action" href="#/podcast">Ver Historias que Edifican</a></div></article>`;
+        const cover = item.cover && assetSource(item.cover, "display");
+        const coverStyle = cover ? ` style="background-image:linear-gradient(145deg,rgba(0,51,141,.28),rgba(8,123,136,.18)),url('${escapeHtml(cover)}')"` : "";
+        return `<article class="home-story-card"><div class="home-story-media${cover ? " has-cover" : ""}"${coverStyle}>${podcastMediaMarkup(item)}</div><div class="home-story-copy"><span class="home-story-kicker">Desde Historias que Edifican</span><span class="status-chip">${escapeHtml(item.category || "Experiencias de fe")}</span><h2>${escapeHtml(item.title || "Historia que Edifica")}</h2><p>${escapeHtml(item.description || "Una historia de fe para escuchar y compartir.")}</p><a class="small-action" href="#/podcast">Ver más historias <span aria-hidden="true">→</span></a></div></article>`;
+      }
+
+      function bindHomeStoryPlayback() {
+        const media = view().querySelector(".home-story-card audio, .home-story-card video");
+        if (!media) return;
+        media.addEventListener("play", () => {
+          const churchAudio = document.getElementById("churchMusicAudio");
+          if (churchAudio && !churchAudio.paused) {
+            churchAudio.pause();
+            setupChurchMusic();
+          }
+        });
+      }
+
+      function renderHomePage() {
         const events = eventsForPlatformDate(today);
         const main = events[0];
         const mainImage = main ? eventImage(main) : "";
         const reflection = reflectionForDate(today);
+        const homePodcast = !main ? homePodcastForToday() : null;
         const mainInvitation = Boolean(main && mainImage);
-        const reflectionStart = !main ? reflectionResumeSeconds(reflection?.media?.url) : 0;
-        const reflectionMarkup = !main ? reflectionMediaMarkup(reflection, !options.pauseReflection, { start: reflectionStart }) : "";
-        reflectionIsActive = Boolean(reflectionMarkup);
-        if (reflectionIsActive) {
-          stopChurchMusic();
-        } else {
-          startChurchMusic();
-        }
+        const homeStoryMarkup = !main ? homePodcastMarkup(homePodcast) : "";
         const next = platformEventsForYear(today.getFullYear()).filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Realizado").sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
         view().innerHTML = `
           <section class="home-hero glass ${mainInvitation ? "has-today-invitation" : "has-reflection-focus"}">
@@ -2304,9 +2316,9 @@ const TYPES = {
               <div class="home-kicker"><span class="home-live-dot"></span><span>IPUC Villa del Río</span><span>•</span><span>${escapeHtml(longPlatformDate(today))}</span></div>
               <p class="eyebrow">${main ? "Lo que vivimos hoy" : "Una palabra para hoy"}</p>
               <h1 class="${main ? "home-event-title" : "home-hero-title"}"${main ? "" : " aria-label=\"Caminamos juntos en la fe\""}>${main ? escapeHtml(main.title) : glassHeroTitleMarkup("Caminamos juntos en la fe")}</h1>
-              <p class="home-lead">${escapeHtml(main ? shortDescription(main) : reflection.media ? "Escucha o mira la reflexión de hoy." : reflection.text + " (" + reflection.ref + ")")}</p>
+              <p class="home-lead">${escapeHtml(main ? shortDescription(main) : homePodcast ? `Escucha ${homePodcast.category === "Predicaciones" ? "una predicación" : "un nuevo testimonio"} de Historias que Edifican.` : reflection.text + " (" + reflection.ref + ")")}</p>
               ${main ? eventInfoList(main) : `<div class="today-line">${escapeHtml(longPlatformDate(today))}</div>`}
-              ${reflectionMarkup}
+              ${homeStoryMarkup}
               <div class="live-visitors" aria-live="polite"><span class="live-visitors-dot"></span><strong data-online-count>1</strong> personas en la página ahora</div>
               <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="music-home-action" type="button" data-home-music>▶ Escuchar música IPUC</button>${deferredInstallPrompt ? `<button class="music-home-action install-home-action" type="button" data-install-app>＋ Instalar app</button>` : ""}</div>
             </div>
@@ -2340,10 +2352,7 @@ const TYPES = {
         bindWorshipSchedule();
         const homeMusic = view().querySelector("[data-home-music]");
         if (homeMusic) homeMusic.onclick = () => {
-          if (reflectionIsActive) {
-            stopReflectionMedia();
-            reflectionIsActive = false;
-          }
+          view().querySelectorAll(".home-story-card audio, .home-story-card video").forEach(media => media.pause());
           startChurchMusic();
         };
         const installApp = view().querySelector("[data-install-app]");
@@ -2354,8 +2363,7 @@ const TYPES = {
           renderRoute();
         };
         bindHomeMotion();
-        bindLocalReflectionPlayback();
-        bindReflectionAutoplayUnlock();
+        bindHomeStoryPlayback();
         updateLiveVisitors();
       }
 
@@ -4630,10 +4638,6 @@ const TYPES = {
       function startChurchMusic() {
         const audio = document.getElementById("churchMusicAudio");
         if (!audio || !(APP_STATE.musicPlaylist || []).length) return;
-        if (reflectionIsActive) {
-          stopReflectionMedia();
-          reflectionIsActive = false;
-        }
         audio.play().then(setupChurchMusic).catch((error) => {
           const status = document.getElementById("musicStatus");
           if (status) status.textContent = error?.name === "NotAllowedError"
@@ -4783,7 +4787,7 @@ const TYPES = {
 
       function reflectionForDate(date) {
         const index = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000) % REFLECTIONS.length;
-        return APP_STATE.reflections[dateKey(date)] || { ...REFLECTIONS[index], media: { type: "youtube", url: DEFAULT_REFLECTION_MEDIA[index % DEFAULT_REFLECTION_MEDIA.length] } };
+        return APP_STATE.reflections[dateKey(date)] || REFLECTIONS[index];
       }
 
       function youtubeEmbedUrl(url, options = {}) {
@@ -4902,7 +4906,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260909-admin-picker-1";
+      link.href = "/css/platform-runtime.css?v=20260909-home-story-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
