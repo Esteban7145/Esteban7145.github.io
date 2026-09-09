@@ -891,6 +891,7 @@ body.platform-body .leader-directory-row {
   body.platform-body .platform-top.is-compact {
     min-height: 68px;
     z-index: 200;
+    isolation: isolate;
   }
 
   body.platform-body .nav-toggle {
@@ -898,14 +899,14 @@ body.platform-body .leader-directory-row {
   }
 
   body.platform-body .platform-nav {
-    position: fixed;
-    top: calc(68px + max(8px, env(safe-area-inset-top)));
-    right: 14px;
-    left: auto;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: 0;
     display: grid;
     grid-template-columns: 1fr;
-    width: min(360px, calc(100vw - 28px));
-    max-height: calc(100dvh - 84px);
+    width: auto;
+    max-height: calc(100dvh - 84px - max(8px, env(safe-area-inset-top)));
     padding: 10px;
     overflow-y: auto;
     border: 1px solid rgba(255, 255, 255, .82);
@@ -977,7 +978,7 @@ body.platform-body .leader-directory-row {
   }
 
   body.platform-body .platform-nav {
-    top: calc(60px + max(8px, env(safe-area-inset-top)));
+    top: calc(100% + 6px);
     right: 8px;
     left: 8px;
     width: auto;
