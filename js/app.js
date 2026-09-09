@@ -4923,7 +4923,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260909-home-video-1";
+      link.href = "/css/platform-runtime.css?v=20260909-mobile-nav-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;

@@ -683,7 +683,11 @@ body.platform-body .nav-toggle {
 }
 
 body.platform-body .nav-backdrop {
-  z-index: 60;
+  z-index: 100;
+}
+
+body.platform-body .nav-backdrop[hidden] {
+  display: none;
 }
 
 body.platform-body .platform-nav.open {
@@ -777,6 +781,7 @@ body.platform-body .leader-directory-row {
   body.platform-body .platform-top.is-scrolled,
   body.platform-body .platform-top.is-compact {
     min-height: 68px;
+    z-index: 200;
   }
 
   body.platform-body .nav-toggle {
@@ -805,6 +810,7 @@ body.platform-body .leader-directory-row {
   }
 
   body.platform-body .platform-nav.open {
+    z-index: 201;
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0) scale(1);
