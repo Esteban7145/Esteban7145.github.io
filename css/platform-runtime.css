@@ -442,6 +442,10 @@
 :root {
   --platform-max: 1180px;
   --nav-height: 76px;
+  --motion-fast: .16s;
+  --motion-base: .24s;
+  --motion-smooth: cubic-bezier(.22, .72, .2, 1);
+  --motion-soft: cubic-bezier(.2, .8, .2, 1);
 }
 .platform-body {
   min-width: 320px;
@@ -589,6 +593,111 @@
 @media (max-width: 380px) {
   .worship-day-list { grid-template-columns: 1fr; }
 }
+/* Motion system: entradas breves, estados táctiles claros y sin saltos de layout. */
+body.platform-body .route-view.is-route-entering > * {
+  animation-name: platformRouteEnter;
+  animation-duration: .42s;
+  animation-timing-function: var(--motion-smooth);
+  animation-fill-mode: both;
+  animation-delay: calc(var(--reveal-delay, 0ms) + 30ms);
+}
+
+body.platform-body .route-view.is-route-entering > *:nth-child(2) { animation-delay: calc(var(--reveal-delay, 0ms) + 70ms); }
+body.platform-body .route-view.is-route-entering > *:nth-child(3) { animation-delay: calc(var(--reveal-delay, 0ms) + 110ms); }
+body.platform-body .route-view.is-route-entering > *:nth-child(n + 4) { animation-delay: calc(var(--reveal-delay, 0ms) + 145ms); }
+
+@keyframes platformRouteEnter {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+body.platform-body .platform-nav a,
+body.platform-body .nav-toggle,
+body.platform-body .primary-link,
+body.platform-body .small-action,
+body.platform-body .calendar-period-arrow,
+body.platform-body .view-switch button,
+body.platform-body .month-strip button,
+body.platform-body .worship-day,
+body.platform-body .podcast-filter,
+body.platform-body .resource-category,
+body.platform-body .map-button,
+body.platform-body .music-home-action {
+  transition-duration: var(--motion-fast);
+  transition-timing-function: var(--motion-soft);
+}
+
+@media (hover: hover) {
+  body.platform-body .platform-nav a:hover,
+  body.platform-body .nav-toggle:hover,
+  body.platform-body .primary-link:hover,
+  body.platform-body .small-action:hover,
+  body.platform-body .calendar-period-arrow:hover,
+  body.platform-body .view-switch button:hover,
+  body.platform-body .month-strip button:hover,
+  body.platform-body .worship-day:hover,
+  body.platform-body .podcast-filter:hover,
+  body.platform-body .resource-category:hover,
+  body.platform-body .map-button:hover,
+  body.platform-body .music-home-action:hover {
+    transform: translateY(-2px);
+  }
+}
+
+body.platform-body .platform-nav a:active,
+body.platform-body .nav-toggle:active,
+body.platform-body .primary-link:active,
+body.platform-body .small-action:active,
+body.platform-body .calendar-period-arrow:active,
+body.platform-body .view-switch button:active,
+body.platform-body .month-strip button:active,
+body.platform-body .worship-day:active,
+body.platform-body .podcast-filter:active,
+body.platform-body .resource-category:active,
+body.platform-body .map-button:active,
+body.platform-body .music-home-action:active {
+  transform: translateY(0) scale(.98);
+  transition-duration: .1s;
+}
+
+body.platform-body .platform-nav a:focus-visible,
+body.platform-body .nav-toggle:focus-visible,
+body.platform-body .primary-link:focus-visible,
+body.platform-body .small-action:focus-visible,
+body.platform-body .calendar-period-arrow:focus-visible,
+body.platform-body .view-switch button:focus-visible,
+body.platform-body .month-strip button:focus-visible,
+body.platform-body .worship-day:focus-visible,
+body.platform-body .podcast-filter:focus-visible,
+body.platform-body .resource-category:focus-visible,
+body.platform-body .map-button:focus-visible,
+body.platform-body .music-home-action:focus-visible {
+  outline: 3px solid rgba(0, 159, 218, .48);
+  outline-offset: 3px;
+}
+
+@media (max-width: 1024px) {
+  body.platform-body .platform-nav {
+    visibility: hidden;
+    transition: opacity var(--motion-base) var(--motion-soft), transform var(--motion-base) var(--motion-soft), visibility 0s linear var(--motion-base);
+  }
+
+  body.platform-body .platform-nav.open {
+    visibility: visible;
+    transition-delay: 0s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (update: slow) {
+  body.platform-body .route-view.is-route-entering > * {
+    animation: none;
+  }
+
+  body.platform-body .platform-nav {
+    transition: none;
+  }
+}
+
 /* Responsive final: una sola estructura para navegación y administración. */
 html,
 body.platform-body {

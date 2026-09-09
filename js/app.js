@@ -1557,10 +1557,12 @@ const TYPES = {
         if (href?.startsWith("#/")) {
           event.preventDefault();
           history.pushState({}, "", href.slice(1) || "/");
+          window.scrollTo({ top: 0, left: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
           renderRoute();
         } else if (href?.startsWith("/")) {
           event.preventDefault();
           history.pushState({}, "", href);
+          window.scrollTo({ top: 0, left: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
           renderRoute();
         }
       });
@@ -1574,7 +1576,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-home-video-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-smooth-motion-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -1591,23 +1593,35 @@ const TYPES = {
         document.title = `${routeTitles[route.name] || "IPUC Villa del Río"} | IPUC Villa del Río`;
         trackLiveVisitorPage();
         updateActiveNavigation(route.name);
-        if (route.name === "calendario") return renderCalendarPage();
-        if (route.name === "agenda") return renderAgendaPage();
-        if (route.name === "eventos") return renderEventsPage();
-        if (route.name === "anuncios") return renderAnnouncementsPage();
-        if (route.name === "podcast") return renderPodcastPage();
-        if (route.name === "archivo") return renderArchivePage();
-        if (route.name === "recursos") return renderResourcesPage();
-        if (route.name === "ubicacion") return renderLocationPage();
-        if (route.name === "evento") return renderEventDetail(route.id);
+        let renderPage = renderHomePage;
+        if (route.name === "calendario") renderPage = renderCalendarPage;
+        else if (route.name === "agenda") renderPage = renderAgendaPage;
+        else if (route.name === "eventos") renderPage = renderEventsPage;
+        else if (route.name === "anuncios") renderPage = renderAnnouncementsPage;
+        else if (route.name === "podcast") renderPage = renderPodcastPage;
+        else if (route.name === "archivo") renderPage = renderArchivePage;
+        else if (route.name === "recursos") renderPage = renderResourcesPage;
+        else if (route.name === "ubicacion") renderPage = renderLocationPage;
+        else if (route.name === "evento") renderPage = () => renderEventDetail(route.id);
         if (route.name === "admin") {
-          if (isAdmin()) return renderAdminPage();
-          if (isLeader()) return renderLeaderPage();
-          if (isDecomMember()) return renderDecomOnlyPage();
-          return renderLoginPage();
+          if (isAdmin()) renderPage = renderAdminPage;
+          else if (isLeader()) renderPage = renderLeaderPage;
+          else if (isDecomMember()) renderPage = renderDecomOnlyPage;
+          else renderPage = renderLoginPage;
         }
-        if (route.name === "login") return renderLoginPage();
-        return renderHomePage();
+        else if (route.name === "login") renderPage = renderLoginPage;
+        renderPage();
+        animateRouteView();
+      }
+
+      function animateRouteView() {
+        const routeView = view();
+        if (!routeView || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          routeView?.classList.remove("is-route-entering");
+          return;
+        }
+        routeView.classList.remove("is-route-entering");
+        window.requestAnimationFrame(() => routeView.classList.add("is-route-entering"));
       }
 
       function renderAnnouncementsPage() {
@@ -4923,7 +4937,7 @@ const TYPES = {
       if (document.querySelector('link[data-platform-runtime]')) return;
       const link = document.createElement("link");
       link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260909-mobile-nav-1";
+      link.href = "/css/platform-runtime.css?v=20260909-smooth-motion-1";
       link.dataset.platformRuntime = "true";
       document.head.appendChild(link);
       return;
