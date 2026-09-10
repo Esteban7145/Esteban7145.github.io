@@ -1,0 +1,523 @@
+/* Administración: una capa visual única y responsive para el área privada. */
+
+body.platform-body .admin-workspace {
+  display: block;
+  width: 100%;
+}
+
+body.platform-body .admin-module:not([hidden]) {
+  animation: adminModuleIn .28s ease both;
+}
+
+@keyframes adminModuleIn {
+  from { opacity: .35; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+body.platform-body .page-head:has(+ .admin-summary) {
+  align-items: center;
+  gap: 20px;
+  padding: clamp(20px, 3vw, 32px);
+}
+
+body.platform-body .page-head:has(+ .admin-summary) > div {
+  min-width: 0;
+}
+
+body.platform-body .page-head:has(+ .admin-summary) > button {
+  flex: 0 0 auto;
+  min-width: 96px;
+}
+
+body.platform-body .admin-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+body.platform-body .admin-summary article {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  min-height: 82px;
+  align-content: center;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, .78);
+  border-radius: 18px;
+  background: rgba(245, 250, 248, .68);
+  box-shadow: 0 10px 22px rgba(20, 52, 71, .07);
+}
+
+body.platform-body .admin-summary strong {
+  color: var(--brand-deep);
+  font-size: clamp(1.1rem, 2vw, 1.45rem);
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+body.platform-body .admin-summary span {
+  color: var(--muted);
+  font-size: .76rem;
+  font-weight: 850;
+}
+
+body.platform-body .admin-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, .72);
+  border-radius: 20px;
+  background: rgba(235, 244, 247, .68);
+}
+
+body.platform-body .admin-tab {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  min-height: 70px;
+  align-content: center;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .5);
+  color: var(--brand-deep);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+body.platform-body .admin-tab:hover {
+  border-color: rgba(0, 159, 218, .3);
+  background: rgba(255, 255, 255, .9);
+  transform: translateY(-1px);
+}
+
+body.platform-body .admin-tab.active {
+  border-color: rgba(0, 159, 218, .35);
+  background: linear-gradient(145deg, #00338d, #075b9d);
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(0, 51, 141, .18);
+}
+
+body.platform-body .admin-tab strong,
+body.platform-body .admin-tab span {
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+body.platform-body .admin-tab strong {
+  font-size: .86rem;
+  line-height: 1.15;
+}
+
+body.platform-body .admin-tab span {
+  color: var(--muted);
+  font-size: .7rem;
+  line-height: 1.2;
+}
+
+body.platform-body .admin-tab.active span {
+  color: rgba(255, 255, 255, .78);
+}
+
+body.platform-body .admin-card-wide,
+body.platform-body .admin-card-narrow {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: clamp(16px, 2.2vw, 26px);
+}
+
+body.platform-body .admin-card-wide > .section-title,
+body.platform-body .admin-card-narrow > .section-title {
+  margin-bottom: 18px;
+}
+
+body.platform-body .admin-card-wide > .section-title h2,
+body.platform-body .admin-card-narrow > .section-title h2 {
+  font-size: clamp(1.35rem, 2.7vw, 2rem);
+  line-height: 1.08;
+}
+
+body.platform-body .event-editor-form {
+  display: grid;
+  gap: 14px;
+}
+
+body.platform-body .admin-form-section {
+  min-width: 0;
+  padding: clamp(15px, 2vw, 22px);
+  border: 1px solid rgba(255, 255, 255, .78);
+  border-radius: 18px;
+  background: rgba(249, 252, 252, .43);
+  box-shadow: 0 8px 20px rgba(20, 52, 71, .045);
+}
+
+body.platform-body .admin-form-section > h3,
+body.platform-body .admin-form-section summary h3 {
+  margin: 3px 0 16px;
+  color: var(--brand-deep);
+  font-size: 1.12rem;
+  line-height: 1.15;
+}
+
+body.platform-body .admin-form-section summary {
+  min-height: 32px;
+}
+
+body.platform-body .form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+body.platform-body .form-grid > * {
+  min-width: 0;
+}
+
+body.platform-body .form-grid label {
+  min-width: 0;
+  color: #466373;
+  line-height: 1.2;
+}
+
+body.platform-body .form-grid label > input,
+body.platform-body .form-grid label > select,
+body.platform-body .form-grid label > textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid rgba(61, 91, 107, .16);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .82);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.25;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+body.platform-body .form-grid label > input,
+body.platform-body .form-grid label > select {
+  min-height: 48px;
+  padding: 0 13px;
+}
+
+body.platform-body .form-grid label > textarea {
+  min-height: 112px;
+  padding: 12px 13px;
+  resize: vertical;
+}
+
+body.platform-body .form-grid label > input:focus,
+body.platform-body .form-grid label > select:focus,
+body.platform-body .form-grid label > textarea:focus {
+  border-color: rgba(0, 159, 218, .68);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 159, 218, .12);
+  outline: none;
+}
+
+body.platform-body .field-caption {
+  margin-bottom: 10px;
+  color: #466373;
+  font-size: .74rem;
+  letter-spacing: .03em;
+}
+
+body.platform-body .committee-picker.full {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+body.platform-body .committee-picker.full .committee-option {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  min-height: 72px;
+  padding: 10px;
+  border: 1px solid rgba(0, 51, 141, .1);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .68);
+  color: var(--brand-deep);
+  font-size: .75rem;
+  text-align: left;
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+body.platform-body .committee-picker.full .committee-option:hover {
+  border-color: rgba(0, 159, 218, .48);
+  background: rgba(255, 255, 255, .92);
+  transform: translateY(-1px);
+}
+
+body.platform-body .committee-picker.full .committee-option.selected {
+  border-color: #009fda;
+  background: rgba(218, 244, 251, .9);
+  box-shadow: 0 7px 16px rgba(0, 51, 141, .12);
+}
+
+body.platform-body .committee-picker.full .committee-option img {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  box-sizing: border-box;
+  padding: 5px;
+  border-radius: 12px;
+  object-fit: contain;
+  background: linear-gradient(145deg, #00338d, #075b9d);
+}
+
+body.platform-body .committee-picker.full .committee-option span {
+  min-width: 0;
+  overflow-wrap: normal;
+  word-break: normal;
+  line-height: 1.18;
+}
+
+body.platform-body .tag-admin {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  align-items: stretch;
+}
+
+body.platform-body .tag-admin .field-caption {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+body.platform-body .tag-admin > label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 51, 141, .12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .68);
+  color: var(--ink);
+  font-size: .76rem;
+  font-weight: 850;
+  line-height: 1.15;
+  text-align: left;
+  text-transform: none;
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, color .18s ease, transform .18s ease;
+}
+
+body.platform-body .tag-admin > label:hover {
+  border-color: rgba(0, 159, 218, .46);
+  background: rgba(224, 245, 252, .84);
+  transform: translateY(-1px);
+}
+
+body.platform-body .tag-admin > label:has(input:checked) {
+  border-color: #00338d;
+  background: linear-gradient(145deg, #00338d, #075b9d);
+  color: #fff;
+  box-shadow: 0 7px 16px rgba(0, 51, 141, .15);
+}
+
+body.platform-body .tag-admin > label > input {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: #00338d;
+}
+
+body.platform-body .tag-admin > label:has(input:checked) > input {
+  accent-color: #f1c75b;
+}
+
+body.platform-body .file-dropzone {
+  min-height: 138px;
+  align-content: center;
+  justify-items: center;
+  padding: 18px;
+  border: 1px dashed rgba(0, 159, 218, .38);
+  border-radius: 16px;
+  background: rgba(225, 245, 251, .42);
+  text-align: center;
+}
+
+body.platform-body .file-dropzone > input {
+  padding: 10px;
+}
+
+body.platform-body .file-dropzone > small {
+  max-width: 620px;
+  color: var(--muted);
+  font-size: .74rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: none;
+}
+
+body.platform-body .upload-group {
+  min-width: 0;
+  padding: 0 14px 14px;
+  border: 1px solid rgba(0, 51, 141, .12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .38);
+}
+
+body.platform-body .upload-group > summary {
+  padding: 15px 2px;
+  color: var(--brand-deep);
+  font-weight: 950;
+  cursor: pointer;
+}
+
+body.platform-body .upload-group > .form-grid {
+  padding-top: 2px;
+}
+
+body.platform-body .upload-guide,
+body.platform-body .music-drive-guide {
+  min-width: 0;
+  border-radius: 14px;
+  line-height: 1.35;
+}
+
+body.platform-body .button-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+body.platform-body .button-row > button,
+body.platform-body .form-grid > button {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+}
+
+body.platform-body .admin-existing-material,
+body.platform-body .weekly-upload,
+body.platform-body .podcast-current-media {
+  min-width: 0;
+}
+
+body.platform-body .existing-list article {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  body.platform-body .admin-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body.platform-body .committee-picker.full,
+  body.platform-body .tag-admin {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  body.platform-body .page-head:has(+ .admin-summary) {
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  body.platform-body .page-head:has(+ .admin-summary) > button {
+    width: 100%;
+  }
+
+  body.platform-body .admin-summary,
+  body.platform-body .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.platform-body .admin-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.platform-body .committee-picker.full,
+  body.platform-body .tag-admin {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.platform-body .admin-card-wide,
+  body.platform-body .admin-card-narrow {
+    padding: 14px;
+  }
+
+  body.platform-body .admin-form-section {
+    padding: 14px;
+  }
+
+  body.platform-body .button-row {
+    grid-template-columns: 1fr;
+  }
+
+  body.platform-body .committee-picker.full .committee-option {
+    grid-template-columns: 40px minmax(0, 1fr);
+    min-height: 66px;
+    padding: 8px;
+    gap: 8px;
+    font-size: .72rem;
+  }
+
+  body.platform-body .committee-picker.full .committee-option img {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 4px;
+  }
+
+  body.platform-body .tag-admin > label {
+    min-height: 48px;
+    padding: 9px 10px;
+    gap: 8px;
+    font-size: .72rem;
+  }
+}
+
+@media (max-width: 380px) {
+  body.platform-body .admin-tabs {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  body.platform-body .admin-tab {
+    min-height: 60px;
+    padding: 9px 7px;
+    text-align: center;
+  }
+
+  body.platform-body .admin-tab strong {
+    font-size: .76rem;
+  }
+
+  body.platform-body .admin-tab span {
+    font-size: .64rem;
+  }
+
+  body.platform-body .tag-admin > label {
+    min-height: 44px;
+    padding-inline: 8px;
+    font-size: .69rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.platform-body .admin-module:not([hidden]) {
+    animation: none;
+  }
+}
