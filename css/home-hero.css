@@ -30,7 +30,7 @@ body.platform-body:has(.earth-hero) .platform-top {
   padding: max(12px, env(safe-area-inset-top)) max(20px, calc((100vw - 1240px) / 2)) 12px;
   border: 0;
   border-radius: 0;
-  background: linear-gradient(180deg, rgba(2, 8, 19, .72), rgba(2, 8, 19, .08));
+  background: linear-gradient(180deg, rgba(2, 8, 19, .34), rgba(2, 8, 19, .02));
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -69,17 +69,17 @@ body.platform-body:has(.earth-hero) .platform-nav {
 body.platform-body:has(.earth-hero) .platform-nav a {
   position: relative;
   min-height: 42px;
-  padding: 0 9px;
-  border-color: rgba(255, 255, 255, .15);
-  background: rgba(2, 8, 19, .25);
+  padding: 0 8px;
+  border-color: transparent;
+  background: transparent;
   color: rgba(247, 251, 255, .9);
-  font-size: .78rem;
+  font-size: .82rem;
   transition: color .24s ease, background .24s ease, border-color .24s ease;
 }
 
 body.platform-body:has(.earth-hero) .platform-nav a:hover,
 body.platform-body:has(.earth-hero) .platform-nav a:focus-visible {
-  background: rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .07);
   color: #fff;
   transform: none;
 }
@@ -156,6 +156,7 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
   overflow: hidden;
   isolation: isolate;
   background:
+    radial-gradient(ellipse at 82% 18%, rgba(28, 68, 124, .14), transparent 30%),
     radial-gradient(ellipse at 50% 112%, rgba(16, 67, 136, .28), transparent 47%),
     radial-gradient(circle at 13% 19%, rgba(19, 75, 128, .1), transparent 18rem),
     #020712;
@@ -235,7 +236,7 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
   position: relative;
   z-index: 4;
   align-self: start;
-  width: min(1000px, 94vw);
+  width: min(1120px, 92vw);
   margin: clamp(145px, 23vh, 250px) auto 0;
   pointer-events: none;
 }
@@ -246,7 +247,7 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
   fill: #f7fbff;
   filter: drop-shadow(0 0 5px rgba(64, 157, 255, .9));
   font-family: "Segoe UI", Arial, sans-serif;
-  font-size: clamp(19px, 3.25vw, 43px);
+  font-size: clamp(19px, 3.35vw, 46px);
   font-weight: 800;
   letter-spacing: 1.6px;
   paint-order: stroke;

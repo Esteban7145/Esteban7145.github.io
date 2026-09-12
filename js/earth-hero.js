@@ -214,21 +214,20 @@ function initEarthHero(hero) {
       if (material?.name?.startsWith("Colombia_")) {
         const isGlow = material.name.startsWith("Colombia_Light_");
         object.renderOrder = 3;
-        material.depthTest = true;
-        material.depthWrite = false;
         object.scale.multiplyScalar(1.002);
         object.material = new THREE.MeshBasicMaterial({
-          color: isGlow ? 0xff8a12 : 0xf2a900,
+          color: isGlow ? 0xffb52e : 0xffa51b,
           transparent: isGlow,
-          opacity: isGlow ? 0.16 : 1,
+          opacity: isGlow ? 0.18 : 1,
           depthTest: true,
           depthWrite: false,
           side: THREE.DoubleSide,
-          blending: isGlow ? THREE.AdditiveBlending : THREE.NormalBlending
+          blending: isGlow ? THREE.AdditiveBlending : THREE.NormalBlending,
+          toneMapped: false,
+          polygonOffset: true,
+          polygonOffsetFactor: -1,
+          polygonOffsetUnits: -1
         });
-        material.polygonOffset = true;
-        material.polygonOffsetFactor = -1;
-        material.polygonOffsetUnits = -1;
       }
     });
     const [sunX, sunY, sunZ] = config.sunDirectionBlender;
