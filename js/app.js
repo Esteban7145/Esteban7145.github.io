@@ -2372,7 +2372,7 @@ const TYPES = {
                 <span class="sr-only">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</span>
                 <svg class="earth-hero-curve" viewBox="0 0 1000 240" role="img" aria-label="IGLESIA PENTECOSTAL UNIDA DE COLOMBIA">
                   <defs><path id="earthHeroCurvePath" d="M 62 190 Q 500 24 938 190"></path></defs>
-                  <text class="earth-hero-curve-text"><textPath href="#earthHeroCurvePath" startOffset="50%" text-anchor="middle">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</textPath></text>
+                  <text class="earth-hero-curve-text"><textPath href="#earthHeroCurvePath" startOffset="50%" text-anchor="middle" textLength="865" lengthAdjust="spacingAndGlyphs">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</textPath></text>
                 </svg>
               </h1>
             </div>
