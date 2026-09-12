@@ -1504,6 +1504,10 @@ const TYPES = {
             <a href="/ubicacion" data-route-link="ubicacion">Ubicación</a>
             <a href="/admin/login" data-login-link>Admin</a>
           </nav>
+          <a class="platform-schedule-link" href="/calendario" data-route-link="calendario" aria-label="Abrir Cronograma">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M3 9h18M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01M16 17h.01"></path></svg>
+            <span>Cronograma</span>
+          </a>
         </header>
         <section id="routeView" class="route-view" tabindex="-1"></section>
         <footer class="platform-footer glass">
@@ -1576,7 +1580,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260909-stability-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260912-earth-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -2357,27 +2361,21 @@ const TYPES = {
       }
 
       function renderHomePage() {
-        const events = eventsForPlatformDate(today);
-        const main = events[0];
-        const mainImage = main ? eventImage(main) : "";
-        const reflection = reflectionForDate(today);
-        const homePodcast = !main ? homePodcastForToday() : null;
-        const mainInvitation = Boolean(main && mainImage);
-        const homeStoryMarkup = !main ? homePodcastMarkup(homePodcast) : "";
-        const next = platformEventsForYear(today.getFullYear()).filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Realizado").sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
         view().innerHTML = `
-          <section class="home-hero glass ${mainInvitation ? "has-today-invitation" : "has-reflection-focus"}">
-            <div class="hero-copy">
-              <div class="home-kicker"><span class="home-live-dot"></span><span>IPUC Villa del Río</span><span>•</span><span>${escapeHtml(longPlatformDate(today))}</span></div>
-              <p class="eyebrow">${main ? "Lo que vivimos hoy" : "Una palabra para hoy"}</p>
-              <h1 class="${main ? "home-event-title" : "home-hero-title"}"${main ? "" : " aria-label=\"Caminamos juntos en la fe\""}>${main ? escapeHtml(main.title) : glassHeroTitleMarkup("Caminamos juntos en la fe")}</h1>
-              <p class="home-lead">${escapeHtml(main ? shortDescription(main) : homePodcast ? `Escucha ${homePodcast.category === "Predicaciones" ? "una predicación" : "un nuevo testimonio"} de Historias que Edifican.` : reflection.text + " (" + reflection.ref + ")")}</p>
-              ${main ? eventInfoList(main) : `<div class="today-line">${escapeHtml(longPlatformDate(today))}</div>`}
-              ${homeStoryMarkup}
-              <div class="live-visitors" aria-live="polite"><span class="live-visitors-dot"></span><strong data-online-count>1</strong> personas en la página ahora</div>
-              <div class="home-actions">${main ? `<a class="primary-link" href="#/evento/${encodeURIComponent(main.id)}">Ver detalles</a>` : `<a class="primary-link" href="#/calendario">Explorar calendario</a>`}<button class="music-home-action" type="button" data-home-music>▶ Escuchar música IPUC</button>${deferredInstallPrompt ? `<button class="music-home-action install-home-action" type="button" data-install-app>＋ Instalar app</button>` : ""}</div>
+          <section class="earth-hero" data-earth-hero aria-labelledby="earthHeroTitle">
+            <div class="earth-hero-stage" data-earth-stage aria-hidden="true">
+              <img class="earth-hero-preview" data-earth-preview src="/assets/earth/Tierra_Hero_preview.png" alt="Tierra con Colombia resaltada en dorado" decoding="async" fetchpriority="high">
+              <canvas class="earth-hero-canvas" data-earth-canvas></canvas>
             </div>
-            ${mainInvitation ? `<aside class="home-invitation-card"><div class="home-invitation-head"><span class="eyebrow">Imagen del evento</span><span class="home-invitation-dot" aria-hidden="true"></span></div><img class="home-invitation-image" src="${escapeHtml(mainImage)}" alt="Imagen de ${escapeHtml(main.title)}"><a class="home-invitation-link" href="#/evento/${encodeURIComponent(main.id)}">Ver evento completo <span aria-hidden="true">→</span></a></aside>` : ""}
+            <div class="earth-hero-copy">
+              <h1 id="earthHeroTitle" class="earth-hero-title">
+                <span class="sr-only">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</span>
+                <svg class="earth-hero-curve" viewBox="0 0 1000 240" role="img" aria-label="IGLESIA PENTECOSTAL UNIDA DE COLOMBIA">
+                  <defs><path id="earthHeroCurvePath" d="M 62 190 Q 500 24 938 190"></path></defs>
+                  <text class="earth-hero-curve-text"><textPath href="#earthHeroCurvePath" startOffset="50%" text-anchor="middle">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</textPath></text>
+                </svg>
+              </h1>
+            </div>
           </section>
           <section class="home-welcome glass">
             <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta actividades, recursos, horarios y novedades de la congregación desde un solo lugar.</p></div>

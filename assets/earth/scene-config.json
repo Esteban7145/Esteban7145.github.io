@@ -1,0 +1,27 @@
+{
+  "periodSeconds": 120,
+  "cloudDrift": 0.025,
+  "sunDirectionBlender": [
+    -0.641274631023407,
+    -0.7127922177314758,
+    0.2840670645236969
+  ],
+  "radius": 1,
+  "camera": {
+    "position": [
+      0.5237109661102295,
+      -3.7263972759246826,
+      -0.5288577675819397
+    ],
+    "quaternion": [
+      0.6140999794006348,
+      0.7861394882202148,
+      0.05497223511338234,
+      0.04294205456972122
+    ],
+    "lens": 50.0
+  },
+  "blenderZUpToGltfYUp": "(x,y,z) -> (x,z,-y)",
+  "atmosphere": "Companion shader required",
+  "nightLights": "Companion shader masks emission on sunlit hemisphere"
+}
