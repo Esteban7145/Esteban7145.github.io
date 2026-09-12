@@ -1580,7 +1580,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260912-earth-2").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260912-redesign-3").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -2377,47 +2377,7 @@ const TYPES = {
               </h1>
             </div>
           </section>
-          <section class="home-welcome glass">
-            <div><p class="eyebrow">Siempre conectados</p><h2>Todo lo que necesitas para participar</h2><p>Consulta actividades, recursos, horarios y novedades de la congregación desde un solo lugar.</p></div>
-            <div class="home-quick-links"><a href="#/calendario"><strong>Calendario</strong><span>Ver la semana completa →</span></a><a href="#/podcast"><strong>Historias que Edifican</strong><span>Historias que edifican →</span></a><a href="#/recursos"><strong>Recursos</strong><span>Material oficial IPUC →</span></a><a href="#/ubicacion"><strong>Ubicación</strong><span>Cómo llegar →</span></a></div>
-          </section>
-          <section class="home-community glass">
-            <div class="home-community-head"><div><p class="eyebrow">Familia IPUC</p><h2>Una iglesia que sirve unida</h2><p>Conoce los comités y ministerios que hacen parte de la vida de IPUC Villa del Río.</p></div><a class="small-action" href="#/eventos">Ver actividades</a></div>
-            <div class="home-committee-grid">${committeeHomeMarkup()}</div>
-          </section>
-          <section class="type-shortcuts glass" aria-label="Buscar por tipo de evento">
-            <div><p class="eyebrow">Accesos rápidos</p><h2>¿Qué evento buscas?</h2></div>
-            ${typeLegendMarkup()}
-          </section>
-          <section class="split-grid">
-            <article class="content-card glass">
-              <div class="section-title"><p class="eyebrow">Próximos</p><h2>Eventos destacados</h2></div>
-              <div class="card-list">${featuredEvents().map(eventMiniCard).join("") || emptyText("No hay destacados próximos.")}</div>
-            </article>
-            <article class="content-card glass">
-              <div class="section-title"><p class="eyebrow">Avisos</p><h2>Últimos anuncios</h2></div>
-              <div class="card-list">${announcementCards()}</div>
-            </article>
-          </section>
         `;
-        bindTypeShortcuts();
-        bindHomeCommitteeShortcuts();
-        bindWorshipSchedule();
-        const homeMusic = view().querySelector("[data-home-music]");
-        if (homeMusic) homeMusic.onclick = () => {
-          view().querySelectorAll(".home-story-card audio, .home-story-card video").forEach(media => media.pause());
-          startChurchMusic();
-        };
-        const installApp = view().querySelector("[data-install-app]");
-        if (installApp) installApp.onclick = async () => {
-          deferredInstallPrompt.prompt();
-          await deferredInstallPrompt.userChoice;
-          deferredInstallPrompt = null;
-          renderRoute();
-        };
-        bindHomeMotion();
-        bindHomeStoryPlayback();
-        updateLiveVisitors();
       }
 
       function setupReflectionPlaybackMemory() {
