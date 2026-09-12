@@ -203,13 +203,13 @@ function initEarthHero(hero) {
       surfaceMaterial.emissive.setRGB(0, 0, 0);
       surfaceMaterial.emissiveIntensity = 0;
     }
-    if (surfaceMaterial?.color) surfaceMaterial.color.multiplyScalar(0.36);
+    if (surfaceMaterial?.color) surfaceMaterial.color.multiplyScalar(0.28);
     model.traverse(object => {
       const material = object.material;
       if (object.name === "Clouds_Independent" || material?.name?.startsWith("Clouds_")) {
         object.visible = true;
         material.transparent = true;
-        material.opacity = Math.min(material.opacity ?? 1, 0.62);
+        material.opacity = Math.min(material.opacity ?? 1, 0.16);
         material.depthWrite = false;
       }
       if (material?.name?.startsWith("Colombia_")) {
@@ -231,6 +231,7 @@ function initEarthHero(hero) {
         });
       }
     });
+    model.position.y = -0.55;
     const [sunX, sunY, sunZ] = config.sunDirectionBlender;
     const sunLight = new THREE.DirectionalLight(0xfff4dc, 0.44);
     sunLight.position.set(sunX, sunZ, -sunY).normalize().multiplyScalar(4);
