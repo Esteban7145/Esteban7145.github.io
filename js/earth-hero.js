@@ -101,7 +101,7 @@ function initEarthHero(hero) {
     });
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.AgXToneMapping;
-    renderer.toneMappingExposure = 0.22;
+    renderer.toneMappingExposure = 0.18;
     renderer.setClearColor(0x000000, 1);
   } catch (error) {
     console.warn("La Tierra 3D no está disponible; se usará la vista previa.", error);
@@ -111,7 +111,7 @@ function initEarthHero(hero) {
   }
 
   const scene = new THREE.Scene();
-  const fillLight = new THREE.HemisphereLight(0x9ecbff, 0x020812, 0.08);
+  const fillLight = new THREE.HemisphereLight(0x9ecbff, 0x020812, 0.04);
   scene.add(fillLight);
   let camera = null;
   let earth = null;
@@ -203,7 +203,7 @@ function initEarthHero(hero) {
       surfaceMaterial.emissive.setRGB(0, 0, 0);
       surfaceMaterial.emissiveIntensity = 0;
     }
-    if (surfaceMaterial?.color) surfaceMaterial.color.multiplyScalar(0.72);
+    if (surfaceMaterial?.color) surfaceMaterial.color.multiplyScalar(0.36);
     model.traverse(object => {
       const material = object.material;
       if (object.name === "Clouds_Independent" || material?.name?.startsWith("Clouds_")) {
@@ -232,7 +232,7 @@ function initEarthHero(hero) {
       }
     });
     const [sunX, sunY, sunZ] = config.sunDirectionBlender;
-    const sunLight = new THREE.DirectionalLight(0xfff4dc, 0.62);
+    const sunLight = new THREE.DirectionalLight(0xfff4dc, 0.44);
     sunLight.position.set(sunX, sunZ, -sunY).normalize().multiplyScalar(4);
     sunLight.target.position.set(0, 0, 0);
     scene.add(sunLight, sunLight.target);

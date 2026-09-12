@@ -1580,7 +1580,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260912-earth-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260912-earth-2").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
