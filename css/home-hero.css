@@ -215,8 +215,9 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
 }
 
 .earth-hero-preview {
-  z-index: 1;
+  z-index: 3;
   opacity: 1;
+  visibility: visible;
   object-position: center center;
   transition: opacity .72s cubic-bezier(.2,.8,.2,1), visibility 0s linear .86s;
 }
@@ -224,11 +225,12 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
 .earth-hero-canvas {
   z-index: 2;
   opacity: 0;
+  visibility: hidden;
   transition: opacity .72s cubic-bezier(.2,.8,.2,1);
 }
 
-.earth-hero-stage.is-ready .earth-hero-preview { opacity: 0; visibility: hidden; }
-.earth-hero-stage.is-ready .earth-hero-canvas { opacity: 1; }
+.earth-hero-stage.is-ready .earth-hero-preview { opacity: 1; visibility: visible; }
+.earth-hero-stage.is-ready .earth-hero-canvas { opacity: 0; visibility: hidden; }
 .earth-hero-stage.is-fallback .earth-hero-preview { opacity: 1; visibility: visible; }
 .earth-hero-stage.is-fallback .earth-hero-canvas { display: none; }
 
@@ -237,7 +239,7 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
   z-index: 4;
   align-self: start;
   width: min(1120px, 92vw);
-  margin: clamp(145px, 23vh, 250px) auto 0;
+  margin: clamp(126px, 18vh, 190px) auto 0;
   pointer-events: none;
 }
 
