@@ -1,5 +1,5 @@
-const CACHE_NAME = "ipuc-villa-del-rio-v91-visual-redesign";
-const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/css/platform-runtime.css", "/css/home-hero.css", "/js/app.js", "/assets/logo.png", "/assets/favicon.png", "/assets/ipuc-villa-del-rio-brand.png", "/assets/historias-que-edifican.png", "/assets/earth/Tierra_Hero_preview.png", "/assets/og.png"];
+const CACHE_NAME = "ipuc-villa-del-rio-v94-release";
+const APP_SHELL = ["/", "/manifest.webmanifest", "/css/styles.css", "/css/modern.css", "/css/platform-runtime.css", "/css/admin.css", "/css/home-hero.css", "/css/site-redesign.css", "/js/app.js", "/assets/logo.png", "/assets/favicon.png", "/assets/ipuc-villa-del-rio-brand.png", "/assets/historias-que-edifican.png", "/assets/earth/Tierra_Hero_preview.png", "/assets/og.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
@@ -18,7 +18,8 @@ self.addEventListener("fetch", event => {
   if (request.destination === "video" || request.destination === "audio") return;
   if (url.pathname.endsWith("/assets/earth/tierra-ipuc.glb")) return;
   const isStatic = ["style", "script", "font", "manifest", "image"].includes(request.destination) || /\/assets\/(?:favicon|logo|og|historias|ipuc-villa-del-rio-brand)/.test(url.pathname);
-  event.respondWith(isStatic ? cacheFirst(request) : networkFirst(request));
+  const isCode = ["style", "script"].includes(request.destination);
+  event.respondWith(isStatic && !isCode ? cacheFirst(request) : networkFirst(request));
 });
 
 async function cacheFirst(request) {
@@ -35,6 +36,9 @@ async function networkFirst(request) {
     if (response.ok && response.type === "basic") (await caches.open(CACHE_NAME)).put(request, response.clone());
     return response;
   } catch {
-    return (await caches.match(request)) || (await caches.match("/"));
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    if (request.mode === "navigate") return (await caches.match("/")) || Response.error();
+    return Response.error();
   }
 }

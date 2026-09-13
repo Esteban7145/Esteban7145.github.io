@@ -475,6 +475,22 @@
   opacity: 1;
   pointer-events: auto;
 }
+@media (max-width: 900px) {
+  body.platform-body .nav-backdrop {
+    z-index: 110 !important;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0;
+    border: 0;
+    background: rgba(2, 7, 18, .34) !important;
+  }
+  body.platform-body .platform-top:has(.platform-nav.open) {
+    z-index: 120 !important;
+  }
+  body.platform-body .platform-top:has(.platform-nav.open) .platform-nav {
+    z-index: 121 !important;
+  }
+}
 .platform-body.nav-open {
   overflow: hidden;
 }

@@ -7,7 +7,7 @@ const DEFAULT_FOLDERS = {
   event: "1Z3C25CEZT_spPTYfe9ktHHwbcRWIUjcn",
   multimedia: "1Av4jSQaDTimZwSIOcX58JyhCf2uLUo69",
   biblical: "1CQouw6irDWXEzlSHkbJM5NQlf7jPKwA1",
-  music: "1yHRYX-6SkDjqNxJT7pZAJDjVgci2nGdP",
+  music: "1TQTIz_Vi7BN8CMkBIIMp2U98GF7dnbs6",
 };
 
 function corsHeaders(req: Request) {
@@ -193,14 +193,23 @@ async function listMusicFromDrive(token: string) {
 async function streamMusic(req: Request) {
   const fileId = new URL(req.url).searchParams.get("id") || "";
   if (!/^[A-Za-z0-9_-]+$/.test(fileId)) return response(req, { error: "El archivo de música no es válido." }, 400);
-  const token = await googleAccessToken();
-  const upstreamHeaders = new Headers({ Authorization: `Bearer ${token}` });
+  const upstreamHeaders = new Headers();
   const range = req.headers.get("Range");
   if (range) upstreamHeaders.set("Range", range);
-  const upstream = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media`, {
+  // Public audio in the approved music folder can be streamed without an
+  // OAuth redirect. Use OAuth only as a fallback for private admin files.
+  let upstream = await fetch(`https://drive.usercontent.google.com/download?id=${encodeURIComponent(fileId)}&export=media`, {
     method: req.method,
     headers: upstreamHeaders,
   });
+  if (!upstream.ok) {
+    const token = await googleAccessToken();
+    upstreamHeaders.set("Authorization", `Bearer ${token}`);
+    upstream = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?alt=media`, {
+      method: req.method,
+      headers: upstreamHeaders,
+    });
+  }
   if (!upstream.ok) {
     const detail = await upstream.text().catch(() => "");
     return response(req, { error: detail || "No se pudo leer la canción desde Drive." }, upstream.status);

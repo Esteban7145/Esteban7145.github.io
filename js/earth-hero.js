@@ -96,13 +96,13 @@ function initEarthHero(hero) {
     renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
-      alpha: false,
+      alpha: true,
       powerPreference: "high-performance"
     });
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.AgXToneMapping;
-    renderer.toneMappingExposure = 0.18;
-    renderer.setClearColor(0x000000, 1);
+    renderer.toneMappingExposure = 1;
+    renderer.setClearColor(0x020712, 0);
   } catch (error) {
     console.warn("La Tierra 3D no está disponible; se usará la vista previa.", error);
     createFallback(stage);
@@ -111,7 +111,7 @@ function initEarthHero(hero) {
   }
 
   const scene = new THREE.Scene();
-  const fillLight = new THREE.HemisphereLight(0x9ecbff, 0x020812, 0.04);
+  const fillLight = new THREE.HemisphereLight(0x9ecbff, 0x020812, 0.18);
   scene.add(fillLight);
   let camera = null;
   let earth = null;
@@ -120,6 +120,8 @@ function initEarthHero(hero) {
   let elapsed = 0;
   let last = performance.now();
   let isVisible = true;
+  let viewportWidth = 0;
+  let viewportHeight = 0;
 
   const runtime = {
     stage,
@@ -137,6 +139,11 @@ function initEarthHero(hero) {
       requestFrame();
     },
     destroyHeader,
+    onMotionChange: () => {
+      elapsed = 0;
+      last = performance.now();
+      requestFrame();
+    },
     resizeObserver: null,
     stageObserver: null
   };
@@ -150,25 +157,60 @@ function initEarthHero(hero) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprLimit));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    camera.fov = width / height < 1
-      ? 46
-      : THREE.MathUtils.radToDeg(2 * Math.atan(36 / (2 * 50) / (width / height)));
+    viewportWidth = width;
+    viewportHeight = height;
+    updateFraming();
+  }
+
+  function updateFraming() {
+    const width = viewportWidth || Math.max(1, stage.clientWidth || window.innerWidth);
+    const height = viewportHeight || Math.max(1, stage.clientHeight || window.innerHeight);
+    const initialRadius = width * (width < 700 ? 1.15 : .60);
+    const radius = initialRadius;
+    const initialCenterY = height * (width < 700 ? .36 : .28) + initialRadius;
+    const centerY = initialCenterY;
+    const distance = camera.position.length();
+    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(height / (2 * radius * Math.sqrt(distance * distance - 1))));
     camera.updateProjectionMatrix();
+    camera.projectionMatrix.elements[9] = 2 * centerY / height - 1;
+    camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+    const svg = hero.querySelector(".earth-hero-curve");
+    const path = hero.querySelector("#earthHeroCurvePath");
+    const text = hero.querySelector(".earth-hero-curve-text");
+    const textPath = text?.querySelector("textPath");
+    const arcRadius = radius + (width < 700 ? 12 : 20);
+    const halfAngle = width < 700 ? .43 : .74;
+    const x = arcRadius * Math.sin(halfAngle);
+    const titleLift = height * (width < 700 ? .1 : .08);
+    const y = centerY - arcRadius * Math.cos(halfAngle) - titleLift;
+    svg?.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    // A controlled quadratic keeps the title clearly above the horizon at every viewport size.
+    // Match the title arc to the visible terrestrial horizon instead of using
+    // a taller ornamental arch that separates the words from the planet.
+    const archFactor = 1.16;
+    path?.setAttribute("d", `M ${width/2-x} ${y} Q ${width/2} ${centerY - arcRadius * archFactor - titleLift} ${width/2+x} ${y}`);
+    text?.style.setProperty("font-size", `${width * (width < 700 ? .036 : .033)}px`);
+    textPath?.setAttribute("textLength", String(arcRadius * halfAngle * 1.78));
+    if (model && isLowMotion()) renderer.render(scene, camera);
   }
 
   function requestFrame() {
-    if (!frame && !document.hidden && isVisible && model) frame = window.requestAnimationFrame(renderFrame);
+    if (!frame && !document.hidden && isVisible && model && active === runtime) {
+      frame = window.requestAnimationFrame(renderFrame);
+      runtime.frame = frame;
+    }
   }
 
   function renderFrame(now) {
     frame = 0;
-    if (!active || document.hidden || !isVisible || !model) return;
+    runtime.frame = 0;
+    if (active !== runtime || document.hidden || !isVisible || !model) return;
     const delta = Math.min((now - last) / 1000, 0.1);
     last = now;
     if (!isLowMotion()) elapsed += delta;
     earth?.update(elapsed);
     renderer.render(scene, camera);
-    requestFrame();
+    if (!isLowMotion()) requestFrame();
   }
 
   window.addEventListener("resize", runtime.onResize, { passive: true });
@@ -195,59 +237,50 @@ function initEarthHero(hero) {
       return response.json();
     })
   ]).then(([gltf, config]) => {
-    if (!active || active.stage !== stage) return;
+    if (!active || active.stage !== stage) {
+      disposeModel(gltf.scene);
+      return;
+    }
     model = gltf.scene;
     earth = prepareEarth(gltf, config);
+    // The exported asset faces Africa in the narrow mobile crop. Apply a
+    // fixed root yaw so the requested Colombia-first composition is preserved
+    // without changing the GLB or the physical rotation of the planet.
+    model.rotation.y = isSmallViewport() ? -1.3 : -0.62;
     const surfaceMaterial = model.getObjectByName("Earth_Surface")?.material;
-    if (surfaceMaterial?.emissive) {
-      surfaceMaterial.emissive.setRGB(0, 0, 0);
-      surfaceMaterial.emissiveIntensity = 0;
-    }
-    if (surfaceMaterial?.color) surfaceMaterial.color.multiplyScalar(0.28);
+    // Normalize the exported Blender sun (683 lux) for this web scene.
+    // Preserve the original satellite textures and night-light material.
+    if (surfaceMaterial) surfaceMaterial.roughness = .85;
     model.traverse(object => {
+      if (object.isLight) object.intensity = 0;
       const material = object.material;
       if (object.name === "Clouds_Independent" || material?.name?.startsWith("Clouds_")) {
         object.visible = true;
         material.transparent = true;
-        material.opacity = Math.min(material.opacity ?? 1, 0.16);
+        material.opacity = .65;
         material.depthWrite = false;
       }
       if (material?.name?.startsWith("Colombia_")) {
-        const isGlow = material.name.startsWith("Colombia_Light_");
         object.renderOrder = 3;
-        object.scale.multiplyScalar(1.002);
-        object.material = new THREE.MeshBasicMaterial({
-          color: isGlow ? 0xffb52e : 0xffa51b,
-          transparent: isGlow,
-          opacity: isGlow ? 0.18 : 1,
-          depthTest: true,
-          depthWrite: false,
-          side: THREE.DoubleSide,
-          blending: isGlow ? THREE.AdditiveBlending : THREE.NormalBlending,
-          toneMapped: false,
-          polygonOffset: true,
-          polygonOffsetFactor: -1,
-          polygonOffsetUnits: -1
-        });
+        material.depthWrite = false;
       }
     });
-    model.position.y = -0.55;
     const [sunX, sunY, sunZ] = config.sunDirectionBlender;
-    const sunLight = new THREE.DirectionalLight(0xfff4dc, 0.44);
+    const sunLight = new THREE.DirectionalLight(0xfff4dc, 2.5);
     sunLight.position.set(sunX, sunZ, -sunY).normalize().multiplyScalar(4);
     sunLight.target.position.set(0, 0, 0);
     scene.add(sunLight, sunLight.target);
-    camera = gltf.cameras?.[0] || new THREE.PerspectiveCamera(46, 1, 0.01, 100);
+    camera = new THREE.PerspectiveCamera(46, 1, 0.01, 100);
     if (!gltf.cameras?.length) camera.position.set(0, 0, 3.2);
+    // Keep the cinematic day-side viewing direction and place Colombia on the initial face.
+    camera.position.set(.8, -2.5, 2.8);
+    camera.lookAt(0, 0, 0);
     scene.add(model);
     runtime.model = model;
     resize();
     earth.update(0);
     renderer.render(scene, camera);
     stage.classList.add("is-ready");
-    window.setTimeout(() => {
-      if (stage.isConnected) stage.querySelector("[data-earth-preview]")?.setAttribute("hidden", "hidden");
-    }, 850);
     last = performance.now();
     requestFrame();
   }).catch(error => {
@@ -286,7 +319,9 @@ function boot() {
   }
   routeObserver = new MutationObserver(syncHero);
   routeObserver.observe(routeView, { childList: true, subtree: true });
-  reducedMotion?.addEventListener?.("change", syncHero);
+  reducedMotion?.addEventListener?.("change", () => {
+    active?.onMotionChange?.();
+  });
   syncHero();
 }
 

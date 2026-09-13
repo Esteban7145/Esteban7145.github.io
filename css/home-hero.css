@@ -13,7 +13,14 @@ body.platform-body:has(.earth-hero) .site-video-backdrop {
 
 body.platform-body:has(.earth-hero) .platform-shell {
   padding-top: 0;
+  padding-bottom: 0;
 }
+
+body.platform-body:has(.earth-hero) .platform-footer { display: none; }
+
+/* El reproductor sigue disponible en el inicio; solo se oculta el contenido
+   inferior para conservar la portada limpia. */
+body.platform-body:has(.earth-hero) .music-widget { display: grid; }
 
 body.platform-body:has(.earth-hero) .route-view {
   gap: 0;
@@ -151,6 +158,7 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
   position: relative;
   display: grid;
   min-height: 100svh;
+  height: 100svh;
   width: 100vw;
   margin-left: calc(50% - 50vw);
   overflow: hidden;
@@ -160,6 +168,12 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
     radial-gradient(ellipse at 50% 112%, rgba(16, 67, 136, .28), transparent 47%),
     radial-gradient(circle at 13% 19%, rgba(19, 75, 128, .1), transparent 18rem),
     #020712;
+}
+
+/* Fixed camera layers must not inherit the route reveal transform. */
+body.platform-body:has(.earth-hero) .route-view.is-route-entering > .earth-hero {
+  transform: none !important;
+  animation: none !important;
 }
 
 .earth-hero::before,
@@ -184,15 +198,22 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
 
 .earth-hero::after {
   z-index: 2;
+  inset: 0 0 auto;
+  height: 100svh;
   background: linear-gradient(180deg, rgba(2,7,18,.1) 0 55%, rgba(2,7,18,.18) 72%, rgba(2,7,18,.9) 100%);
 }
 
 .earth-hero-stage {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 100svh;
+  width: 100%;
+  z-index: 3;
   overflow: hidden;
   pointer-events: none;
+  align-self: start;
 }
 
 .earth-hero-stage::after {
@@ -216,35 +237,45 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
 
 .earth-hero-preview {
   z-index: 3;
-  opacity: 1;
-  visibility: visible;
+  /* The preview is a failure fallback only. Keeping it hidden during the
+     normal GLB load prevents the old static Earth from flashing first. */
+  opacity: 0;
+  visibility: hidden;
   object-position: center center;
-  transition: opacity .72s cubic-bezier(.2,.8,.2,1), visibility 0s linear .86s;
+  /* Keep the loading frame in the same close-up composition as the GLB.
+     This prevents a full-planet flash before WebGL takes over. */
+  transform: scale(1.2);
+  transform-origin: 50% 82%;
+  transition: opacity .42s cubic-bezier(.2,.8,.2,1), visibility 0s linear .5s;
 }
 
 .earth-hero-canvas {
   z-index: 2;
   opacity: 0;
   visibility: hidden;
-  transition: opacity .72s cubic-bezier(.2,.8,.2,1);
+  transition: opacity .42s cubic-bezier(.2,.8,.2,1);
 }
 
-.earth-hero-stage.is-ready .earth-hero-preview { opacity: 1; visibility: visible; }
-.earth-hero-stage.is-ready .earth-hero-canvas { opacity: 0; visibility: hidden; }
+.earth-hero-stage.is-ready .earth-hero-canvas { opacity: 1; visibility: visible; }
 .earth-hero-stage.is-fallback .earth-hero-preview { opacity: 1; visibility: visible; }
 .earth-hero-stage.is-fallback .earth-hero-canvas { display: none; }
 
 .earth-hero-copy {
-  position: relative;
-  z-index: 4;
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  /* The planet sits in front; the title remains fully readable above its rim. */
+  z-index: 2;
   align-self: start;
-  width: min(1120px, 92vw);
-  margin: clamp(100px, 13vh, 150px) auto 0;
+  width: 100%;
+  height: 100svh;
+  margin: 0;
   pointer-events: none;
 }
 
-.earth-hero-title { margin: 0; }
-.earth-hero-curve { display: block; width: 100%; height: auto; overflow: visible; }
+.earth-hero-title { margin: 0; height: 100%; }
+.earth-hero-curve { display: block; width: 100%; height: 100%; overflow: visible; }
 .earth-hero-curve-text {
   fill: #f7fbff;
   filter: drop-shadow(0 0 5px rgba(64, 157, 255, .9));
@@ -304,10 +335,11 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
   body.platform-body:has(.earth-hero) .platform-schedule-link { display: none; }
   body.platform-body:has(.earth-hero) .nav-backdrop { z-index: 1100; background: rgba(0, 3, 10, .66); }
   body.platform-body:has(.earth-hero) .platform-nav.open { z-index: 1300; }
-  .earth-hero-copy { width: min(900px, 92vw); margin-top: clamp(120px, 17vh, 170px); }
+  .earth-hero-copy { width: 100%; margin: 0; }
 }
 
 @media (max-width: 700px) {
+  .earth-hero { min-height: 100svh; height: 100svh; }
   body.platform-body:has(.earth-hero) .platform-top,
   body.platform-body:has(.earth-hero) .platform-top.earth-header-scrolled {
     min-height: 64px;
@@ -319,7 +351,7 @@ body.platform-body:has(.earth-hero) .nav-toggle::before { content: "☰"; font-s
   body.platform-body:has(.earth-hero) .earth-header-scrolled .platform-brand img { width: min(190px, 63vw); height: 48px; }
   body.platform-body:has(.earth-hero) .platform-nav { top: calc(100% + 8px); right: 8px; left: 8px; max-height: calc(100dvh - 84px); }
   .earth-hero-preview { object-position: 54% center; }
-  .earth-hero-copy { width: 96vw; margin-top: clamp(104px, 15vh, 150px); }
+  .earth-hero-copy { width: 100%; margin: 0; }
   .earth-hero-curve-text { font-size: clamp(17px, 4.5vw, 28px); letter-spacing: .8px; }
   @keyframes earthTextReveal { from { opacity: 0; letter-spacing: 4px; } to { opacity: 1; letter-spacing: .8px; } }
 }

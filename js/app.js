@@ -1343,7 +1343,27 @@ const TYPES = {
         leaderBucket: "leader-submissions",
         driveFunction: "drive-upload"
       };
-      const MUSIC_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1yHRYX-6SkDjqNxJT7pZAJDjVgci2nGdP";
+      const MUSIC_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1TQTIz_Vi7BN8CMkBIIMp2U98GF7dnbs6";
+      // Public playback manifest for the single Música IPUC Villa del Río
+      // folder. It keeps the player working while the admin OAuth connection
+      // is being reauthorized, without copying audio outside Drive.
+      const DIRECT_DRIVE_MUSIC = [
+        ["1iCfe4fchn3DY_EVjtUgMf2NFFUYWRICK", "Exaltado — Quién como Él"],
+        ["14RmpghYez-Qy51s1har7HGkP415lWy3t", "Linaje — Ministerio"],
+        ["1eiPhRhI3zVzR9Gf5VVxH_ZlSQMIZqIG9", "Medley Oh Alma Mía y Acude"],
+        ["1GhiVtPJ6A9vWCO16NnGgp2mWlHcGH_9X", "Mokara — Sin Ti Me Muero"],
+        ["13QRM2EJ-7o3yjeD9LUdQZJUn45upB8Eb", "Mokara — Padre Mío"],
+        ["1PaF_2e15vfZ5bzxAtR5LX8g7TbGheuI7", "Mokara — Te Esperaré"],
+        ["1C8Fg4PhUh2lVgs-4SaWzegYfJJ4u-RlC", "Mokara — Tu Nombre"],
+        ["1Z2Etm2KTisExNUv1hUbSDJ4dfUKgMoNX", "Te levantaré"],
+        ["12DKGpBMpN1B0XNoQr21X2sbfzTxBETd_", "Tu nombre — Coro Distrito Dos"],
+        ["1EOGx9z2DDqNr_rhPnmefVA8oxovNM3ja", "Tú Eres Todo"],
+        ["1soYAIghsOlxBZpEpqWBiOcv7Yz8nkN1L", "Un Corazón — Otra Vez"]
+      ].map(([id, name]) => ({
+        id,
+        name,
+        audioUrl: `https://qgucwxgwehkualhfnckt.supabase.co/functions/v1/drive-upload/music?id=${encodeURIComponent(id)}`
+      }));
       const cloud = {
         enabled: false,
         ready: false,
@@ -1497,7 +1517,6 @@ const TYPES = {
           <button class="nav-toggle" type="button" data-toggle-nav aria-expanded="false" aria-controls="platformNav" aria-label="Abrir menú">Menú</button>
           <nav class="platform-nav" id="platformNav" aria-label="Navegación principal">
             <a href="/" data-route-link="inicio">Inicio</a>
-            <a href="/calendario" data-route-link="calendario">Calendario</a>
             <a href="/anuncios" data-route-link="anuncios">Anuncios</a>
             <a href="/podcast" data-route-link="podcast">Historias que Edifican</a>
             <a href="/recursos" data-route-link="recursos">Recursos</a>
@@ -1580,10 +1599,18 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260912-redesign-3").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260913-release-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
+      const resumeMusicAfterInteraction = () => {
+        if (location.pathname !== "/" || !getChurchMusicPlaylist().length) return;
+        if (location.pathname === "/" && getChurchMusicPlaylist().length && document.getElementById("churchMusicAudio")?.paused) {
+          startChurchMusic();
+        }
+        ["pointerdown", "keydown", "touchstart"].forEach(type => document.removeEventListener(type, resumeMusicAfterInteraction));
+      };
+      ["pointerdown", "keydown", "touchstart"].forEach(type => document.addEventListener(type, resumeMusicAfterInteraction, { passive: true }));
       if (location.hash) history.replaceState({}, "", location.hash.replace(/^#\/?/, "/") || "/");
       renderRoute();
       initializeCloud();
@@ -4535,13 +4562,19 @@ const TYPES = {
           APP_STATE.musicPlaylistError = "";
           APP_STATE.musicIndex = 0;
         } catch (error) {
-          APP_STATE.musicPlaylist = [];
+          APP_STATE.musicPlaylist = DIRECT_DRIVE_MUSIC;
           APP_STATE.musicPlaylistLoaded = true;
           APP_STATE.musicPlaylistError = error.message || "No se pudo cargar la música de Drive.";
         } finally {
           APP_STATE.musicPlaylistLoading = false;
           setupChurchMusic();
+          if (location.pathname === "/" && getChurchMusicPlaylist().length) startChurchMusic();
         }
+      }
+
+      function getChurchMusicPlaylist() {
+        if (APP_STATE.musicPlaylist?.length) return APP_STATE.musicPlaylist;
+        return APP_STATE.music?.dataUrl ? [{ id: "saved-music", name: APP_STATE.music.name || "Música de la iglesia", audioUrl: APP_STATE.music.dataUrl }] : [];
       }
 
       function setupChurchMusic() {
@@ -4549,7 +4582,7 @@ const TYPES = {
         const toggle = document.getElementById("musicToggle");
         const widget = document.querySelector(".music-widget");
         if (!audio || !toggle || !widget) return;
-        const playlist = APP_STATE.musicPlaylist || [];
+        const playlist = getChurchMusicPlaylist();
         const hasMusic = playlist.length > 0;
         const item = playlist[APP_STATE.musicIndex] || playlist[0];
         if (hasMusic) {
@@ -4582,11 +4615,14 @@ const TYPES = {
         if (statusDot) statusDot.style.background = hasMusic && !audio.paused ? "#009FDA" : "#9aa8b2";
         toggle.textContent = hasMusic && !audio.paused ? "Ⅱ" : "▶";
         toggle.setAttribute("aria-label", hasMusic && !audio.paused ? "Pausar música" : "Reproducir música");
-        toggle.onclick = () => audio.paused ? startChurchMusic() : stopChurchMusic();
+        if (!toggle.dataset.musicBound) {
+          toggle.addEventListener("click", () => audio.paused ? startChurchMusic() : stopChurchMusic());
+          toggle.dataset.musicBound = "1";
+        }
         audio.onplay = () => setupChurchMusic();
         audio.onpause = () => setupChurchMusic();
         audio.onerror = () => {
-          const currentItem = (APP_STATE.musicPlaylist || [])[APP_STATE.musicIndex];
+          const currentItem = getChurchMusicPlaylist()[APP_STATE.musicIndex];
           const currentId = currentItem?.id ? String(currentItem.id) : "";
           const candidates = [
             currentItem?.audioUrl,
@@ -4607,7 +4643,7 @@ const TYPES = {
       }
 
       function changeChurchMusic(step, autoplay = false) {
-        const playlist = APP_STATE.musicPlaylist || [];
+        const playlist = getChurchMusicPlaylist();
         const audio = document.getElementById("churchMusicAudio");
         if (!playlist.length || !audio) return;
         const wasPlaying = autoplay || !audio.paused;
@@ -4618,7 +4654,7 @@ const TYPES = {
 
       function startChurchMusic() {
         const audio = document.getElementById("churchMusicAudio");
-        if (!audio || !(APP_STATE.musicPlaylist || []).length) return;
+        if (!audio || !getChurchMusicPlaylist().length) return;
         audio.play().then(setupChurchMusic).catch((error) => {
           const status = document.getElementById("musicStatus");
           if (status) status.textContent = error?.name === "NotAllowedError"
@@ -4901,12 +4937,20 @@ const TYPES = {
     }
 
     function installPlatformStyles() {
-      if (document.querySelector('link[data-platform-runtime]')) return;
-      const link = document.createElement("link");
-      link.rel = "stylesheet";
-      link.href = "/css/platform-runtime.css?v=20260909-stability-1";
-      link.dataset.platformRuntime = "true";
-      document.head.appendChild(link);
+      if (!document.querySelector('link[data-platform-runtime]')) {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = "/css/platform-runtime.css?v=20260909-stability-1";
+        link.dataset.platformRuntime = "true";
+        document.head.appendChild(link);
+      }
+      if (!document.querySelector('link[data-site-redesign]')) {
+        const redesign = document.createElement("link");
+        redesign.rel = "stylesheet";
+        redesign.href = "/css/site-redesign.css?v=20260912-redesign-4";
+        redesign.dataset.siteRedesign = "true";
+        document.head.appendChild(redesign);
+      }
       return;
       if (false) {
       /* Legacy inline styles kept below only as historical reference. */
@@ -5347,6 +5391,41 @@ const TYPES = {
         body.platform-body .site-video-backdrop span { background: linear-gradient(135deg, rgba(0, 51, 141, .20), rgba(0, 159, 218, .08) 48%, rgba(0, 25, 67, .24)); }
         @media (max-width: 620px) {
           html, body.platform-body { max-width: 100%; overflow-x: hidden !important; }
+          body.platform-body .nav-backdrop {
+            z-index: 110 !important;
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            padding: 0 !important;
+            border: 0 !important;
+            background: rgba(2, 7, 18, .34) !important;
+          }
+          body.platform-body .platform-top.is-compact { z-index: 120 !important; }
+          body.platform-body .nav-backdrop.is-visible { background: rgba(2, 7, 18, .34) !important; }
+          /* El header crea su propio contexto de apilado; al abrir el menú
+             debe quedar por encima de la capa que cierra la navegación. */
+          body.platform-body .platform-top:has(.platform-nav.open) { z-index: 120 !important; }
+          body.platform-body .platform-top.is-compact .platform-nav.open {
+            background: rgba(3, 14, 30, .97) !important;
+            border: 1px solid rgba(245, 189, 55, .28) !important;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, .48) !important;
+          }
+          body.platform-body .platform-top.is-compact .platform-nav.open a,
+          body.platform-body .platform-top.is-compact .platform-nav.open a.active,
+          body.platform-body .platform-top.is-compact .platform-nav.open a[aria-current="page"] {
+            background: rgba(255, 255, 255, .065) !important;
+            border-color: rgba(255, 255, 255, .13) !important;
+            color: #f7fbff !important;
+            box-shadow: none !important;
+          }
+          body.platform-body .platform-top.is-compact .platform-nav.open a.active,
+          body.platform-body .platform-top.is-compact .platform-nav.open a[aria-current="page"] {
+            border-color: rgba(245, 189, 55, .72) !important;
+            background: rgba(245, 189, 55, .12) !important;
+          }
+          body.platform-body .platform-top.is-compact .platform-nav.open a.active::after,
+          body.platform-body .platform-top.is-compact .platform-nav.open a[aria-current="page"]::after {
+            background: #f5bd37 !important;
+          }
           body.platform-body .platform-top.is-compact .platform-nav.open { position: fixed !important; top: 70px !important; right: 8px !important; left: 8px !important; width: auto !important; max-height: calc(100vh - 82px) !important; display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; overflow-y: auto; box-sizing: border-box; }
           body.platform-body .platform-top.is-compact .platform-nav.open a { min-width: 0; min-height: 44px; justify-content: center; padding: 0 7px; text-align: center; white-space: normal; }
           body.platform-body .calendar-page, body.platform-body .month-calendar-view, body.platform-body .decom-calendar-shell { width: 100% !important; min-width: 0 !important; max-width: 100% !important; overflow-x: hidden !important; box-sizing: border-box; }
