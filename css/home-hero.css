@@ -265,8 +265,8 @@ body.platform-body:has(.earth-hero) .route-view.is-route-entering > .earth-hero 
   top: 0;
   right: 0;
   left: 0;
-  /* The planet sits in front; the title remains fully readable above its rim. */
-  z-index: 9999;
+  /* La Tierra cubre naturalmente la parte inferior del título al cruzarse. */
+  z-index: 1;
   align-self: start;
   width: 100%;
   height: 100svh;
@@ -277,20 +277,21 @@ body.platform-body:has(.earth-hero) .route-view.is-route-entering > .earth-hero 
   opacity: 1 !important;
 }
 
+.earth-hero-stage.is-fallback .earth-hero-copy { z-index: 4; }
 .earth-hero-title { display: block; visibility: visible !important; margin: 0; height: 100%; }
-.earth-hero-curve { position: relative; z-index: 1; display: block; width: 100%; height: 56svh; overflow: visible; }
+.earth-hero-curve { position: relative; z-index: 1; display: block; width: 100%; height: 100svh; overflow: visible; }
 .earth-hero-curve-text { display: block; }
 .earth-hero-curve-text {
   opacity: 1;
   fill: #f7fbff;
   filter: drop-shadow(0 0 5px rgba(64, 157, 255, .9));
   font-family: "Segoe UI", Arial, sans-serif;
-  font-size: clamp(19px, 3.35vw, 46px);
+    font-size: clamp(36px, 6.5vw, 112px);
   font-weight: 800;
-  letter-spacing: 1.6px;
+  letter-spacing: 1px;
   paint-order: stroke;
   stroke: rgba(67, 155, 230, .28);
-  stroke-width: 1px;
+  stroke-width: .7px;
 }
 
 .earth-hero-curve-text textPath {
@@ -310,8 +311,8 @@ body.platform-body:has(.earth-hero) .route-view.is-route-entering > .earth-hero 
 }
 
 @keyframes earthTextReveal {
-  from { opacity: 0; letter-spacing: 9px; }
-  to { opacity: 1; letter-spacing: 1.6px; }
+  from { opacity: 0; letter-spacing: 7px; }
+  to { opacity: 1; letter-spacing: 1px; }
 }
 
 @media (max-width: 1024px) {
@@ -358,8 +359,9 @@ body.platform-body:has(.earth-hero) .route-view.is-route-entering > .earth-hero 
   body.platform-body:has(.earth-hero) .platform-nav { top: calc(100% + 8px); right: 8px; left: 8px; max-height: calc(100dvh - 84px); }
   .earth-hero-preview { object-position: 54% center; }
   .earth-hero-copy { width: 100%; margin: 0; }
-  .earth-hero-curve-text { font-size: clamp(17px, 4.5vw, 28px); letter-spacing: .8px; }
-  @keyframes earthTextReveal { from { opacity: 0; letter-spacing: 4px; } to { opacity: 1; letter-spacing: .8px; } }
+  .earth-hero-curve { height: 90svh; }
+  .earth-hero-curve-text { font-size: clamp(20px, 6.4vw, 42px); letter-spacing: .5px; }
+  @keyframes earthTextReveal { from { opacity: 0; letter-spacing: 4px; } to { opacity: 1; letter-spacing: .5px; } }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -2395,9 +2395,9 @@ const TYPES = {
               <div class="earth-hero-copy">
                 <h1 id="earthHeroTitle" class="earth-hero-title">
                   <span class="sr-only">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</span>
-                  <svg class="earth-hero-curve" viewBox="0 0 1000 240" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="IGLESIA PENTECOSTAL UNIDA DE COLOMBIA">
-                    <defs><path id="earthHeroCurvePath" d="M 62 190 Q 500 24 938 190"></path></defs>
-                    <text class="earth-hero-curve-text"><textPath xlink:href="#earthHeroCurvePath" startOffset="50%" text-anchor="middle" textLength="865" lengthAdjust="spacingAndGlyphs">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</textPath></text>
+                  <svg class="earth-hero-curve" viewBox="0 0 1000 520" preserveAspectRatio="xMidYMin meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="IGLESIA PENTECOSTAL UNIDA DE COLOMBIA">
+                    <defs><path id="earthHeroCurvePath" d="M -100 465 Q 500 170 1100 465"></path></defs>
+                    <text class="earth-hero-curve-text"><textPath xlink:href="#earthHeroCurvePath" startOffset="50%" text-anchor="middle" textLength="1180" lengthAdjust="spacingAndGlyphs">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</textPath></text>
                   </svg>
                 </h1>
               </div>
