@@ -2390,18 +2390,18 @@ const TYPES = {
       function renderHomePage() {
         view().innerHTML = `
           <section class="earth-hero" data-earth-hero aria-labelledby="earthHeroTitle">
-            <div class="earth-hero-stage" data-earth-stage aria-hidden="true">
-              <img class="earth-hero-preview" data-earth-preview src="/assets/earth/Tierra_Hero_preview.png" alt="Tierra con Colombia resaltada en dorado" decoding="async" fetchpriority="high">
-              <canvas class="earth-hero-canvas" data-earth-canvas></canvas>
-            </div>
-            <div class="earth-hero-copy">
-              <h1 id="earthHeroTitle" class="earth-hero-title">
-                <span class="sr-only">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</span>
-                <svg class="earth-hero-curve" viewBox="0 0 1000 240" role="img" aria-label="IGLESIA PENTECOSTAL UNIDA DE COLOMBIA">
-                  <defs><path id="earthHeroCurvePath" d="M 62 190 Q 500 24 938 190"></path></defs>
-                  <text class="earth-hero-curve-text"><textPath href="#earthHeroCurvePath" startOffset="50%" text-anchor="middle" textLength="865" lengthAdjust="spacingAndGlyphs">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</textPath></text>
-                </svg>
-              </h1>
+            <div class="earth-hero-stage" data-earth-stage>
+              <img class="earth-hero-preview" data-earth-preview src="/assets/earth/Tierra_Hero_preview.png" alt="" aria-hidden="true" decoding="async" fetchpriority="high">
+              <canvas class="earth-hero-canvas" data-earth-canvas aria-hidden="true"></canvas>
+              <div class="earth-hero-copy">
+                <h1 id="earthHeroTitle" class="earth-hero-title">
+                  <span class="sr-only">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</span>
+                  <svg class="earth-hero-curve" viewBox="0 0 1000 240" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-label="IGLESIA PENTECOSTAL UNIDA DE COLOMBIA">
+                    <defs><path id="earthHeroCurvePath" d="M 62 190 Q 500 24 938 190"></path></defs>
+                    <text class="earth-hero-curve-text"><textPath xlink:href="#earthHeroCurvePath" startOffset="50%" text-anchor="middle" textLength="865" lengthAdjust="spacingAndGlyphs">IGLESIA PENTECOSTAL UNIDA DE COLOMBIA</textPath></text>
+                  </svg>
+                </h1>
+              </div>
             </div>
           </section>
         `;
@@ -4942,14 +4942,11 @@ const TYPES = {
         link.rel = "stylesheet";
         link.href = "/css/platform-runtime.css?v=20260909-stability-1";
         link.dataset.platformRuntime = "true";
-        document.head.appendChild(link);
-      }
-      if (!document.querySelector('link[data-site-redesign]')) {
-        const redesign = document.createElement("link");
-        redesign.rel = "stylesheet";
-        redesign.href = "/css/site-redesign.css?v=20260912-redesign-4";
-        redesign.dataset.siteRedesign = "true";
-        document.head.appendChild(redesign);
+        // Cargar la capa estructural antes del tema público para que el
+        // diseño oscuro global sea la última capa visual aplicable.
+        const modernStyles = document.querySelector('link[href*="/css/modern.css"]');
+        if (modernStyles) document.head.insertBefore(link, modernStyles);
+        else document.head.appendChild(link);
       }
       return;
       if (false) {
