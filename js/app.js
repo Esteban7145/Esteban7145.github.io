@@ -1611,6 +1611,12 @@ const TYPES = {
         ["pointerdown", "keydown", "touchstart"].forEach(type => document.removeEventListener(type, resumeMusicAfterInteraction));
       };
       ["pointerdown", "keydown", "touchstart"].forEach(type => document.addEventListener(type, resumeMusicAfterInteraction, { passive: true }));
+      const WORSHIP_SCHEDULE = [
+        { day: 2, label: "Martes", time: "7:00 p. m.", title: "Reunión congregacional", note: "Un espacio para encontrarnos como familia IPUC." },
+        { day: 4, label: "Jueves", time: "7:00 p. m.", title: "Reunión congregacional", note: "Un espacio para encontrarnos como familia IPUC." },
+        { day: 6, label: "Sábados", time: "7:00 p. m.", title: "Reunión congregacional", note: "Un espacio para encontrarnos como familia IPUC." },
+        { day: 0, label: "Domingos", time: "10:00 a. m.", title: "Reunión congregacional", note: "Un espacio para encontrarnos como familia IPUC." }
+      ];
       if (location.hash) history.replaceState({}, "", location.hash.replace(/^#\/?/, "/") || "/");
       renderRoute();
       initializeCloud();
@@ -2319,13 +2325,6 @@ const TYPES = {
           return `<span class="hero-letter" style="--letter-tilt:${tilt}deg" aria-hidden="true">${escapeHtml(character)}</span>`;
         }).join("");
       }
-
-      const WORSHIP_SCHEDULE = [
-        { day: 2, label: "Martes", time: "7:00 p. m.", title: "Reunión congregacional", note: "Un espacio para encontrarnos como familia IPUC." },
-        { day: 4, label: "Jueves", time: "7:00 p. m.", title: "Reunión congregacional", note: "Un espacio para encontrarnos como familia IPUC." },
-        { day: 6, label: "Sábados", time: "7:00 p. m.", title: "Reunión congregacional", note: "Un espacio para encontrarnos como familia IPUC." },
-        { day: 0, label: "Domingos", time: "10:00 a. m.", title: "Reunión congregacional", note: "Un espacio para encontrarnos como familia IPUC." }
-      ];
 
       function worshipScheduleMarkup() {
         const selected = WORSHIP_SCHEDULE.find(item => item.day === today.getDay()) || WORSHIP_SCHEDULE[0];
