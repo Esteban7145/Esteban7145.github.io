@@ -1407,6 +1407,22 @@ const TYPES = {
         { text: "La oracion abre caminos cuando el pueblo se reune con fe y perseverancia.", ref: "Hechos 4:31", style: "noche" },
         { text: "Dios fortalece al que espera en El y renueva su animo para servir.", ref: "Isaias 40:31", style: "naturaleza" }
       ];
+      const DAILY_VERSES = [
+        { text: "Lámpara es á mis pies tu palabra, y lumbrera á mi camino.", ref: "Salmo 119:105" },
+        { text: "Jehová es mi pastor; nada me faltará.", ref: "Salmo 23:1" },
+        { text: "La paz os dejo, mi paz os doy: no como el mundo la da, yo os la doy.", ref: "Juan 14:27" },
+        { text: "Todo lo puedo en Cristo que me fortalece.", ref: "Filipenses 4:13" },
+        { text: "Dios es nuestro amparo y fortaleza, nuestro pronto auxilio en las tribulaciones.", ref: "Salmo 46:1" },
+        { text: "Fíate de Jehová de todo tu corazón, y no estribes en tu prudencia.", ref: "Proverbios 3:5" },
+        { text: "Echando toda vuestra solicitud en él, porque él tiene cuidado de vosotros.", ref: "1 Pedro 5:7" },
+        { text: "Venid á mí todos los que estáis trabajados y cargados, que yo os haré descansar.", ref: "Mateo 11:28" },
+        { text: "Esforzaos y cobrad ánimo; no temáis, ni tengáis miedo de ellos: que Jehová tu Dios es el que va contigo.", ref: "Deuteronomio 31:6" },
+        { text: "Encomienda á Jehová tu camino, y espera en él; y él hará.", ref: "Salmo 37:5" },
+        { text: "Mas buscad primeramente el reino de Dios y su justicia, y todas estas cosas os serán añadidas.", ref: "Mateo 6:33" },
+        { text: "Y todo lo que hacéis, hacedlo de ánimo, como al Señor, y no á los hombres.", ref: "Colosenses 3:23" },
+        { text: "No temas, que yo soy contigo; no desmayes, que yo soy tu Dios que te esfuerzo.", ref: "Isaías 41:10" },
+        { text: "Porque donde están dos ó tres congregados en mi nombre, allí estoy en medio de ellos.", ref: "Mateo 18:20" }
+      ];
       const DECOM_YEAR = 2026;
       const DECOM_MONTHS = months.map((_, index) => index);
       const DECOM_STATUSES = ["Pendiente", "Confirmado", "Cubierto", "Sin asignar", "Cambio solicitado"];
@@ -1483,7 +1499,10 @@ const TYPES = {
         resourcesError: "",
         selectedAdminEvent: "__new__",
         selectedPodcast: null,
-        adminSection: "eventos"
+        adminSection: "eventos",
+        members: [],
+        memberAttendance: [],
+        memberCard: null
       };
 
       installPlatformStyles();
@@ -1520,6 +1539,7 @@ const TYPES = {
             <a href="/anuncios" data-route-link="anuncios">Anuncios</a>
             <a href="/podcast" data-route-link="podcast">Historias que Edifican</a>
             <a href="/recursos" data-route-link="recursos">Recursos</a>
+            <a href="/membresia" data-route-link="membresia">Membresía</a>
             <a href="/ubicacion" data-route-link="ubicacion">Ubicación</a>
             <a href="/admin/login" data-login-link>Admin</a>
           </nav>
@@ -1599,7 +1619,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260913-release-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260923-members-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -1626,7 +1646,7 @@ const TYPES = {
         refreshAdminNav();
         setNavOpen(false);
         const route = parseRoute();
-        const routeTitles = { inicio: "Inicio", calendario: "Calendario", anuncios: "Anuncios", podcast: "Historias que Edifican", recursos: "Recursos", ubicacion: "Ubicación", admin: "Administración", login: "Iniciar sesión", eventos: "Eventos", archivo: "Archivo" };
+        const routeTitles = { inicio: "Inicio", calendario: "Cronograma", anuncios: "Anuncios", podcast: "Historias que Edifican", recursos: "Recursos", membresia: "Membresía", ubicacion: "Ubicación", admin: "Administración", login: "Iniciar sesión", eventos: "Eventos", archivo: "Archivo" };
         document.title = `${routeTitles[route.name] || "IPUC Villa del Río"} | IPUC Villa del Río`;
         trackLiveVisitorPage();
         updateActiveNavigation(route.name);
@@ -1639,6 +1659,7 @@ const TYPES = {
         else if (route.name === "archivo") renderPage = renderArchivePage;
         else if (route.name === "recursos") renderPage = renderResourcesPage;
         else if (route.name === "ubicacion") renderPage = renderLocationPage;
+        else if (route.name === "membresia") renderPage = renderMembershipPage;
         else if (route.name === "evento") renderPage = () => renderEventDetail(route.id);
         if (route.name === "admin") {
           if (isAdmin()) renderPage = renderAdminPage;
@@ -1974,6 +1995,55 @@ const TYPES = {
       function renderLocationPage() {
         view().innerHTML = `<section class="page-head glass"><div><p class="eyebrow">Encuéntranos</p><h1>IPUC Villa del Río</h1><p>Consulta la ubicación de la congregación y planea tu llegada.</p></div></section><section class="location-card glass"><div class="location-info"><p class="eyebrow">Ubicación</p><h2>Estamos aquí para recibirte</h2><p>Villa del Río · Colombia</p><div class="location-actions"><a class="map-button primary" href="https://www.google.com/maps/dir/?api=1&destination=5.065963,-75.491681" target="_blank" rel="noopener">Cómo llegar</a><a class="map-button" href="https://www.google.com/maps?q=5.065963,-75.491681" target="_blank" rel="noopener">Abrir mapa</a></div></div><iframe class="map-frame" title="Mapa de IPUC Villa del Río" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=5.065963,-75.491681&z=17&output=embed"></iframe></section>${worshipScheduleMarkup()}`;
         bindWorshipSchedule();
+      }
+
+      function renderMembershipPage() {
+        const card = platform.memberCard;
+        view().innerHTML = `<section class="page-head"><div><p class="eyebrow">Familia IPUC</p><h1>Registro de membresía</h1><p>Actualiza tus datos para ayudarnos a cuidar mejor la comunidad y llevar el registro de asistencia.</p></div></section>
+          ${card ? `<section class="membership-success"><p class="eyebrow">Registro recibido</p><h2>Gracias, ${escapeHtml(card.fullName)}</h2><p>Tu solicitud quedó pendiente de validación por la iglesia.</p><article class="member-card" aria-label="Credencial provisional de membresía"><img class="member-card-brand" src="/assets/ipuc-villa-del-rio-brand.png" alt="IPUC Villa del Río">${card.photoUrl ? `<img class="member-card-photo" src="${escapeHtml(card.photoUrl)}" alt="Foto de ${escapeHtml(card.fullName)}">` : `<span class="member-card-initials" aria-hidden="true">${escapeHtml(card.fullName.slice(0, 1).toUpperCase())}</span>`}<div><small>MEMBRESÍA · DISTRITO 4</small><strong>${escapeHtml(card.fullName)}</strong><span>${escapeHtml(card.memberNumber)}</span>${card.churchRole ? `<span>${escapeHtml(card.churchRole)}</span>` : ""}<em>Solicitud pendiente de aprobación</em></div></article><button class="small-action" type="button" data-print-member>Imprimir credencial</button></section>` : `<form class="membership-form" id="membershipForm" novalidate><div class="membership-form-heading"><span>01</span><div><h2>Tus datos</h2><p>La información de este registro solo la consultará el equipo administrativo autorizado.</p></div></div><div class="membership-fields"><label>Nombre completo<input name="fullName" autocomplete="name" required maxlength="140"></label><label>Dirección de residencia<input name="address" autocomplete="street-address" required maxlength="240"></label><label>Correo electrónico<input name="email" type="email" autocomplete="email" required maxlength="254"></label><label>Teléfono<input name="phone" type="tel" autocomplete="tel" required maxlength="32"></label><label class="member-photo-field">Foto para la credencial · opcional<input name="photo" type="file" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG o WebP · máximo 3 MB. No es necesaria para registrarte.</small><img data-member-photo-preview alt="Vista previa de tu foto" hidden></label><label class="member-role-toggle"><input name="hasChurchRole" type="checkbox" data-member-role-toggle> ¿Tienes un cargo en la iglesia?</label><label class="member-role-field" data-member-role-field hidden>¿Cuál es tu cargo?<input name="churchRole" maxlength="120" placeholder="Ej. Presidente DECOM" disabled></label></div><label class="member-consent"><input name="sensitiveDataConsent" type="checkbox" required><span>Autorizo de forma previa, expresa e informada a IPUC Villa del Río a tratar mis datos identificativos y el hecho de mi vinculación como miembro (dato que puede revelar mi afiliación religiosa) para gestionar esta solicitud y mi membresía. Esta autorización no es necesaria para asistir a los cultos. Podré conocer, actualizar, rectificar o solicitar la supresión de mis datos o revocar esta autorización escribiendo a <a href="mailto:decomvilladelrio@gmail.com">decomvilladelrio@gmail.com</a>. El registro será consultable solo por personal administrativo autorizado.</span></label><label class="member-consent"><input name="photoConsent" type="checkbox"><span>Opcional: autorizo expresamente el uso y almacenamiento privado de mi fotografía de rostro para elaborar mi credencial. La fotografía es un dato sensible y no es necesaria para registrar mi membresía.</span></label><label class="member-consent"><input name="attendanceConsent" type="checkbox"><span>Opcional: autorizo registrar mi asistencia a eventos de la iglesia para control interno. Puedo registrarme sin activar esta función.</span></label><p class="member-form-status" data-member-status role="status" aria-live="polite"></p><button class="primary-link" type="submit">Enviar registro</button></form>`}`;
+        const form = document.getElementById("membershipForm");
+        if (form) {
+          const roleToggle = form.elements.namedItem("hasChurchRole");
+          const roleField = form.querySelector("[data-member-role-field]");
+          roleToggle.addEventListener("change", () => { roleField.hidden = !roleToggle.checked; roleField.querySelector("input").disabled = !roleToggle.checked; roleField.querySelector("input").required = roleToggle.checked; });
+          const photoInput = form.elements.namedItem("photo");
+          const preview = form.querySelector("[data-member-photo-preview]");
+          photoInput.addEventListener("change", () => { const file = photoInput.files?.[0]; if (preview.dataset.url) URL.revokeObjectURL(preview.dataset.url); preview.hidden = !file; if (file) { preview.dataset.url = URL.createObjectURL(file); preview.src = preview.dataset.url; } });
+          form.addEventListener("submit", async event => {
+            event.preventDefault();
+            const status = form.querySelector("[data-member-status]");
+            if (!form.reportValidity()) return;
+            const submit = form.querySelector("button[type=submit]"); submit.disabled = true; status.textContent = "Enviando de forma segura…";
+            const data = new FormData(form);
+            const selectedPhoto = photoInput.files?.[0];
+            const photoConsent = form.elements.namedItem("photoConsent").checked;
+            if (selectedPhoto && !photoConsent) { status.textContent = "La foto es opcional; para incluirla, marca su autorización expresa."; submit.disabled = false; return; }
+            if (selectedPhoto && selectedPhoto.size > 3 * 1024 * 1024) {
+              try {
+                const bitmap = await createImageBitmap(selectedPhoto);
+                const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
+                const canvas = document.createElement("canvas"); canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
+                canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close();
+                const resized = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", .82));
+                if (!resized || resized.size > 3 * 1024 * 1024) throw new Error("La imagen aún supera 3 MB después de optimizarla.");
+                data.set("photo", resized, "credencial.jpg");
+              } catch (error) { status.textContent = error.message || "No se pudo optimizar la foto. Elige una imagen más pequeña."; submit.disabled = false; return; }
+            }
+            data.set("consent", String(form.elements.namedItem("sensitiveDataConsent").checked));
+            data.set("sensitiveDataConsent", String(form.elements.namedItem("sensitiveDataConsent").checked));
+            data.set("photoConsent", String(photoConsent));
+            data.set("attendanceConsent", String(form.elements.namedItem("attendanceConsent").checked));
+            data.set("hasChurchRole", String(roleToggle.checked)); data.set("consentVersion", "2026-09-v1");
+            try {
+              const response = await fetch(`${SUPABASE_CONFIG.url}/functions/v1/member-registration`, { method: "POST", headers: { apikey: SUPABASE_CONFIG.publishableKey }, body: data });
+              const result = await response.json(); if (!response.ok || !result.ok) throw new Error(result.error || "No se pudo completar el registro.");
+              const photo = photoInput.files?.[0]; platform.memberCard = { fullName: String(data.get("fullName")).trim(), memberNumber: result.memberNumber, churchRole: roleToggle.checked ? String(data.get("churchRole")).trim() : "", photoUrl: photo?.size ? URL.createObjectURL(photo) : "" };
+              renderMembershipPage();
+            } catch (error) { status.textContent = error.message || "No se pudo enviar el formulario. Inténtalo de nuevo."; submit.disabled = false; }
+          });
+        }
+        const print = view().querySelector("[data-print-member]");
+        if (print) print.onclick = () => window.print();
       }
 
       function parseRoute() {
@@ -2386,6 +2456,11 @@ const TYPES = {
         });
       }
 
+      function dailyVerseForDate(date = today) {
+        const day = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000);
+        return DAILY_VERSES[(day - 1) % DAILY_VERSES.length];
+      }
+
       function renderHomePage() {
         view().innerHTML = `
           <section class="earth-hero" data-earth-hero aria-labelledby="earthHeroTitle">
@@ -2402,6 +2477,12 @@ const TYPES = {
                 </h1>
               </div>
             </div>
+          </section>
+          <section class="home-verse" aria-labelledby="homeVerseTitle">
+            <div class="home-verse-rule" aria-hidden="true"></div>
+            <p class="home-verse-label" id="homeVerseTitle">Palabra para hoy · Reina-Valera 1909</p>
+            <blockquote>“${escapeHtml(dailyVerseForDate().text)}”</blockquote>
+            <cite>${escapeHtml(dailyVerseForDate().ref)}</cite>
           </section>
         `;
       }
@@ -2846,7 +2927,7 @@ const TYPES = {
         const selected = platform.selectedAdminEvent === "__new__" ? null : platformEventById(platform.selectedAdminEvent);
         const adminEvents = platformEventsForYear(today.getFullYear());
         const pendingEvents = adminEvents.filter(event => parseDate(event.date) >= today && platformStatus(event) !== "Realizado" && platformStatus(event) !== "Cancelado").sort(sortByDate);
-        const allowedAdminSections = new Set(["eventos", "material", "podcast", "anuncios", "reflexiones", "solicitudes", "lideres", "decom"]);
+        const allowedAdminSections = new Set(["eventos", "material", "podcast", "anuncios", "reflexiones", "solicitudes", "lideres", "decom", "membresia"]);
         const activeAdminSection = allowedAdminSections.has(platform.adminSection) ? platform.adminSection : "eventos";
         const moduleVisibility = name => activeAdminSection === name ? "" : "hidden";
         const upcoming = adminEvents.filter(event => parseDate(event.date) >= today).sort((a, b) => parseDate(a.date) - parseDate(b.date))[0];
@@ -2861,7 +2942,7 @@ const TYPES = {
             <article><strong>${APP_STATE.announcements?.length || 0}</strong><span>Anuncios publicados</span></article>
           </section>
           <nav class="admin-tabs glass" aria-label="Módulos de administración">
-            ${[["eventos", "Eventos", "Crear o editar"], ["material", "Material", "Subir archivos"], ["podcast", "Historias que Edifican", "Testimonios y predicas"], ["anuncios", "Anuncios", "Publicar aviso"], ["reflexiones", "Reflexiones", "Mensaje diario"], ["solicitudes", "Solicitudes", "Mensajes de líderes"], ["lideres", "Líderes", "Correos autorizados"], ["decom", "DECOM", "Turnos internos"]].map(([key, label, hint]) => `<button type="button" class="admin-tab ${activeAdminSection === key ? "active" : ""}" data-admin-section="${key}"><strong>${label}</strong><span>${hint}</span></button>`).join("")}
+            ${[["eventos", "Eventos", "Crear o editar"], ["material", "Material", "Subir archivos"], ["podcast", "Historias que Edifican", "Testimonios y predicas"], ["anuncios", "Anuncios", "Publicar aviso"], ["reflexiones", "Reflexiones", "Mensaje diario"], ["membresia", "Membresía", "Personas y asistencia"], ["solicitudes", "Solicitudes", "Mensajes de líderes"], ["lideres", "Líderes", "Correos autorizados"], ["decom", "DECOM", "Turnos internos"]].map(([key, label, hint]) => `<button type="button" class="admin-tab ${activeAdminSection === key ? "active" : ""}" data-admin-section="${key}"><strong>${label}</strong><span>${hint}</span></button>`).join("")}
           </nav>
           <section class="admin-layout admin-workspace">
             <section class="admin-module" data-admin-module="eventos" ${moduleVisibility("eventos")}>
@@ -2924,6 +3005,7 @@ const TYPES = {
             </section>
             ${renderLeaderSubmissionsModule()}
             ${renderLeaderProfilesModule()}
+            ${renderMembershipAdminModule()}
           </section>
         `;
         bindAdmin();
@@ -3613,7 +3695,52 @@ const TYPES = {
           button.onclick = () => {
             platform.adminSection = button.dataset.adminSection;
             renderAdminPage();
+            if (platform.adminSection === "membresia") loadMembershipAdmin();
           };
+        });
+        view().querySelectorAll("[data-member-save-status]").forEach(button => {
+          button.onclick = runAdminAction(async () => {
+            const row = button.closest("[data-member-id]");
+            const { error } = await cloud.db.from("church_members").update({ status: row.querySelector("[data-member-status]").value, updated_at: new Date().toISOString() }).eq("id", row.dataset.memberId);
+            if (error) throw error;
+            await loadMembershipAdmin();
+          });
+        });
+        view().querySelectorAll("[data-member-attendance]").forEach(button => {
+          button.onclick = runAdminAction(async () => {
+            const eventId = view().querySelector("[data-member-event]")?.value;
+            if (!eventId) throw new Error("Selecciona primero el evento para registrar la asistencia.");
+            const event = APP_STATE.events[eventId];
+            if (!event) throw new Error("El evento seleccionado ya no está disponible.");
+            const { error } = await cloud.db.from("member_attendance").upsert({ member_id: button.closest("[data-member-id]").dataset.memberId, event_id: eventId, event_title: event.title, recorded_by: cloud.user?.id || null }, { onConflict: "member_id,event_id" });
+            if (error) throw error;
+            await loadMembershipAdmin();
+          });
+        });
+        view().querySelectorAll("[data-member-photo]").forEach(button => {
+          button.onclick = runAdminAction(async () => {
+            const { data, error } = await cloud.storage.from("membership-photos").createSignedUrl(button.dataset.memberPhoto, 600);
+            if (error) throw error;
+            const dialog = document.createElement("dialog");
+            dialog.className = "member-photo-dialog";
+            dialog.innerHTML = `<form method="dialog"><button class="small-action" aria-label="Cerrar">Cerrar</button></form><img alt="Fotografía privada de miembro">`;
+            dialog.querySelector("img").src = data.signedUrl;
+            dialog.addEventListener("close", () => dialog.remove(), { once: true });
+            document.body.append(dialog); dialog.showModal();
+          });
+        });
+        view().querySelectorAll("[data-member-delete]").forEach(button => {
+          button.onclick = runAdminAction(async () => {
+            const member = platform.members.find(item => item.id === button.closest("[data-member-id]").dataset.memberId);
+            if (!member || !window.confirm(`¿Eliminar el registro y las asistencias de ${member.full_name}? Esta acción no se puede deshacer.`)) return;
+            const { error } = await cloud.db.from("church_members").delete().eq("id", member.id);
+            if (error) throw error;
+            if (member.photo_path) {
+              const removed = await cloud.storage.from("membership-photos").remove([member.photo_path]);
+              if (removed.error) console.warn("No se pudo retirar la foto privada del registro eliminado.", removed.error);
+            }
+            await loadMembershipAdmin();
+          });
         });
         document.getElementById("adminSelect").onchange = event => {
           platform.selectedAdminEvent = event.target.value;
@@ -4057,21 +4184,23 @@ const TYPES = {
         const selected = (APP_STATE.podcasts || []).find(item => item.id === platform.selectedPodcast) || null;
         const id = selected?.id || `podcast-${Date.now()}-${slugify(title)}`;
         let media = selected?.media || null;
+        let previousMedia = null;
         if (mediaType === "youtube") {
           if (!youtube || !youtubeEmbedUrl(youtube)) return alert("Pega un enlace válido de YouTube.");
-          if (selected?.media) await deleteCloudAsset(selected.media);
+          previousMedia = selected?.media || null;
           media = { type: "youtube", url: youtube };
         } else if (mediaFile) {
           if (!isAudio(mediaFile) && !isVideo(mediaFile)) return alert("El episodio debe ser un archivo de audio o video.");
-          if (selected?.media) await deleteCloudAsset(selected.media);
+          previousMedia = selected?.media || null;
           media = await uploadCloudFile(mediaFile, id, "podcasts", "Episodio de Historias que Edifican");
         } else if (!media) {
           return alert("Agrega un enlace de YouTube o un audio/video del episodio.");
         }
         let cover = selected?.cover || null;
+        let previousCover = null;
         if (coverFile) {
           if (!isImage(coverFile)) return alert("La portada debe ser una imagen.");
-          if (cover) await deleteCloudAsset(cover);
+          previousCover = cover || null;
           cover = await uploadCloudFile(coverFile, id, "podcast-cover", "Portada de Historias que Edifican");
         }
         await saveCloudDoc("podcasts", id, {
@@ -4086,6 +4215,8 @@ const TYPES = {
           createdBy: cloud.user.id,
           createdAt: selected?.createdAt || new Date().toISOString()
         });
+        if (previousMedia && previousMedia !== media) await deleteCloudAsset(previousMedia);
+        if (previousCover && previousCover !== cover) await deleteCloudAsset(previousCover);
         ["podcastMediaFile", "podcastCoverFile"].forEach(clearPendingUpload);
         platform.selectedPodcast = id;
         completeUploadProgress("Episodio guardado correctamente.");
@@ -4438,6 +4569,37 @@ const TYPES = {
         });
       }
 
+      async function loadMembershipAdmin() {
+        if (!isAdmin() || !cloud.db) return;
+        try {
+          const [members, attendance] = await Promise.all([
+            cloud.db.from("church_members").select("*").order("created_at", { ascending: false }),
+            cloud.db.from("member_attendance").select("*").order("attended_at", { ascending: false })
+          ]);
+          if (members.error) throw members.error;
+          if (attendance.error) throw attendance.error;
+          platform.members = members.data || [];
+          platform.memberAttendance = attendance.data || [];
+          if (parseRoute().name === "admin" && platform.adminSection === "membresia") renderAdminPage();
+        } catch (error) {
+          cloud.storageError = `No se pudo cargar el registro privado: ${error.message}`;
+          if (parseRoute().name === "admin") renderAdminPage();
+        }
+      }
+
+      function renderMembershipAdminModule() {
+        const members = platform.members || [];
+        const counts = { pendiente: 0, activo: 0, inactivo: 0 };
+        members.forEach(member => { counts[member.status] = (counts[member.status] || 0) + 1; });
+        const events = platformEventsForYear(today.getFullYear()).sort((a, b) => parseDate(a.date) - parseDate(b.date));
+        return `<section class="admin-module" data-admin-module="membresia" ${platform.adminSection === "membresia" ? "" : "hidden"}>
+          <article class="content-card admin-card-wide member-admin-module"><div class="section-title"><p class="eyebrow">Datos privados · acceso administrativo</p><h2>Membresía y asistencia</h2><p>Revisa solicitudes, aprueba miembros y registra asistencia por evento. Las fotos se consultan mediante enlaces temporales privados.</p></div>
+          <div class="member-admin-stats"><span><strong>${members.length}</strong>Total</span><span><strong>${counts.pendiente}</strong>Pendientes</span><span><strong>${counts.activo}</strong>Activos</span><span><strong>${counts.inactivo}</strong>Inactivos</span></div>
+          <label class="member-event-select">Evento para registrar asistencia<select data-member-event><option value="">Selecciona un evento</option>${events.map(event => `<option value="${escapeHtml(event.id)}">${escapeHtml(formatDateShort(event.date))} · ${escapeHtml(event.title)}</option>`).join("")}</select></label>
+          <div class="member-admin-list">${members.map(member => { const attendanceCount = (platform.memberAttendance || []).filter(row => row.member_id === member.id).length; return `<article class="member-admin-row" data-member-id="${escapeHtml(member.id)}"><div class="member-admin-identity"><span class="member-avatar">${escapeHtml(String(member.full_name || "?").slice(0, 1).toUpperCase())}</span><div><strong>${escapeHtml(member.full_name)}</strong><small>${escapeHtml(member.member_number)} · ${escapeHtml(member.email)}</small><small>${escapeHtml(member.phone)} · ${escapeHtml(member.address)}</small>${member.has_church_role ? `<small>Cargo: ${escapeHtml(member.church_role)}</small>` : ""}<small>Asistencias: ${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</small></div></div><div class="member-admin-actions"><span class="member-status-chip status-${escapeHtml(member.status)}">${escapeHtml(member.status)}</span>${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>` : ""}<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div></article>`; }).join("") || `<p class="member-empty">Aún no hay solicitudes de membresía.</p>`}</div></article>
+        </section>`;
+      }
+
       function isEvangelismoEvent(event) {
         if (!isCultoEvent(event)) return false;
         const values = [event?.title, event?.department, event?.organizer, event?.committee, ...(Array.isArray(event?.tags) ? event.tags : [])];
@@ -4763,6 +4925,36 @@ const TYPES = {
         if (folderKey === "event" && event) form.append("eventFolder", `${event.date || "evento"} - ${event.title || eventId}`);
         setUploadProgressState({ active: true, label: `Subiendo ${file.name}`, detail: `${label} · Google Drive · ${humanFileSize(file.size)}`, percent: 0, tone: "loading" });
         try {
+          if (file.size > 4 * 1024 * 1024 && (isVideo(file) || isAudio(file))) {
+            const startForm = new FormData();
+            startForm.append("action", "start-resumable");
+            startForm.append("fileName", file.name);
+            startForm.append("mimeType", file.type || "application/octet-stream");
+            startForm.append("size", String(file.size));
+            startForm.append("folderKey", folderKey);
+            if (folderKey === "event" && event) startForm.append("eventFolder", `${event.date || "evento"} - ${event.title || eventId}`);
+            const started = await cloud.app.functions.invoke(SUPABASE_CONFIG.driveFunction, { body: startForm });
+            if (started.error || started.data?.error || !started.data?.sessionUrl) throw new Error(started.data?.error || started.error?.message || "Drive no inició la carga del video.");
+            const chunkSize = 4 * 1024 * 1024;
+            let uploadedBytes = 0;
+            while (uploadedBytes < file.size) {
+              const end = Math.min(uploadedBytes + chunkSize, file.size);
+              const chunkForm = new FormData();
+              chunkForm.append("action", "upload-chunk");
+              chunkForm.append("sessionUrl", started.data.sessionUrl);
+              chunkForm.append("start", String(uploadedBytes));
+              chunkForm.append("total", String(file.size));
+              chunkForm.append("chunk", file.slice(uploadedBytes, end, file.type || "application/octet-stream"), file.name);
+              const result = await cloud.app.functions.invoke(SUPABASE_CONFIG.driveFunction, { body: chunkForm });
+              if (result.error || result.data?.error) throw new Error(result.data?.error || result.error?.message || "Drive rechazó un bloque del video.");
+              if (result.data?.complete) return { ...result.data.asset, label, name: result.data.asset?.name || file.name, type: result.data.asset?.type || file.type, size: result.data.asset?.size || file.size };
+              const acknowledgedBytes = Number(result.data?.received);
+              if (!Number.isSafeInteger(acknowledgedBytes) || acknowledgedBytes <= uploadedBytes || acknowledgedBytes > end) throw new Error("Drive no confirmó completamente el bloque enviado. La carga se detuvo para evitar un video incompleto.");
+              uploadedBytes = acknowledgedBytes;
+              setUploadProgressState({ active: true, label: `Subiendo ${file.name}`, detail: `${label} · Google Drive · ${humanFileSize(uploadedBytes)} de ${humanFileSize(file.size)}`, percent: (uploadedBytes / file.size) * 100, tone: "loading" });
+            }
+            throw new Error("Drive recibió el video pero no confirmó el archivo terminado. Inténtalo nuevamente.");
+          }
           const { data, error } = await cloud.app.functions.invoke(SUPABASE_CONFIG.driveFunction, { body: form });
           if (error || data?.error) throw new Error(data?.error || error?.message || "No se pudo subir el archivo a Google Drive.");
           setUploadProgressState({ label: "Archivo cargado", detail: `${label} · guardando el enlace`, percent: 100, tone: "loading" });

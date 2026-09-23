@@ -146,6 +146,74 @@ async function uploadToDrive(token: string, file: File, parentId: string, name: 
   };
 }
 
+async function startResumableDriveUpload(token: string, fileName: string, mimeType: string, size: number, parentId: string) {
+  const metadata = { name: fileName, parents: [parentId], mimeType: mimeType || "application/octet-stream" };
+  const params = new URLSearchParams({ uploadType: "resumable", fields: "id,name,mimeType,size,webViewLink,webContentLink" });
+  const result = await fetch(`https://www.googleapis.com/upload/drive/v3/files?${params}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json; charset=UTF-8",
+      "X-Upload-Content-Type": metadata.mimeType,
+      "X-Upload-Content-Length": String(size),
+    },
+    body: JSON.stringify(metadata),
+  });
+  if (!result.ok) {
+    const body = await result.json().catch(() => ({}));
+    throw new Error(body?.error?.message || "Google Drive no pudo iniciar la carga del video.");
+  }
+  const sessionUrl = result.headers.get("Location");
+  if (!sessionUrl) throw new Error("Google Drive no entregó la sesión de carga. Inténtalo de nuevo.");
+  return sessionUrl;
+}
+
+async function sendResumableDriveChunk(sessionUrl: string, chunk: Blob, start: number, total: number) {
+  const target = new URL(sessionUrl);
+  if (target.protocol !== "https:" || target.hostname !== "www.googleapis.com" || !target.pathname.startsWith("/upload/drive/v3/files")) {
+    throw new Error("La sesión de carga de Google Drive no es válida.");
+  }
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(total) || start < 0 || total < 1 || start + chunk.size > total || chunk.size > 4 * 1024 * 1024) {
+    throw new Error("El bloque de video no es válido.");
+  }
+  const end = start + chunk.size - 1;
+  const result = await fetch(target, {
+    method: "PUT",
+    headers: { "Content-Type": "application/octet-stream", "Content-Range": `bytes ${start}-${end}/${total}` },
+    body: chunk,
+  });
+  if (result.status === 308) {
+    const range = result.headers.get("Range") || "";
+    const received = Number(range.match(/-(\d+)$/)?.[1] || -1) + 1;
+    return { complete: false, received };
+  }
+  const uploaded = await result.json().catch(() => ({}));
+  if (!result.ok) throw new Error(uploaded?.error?.message || "Google Drive rechazó un bloque del video.");
+  const token = await googleAccessToken();
+  await driveRequest(token, `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(uploaded.id)}/permissions?sendNotificationEmail=false`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "anyone", role: "reader", allowFileDiscovery: false }),
+  });
+  return {
+    complete: true,
+    asset: {
+      id: `drive-${uploaded.id}`,
+      driveFileId: uploaded.id,
+      provider: "google-drive",
+      name: uploaded.name || "video",
+      type: uploaded.mimeType || "application/octet-stream",
+      size: Number(uploaded.size || total),
+      url: `https://drive.google.com/uc?export=download&id=${uploaded.id}`,
+      previewUrl: `https://drive.google.com/uc?export=view&id=${uploaded.id}`,
+      webViewLink: uploaded.webViewLink || `https://drive.google.com/file/d/${uploaded.id}/view`,
+      uploadedAt: new Date().toISOString(),
+      path: `drive/${uploaded.id}`,
+      public: true,
+    },
+  };
+}
+
 async function deleteFromDrive(token: string, fileId: string) {
   await driveRequest(token, `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}`, { method: "DELETE" });
   return { deleted: true, driveFileId: fileId };
@@ -243,6 +311,27 @@ Deno.serve(async req => {
       return response(req, await listMusicFromDrive(token));
     }
     await getAuthenticatedUser(req);
+    if (action === "start-resumable") {
+      const fileName = String(form.get("fileName") || "video").slice(0, 180);
+      const mimeType = String(form.get("mimeType") || "application/octet-stream").slice(0, 120);
+      const size = Number(form.get("size") || 0);
+      if (!Number.isSafeInteger(size) || size <= 0 || size > 2 * 1024 * 1024 * 1024) return response(req, { error: "El video debe pesar menos de 2 GB." }, 400);
+      const folderKey = String(form.get("folderKey") || "multimedia");
+      const folders = readFolders();
+      const baseFolder = folders[folderKey as keyof typeof folders] || folders.multimedia;
+      let parentId = baseFolder;
+      const eventFolder = String(form.get("eventFolder") || "").trim();
+      const token = await googleAccessToken();
+      if (folderKey === "event" && eventFolder) parentId = await findOrCreateEventFolder(token, baseFolder, eventFolder.slice(0, 120));
+      const sessionUrl = await startResumableDriveUpload(token, fileName, mimeType, size, parentId);
+      return response(req, { sessionUrl });
+    }
+    if (action === "upload-chunk") {
+      const chunk = form.get("chunk");
+      if (!(chunk instanceof Blob)) return response(req, { error: "No se recibió el bloque del video." }, 400);
+      const result = await sendResumableDriveChunk(String(form.get("sessionUrl") || ""), chunk, Number(form.get("start") || 0), Number(form.get("total") || 0));
+      return response(req, result);
+    }
     if (action === "status") {
       await googleAccessToken();
       return response(req, { configured: true });
