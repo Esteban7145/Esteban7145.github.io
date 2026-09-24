@@ -431,12 +431,18 @@ body.platform-body .existing-list article {
 
 @media (max-width: 680px) {
   body.platform-body .page-head:has(+ .admin-summary) {
-    align-items: stretch;
-    gap: 14px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 8px 12px;
   }
 
   body.platform-body .page-head:has(+ .admin-summary) > button {
-    width: 100%;
+    width: auto;
+    min-width: 0;
+    min-height: 40px;
+    padding-inline: 14px;
+    align-self: start;
   }
 
   body.platform-body .admin-summary,
@@ -605,6 +611,12 @@ body.platform-body:has(.admin-workspace) .member-admin-module { padding: clamp(1
 body.platform-body:has(.admin-workspace) .member-admin-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 20px 0; }
 body.platform-body:has(.admin-workspace) .member-admin-stats > span { display: grid; gap: 4px; padding: 13px; border-left: 2px solid #009fda; color: #aab9c9; background: #0a2039; font-size: .8rem; }
 body.platform-body:has(.admin-workspace) .member-admin-stats strong { color: #f7fbff; font-size: 1.3rem; }
+body.platform-body:has(.admin-workspace) .member-directory-tools { display: grid; grid-template-columns: minmax(220px, 1.2fr) minmax(170px, .7fr) auto; align-items: end; gap: 12px; padding: 16px 0; border-bottom: 1px solid rgba(156,183,212,.16); }
+body.platform-body:has(.admin-workspace) .member-directory-tools label { display: grid; gap: 6px; color: #aab9c9; font-size: .78rem; font-weight: 750; }
+body.platform-body:has(.admin-workspace) .member-directory-tools input,
+body.platform-body:has(.admin-workspace) .member-directory-tools select { min-height: 42px; padding: 8px 11px; border: 1px solid rgba(156,183,212,.22); border-radius: 9px; color: #f7fbff; background: #04101f; font: inherit; }
+body.platform-body:has(.admin-workspace) .member-directory-tools > span { padding: 10px 0; color: #aab9c9; font-size: .78rem; white-space: nowrap; }
+body.platform-body:has(.admin-workspace) .member-filter-empty { grid-column: 1 / -1; padding: 20px; color: #aab9c9; text-align: center; }
 body.platform-body:has(.admin-workspace) .member-event-select { display: grid; gap: 8px; max-width: 480px; margin: 18px 0; color: #dce7f2; font-weight: 750; }
 body.platform-body:has(.admin-workspace) .member-event-select select,
 body.platform-body:has(.admin-workspace) .member-admin-actions select { min-height: 42px; padding: 8px 11px; border: 1px solid rgba(156,183,212,.22); border-radius: 9px; color: #f7fbff; background: #04101f; }
@@ -625,7 +637,125 @@ body.platform-body .member-photo-dialog { z-index: 2000; margin: auto; }
 
 @media (max-width: 760px) {
   body.platform-body:has(.admin-workspace) .member-admin-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.platform-body:has(.admin-workspace) .member-directory-tools { grid-template-columns: minmax(0, 1fr) minmax(130px, .7fr); }
+  body.platform-body:has(.admin-workspace) .member-directory-tools > span { grid-column: 1 / -1; padding: 0; }
   body.platform-body:has(.admin-workspace) .member-admin-row { grid-template-columns: minmax(0, 1fr); }
   body.platform-body:has(.admin-workspace) .member-admin-actions { justify-content: flex-start; }
   body.platform-body:has(.admin-workspace) .member-admin-actions > * { flex: 1 1 auto; }
+}
+
+@media (max-width: 420px) {
+  body.platform-body:has(.admin-workspace) .member-directory-tools { grid-template-columns: minmax(0, 1fr); }
+  body.platform-body:has(.admin-workspace) .member-directory-tools > span { grid-column: 1; }
+}
+
+/* Administración: navegación compacta y controles cómodos en pantallas pequeñas. */
+body.platform-body:has(.admin-workspace) .page-head:has(+ .admin-summary) {
+  padding: clamp(18px, 2.5vw, 28px);
+  border-radius: 18px;
+}
+body.platform-body:has(.admin-workspace) .platform-top {
+  border: 1px solid rgba(156, 183, 212, .16) !important;
+  background: rgba(3, 13, 27, .9) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .18) !important;
+  backdrop-filter: blur(16px) !important;
+}
+body.platform-body:has(.admin-workspace) .platform-nav a {
+  border-color: transparent !important;
+  color: #dce7f2 !important;
+  background: transparent !important;
+}
+body.platform-body:has(.admin-workspace) .platform-nav a:hover,
+body.platform-body:has(.admin-workspace) .platform-nav a.active,
+body.platform-body:has(.admin-workspace) .platform-nav a[aria-current="page"] {
+  color: #fff !important;
+  background: rgba(0, 159, 218, .12) !important;
+}
+body.platform-body:has(.admin-workspace) .page-head:has(+ .admin-summary) h1 { color: #f7fbff !important; }
+body.platform-body:has(.admin-workspace) .page-head:has(+ .admin-summary) > div > p:not(.eyebrow) { color: #aab9c9 !important; }
+body.platform-body:has(.admin-workspace) .page-head:has(+ .admin-summary) .cloud-ok {
+  border-color: rgba(50, 190, 147, .2);
+  color: #b5e8d5;
+  background: rgba(18, 83, 66, .3);
+}
+body.platform-body:has(.admin-workspace) .page-head:has(+ .admin-summary) .cloud-warning {
+  border-color: rgba(245, 189, 55, .28);
+  color: #ffe4a0;
+  background: rgba(111, 76, 12, .24);
+}
+body.platform-body:has(.admin-workspace) .admin-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 20px;
+}
+body.platform-body:has(.admin-workspace) .admin-summary article {
+  min-height: 68px;
+  padding: 10px 14px;
+  border-left-color: rgba(0, 159, 218, .8);
+  background: linear-gradient(105deg, rgba(8, 28, 49, .92), rgba(6, 19, 38, .72));
+}
+body.platform-body:has(.admin-workspace) .admin-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin-bottom: 18px;
+}
+body.platform-body:has(.admin-workspace) .admin-tab {
+  min-height: 58px;
+  padding: 9px 12px;
+  text-align: left;
+}
+body.platform-body:has(.admin-workspace) .admin-tab strong { font-size: .84rem; }
+body.platform-body:has(.admin-workspace) .admin-tab span { font-size: .68rem; }
+body.platform-body:has(.admin-workspace) .admin-card-wide,
+body.platform-body:has(.admin-workspace) .admin-card-narrow {
+  padding: clamp(16px, 2.4vw, 28px);
+  border-radius: 18px;
+}
+body.platform-body:has(.admin-workspace) .admin-form-section > h3,
+body.platform-body:has(.admin-workspace) .admin-form-section summary h3 { margin-bottom: 14px; }
+body.platform-body:has(.admin-workspace) .admin-form-section .form-grid { gap: 14px; }
+body.platform-body:has(.admin-workspace) .tag-admin {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 8px;
+}
+body.platform-body:has(.admin-workspace) .tag-admin > label {
+  min-width: 0;
+  min-height: 46px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 680px) {
+  body.platform-body:has(.admin-workspace) .admin-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  body.platform-body:has(.admin-workspace) .admin-summary article { min-height: 64px; padding: 8px; }
+  body.platform-body:has(.admin-workspace) .admin-summary strong { font-size: 1rem; }
+  body.platform-body:has(.admin-workspace) .admin-summary span { font-size: .66rem; line-height: 1.2; }
+  body.platform-body:has(.admin-workspace) .admin-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding: 2px 2px 10px;
+    scrollbar-width: thin;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+  body.platform-body:has(.admin-workspace) .admin-tab {
+    flex: 0 0 154px;
+    min-height: 58px;
+    scroll-snap-align: start;
+  }
+  body.platform-body:has(.admin-workspace) .admin-card-wide,
+  body.platform-body:has(.admin-workspace) .admin-card-narrow { padding: 16px; }
+  body.platform-body:has(.admin-workspace) .admin-form-section { padding: 14px; }
+  body.platform-body:has(.admin-workspace) .tag-admin { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.platform-body:has(.admin-workspace) .button-row { gap: 9px; }
+}
+
+@media (max-width: 360px) {
+  body.platform-body:has(.admin-workspace) .admin-tab { flex-basis: 138px; }
+  body.platform-body:has(.admin-workspace) .admin-summary span { font-size: .61rem; }
 }

@@ -1493,6 +1493,9 @@ const TYPES = {
         resourceSearch: "",
         resourcePath: "",
         podcastCategory: "Todos",
+        podcastSearch: "",
+        memberSearch: "",
+        memberStatusFilter: "todos",
         resourceItems: [],
         resourcesLoaded: false,
         resourcesLoading: false,
@@ -1568,8 +1571,10 @@ const TYPES = {
       const nav = document.getElementById("platformNav");
       const navToggle = document.querySelector("[data-toggle-nav]");
       const navBackdrop = document.querySelector("[data-nav-backdrop]");
+      const platformHeader = document.querySelector(".platform-top");
       const setNavOpen = open => {
         nav?.classList.toggle("open", open);
+        platformHeader?.classList.toggle("menu-open", open);
         navToggle?.setAttribute("aria-expanded", String(open));
         navToggle?.setAttribute("aria-label", open ? "Cerrar menú" : "Abrir menú");
         navBackdrop?.classList.toggle("is-visible", open);
@@ -1619,7 +1624,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260923-members-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260923-local-ideas-2").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -1709,12 +1714,30 @@ const TYPES = {
 
       function renderPodcastPage() {
         const activeCategory = platform.podcastCategory || "Todos";
+        const searchTerm = String(platform.podcastSearch || "").trim().toLocaleLowerCase("es");
         const all = (APP_STATE.podcasts || []).filter(item => item.published !== false).sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
-        const items = activeCategory === "Todos" ? all : all.filter(item => item.category === activeCategory);
+        const items = all.filter(item => {
+          const matchesCategory = activeCategory === "Todos" || item.category === activeCategory;
+          const searchable = `${item.title || ""} ${item.description || ""} ${item.category || ""}`.toLocaleLowerCase("es");
+          return matchesCategory && (!searchTerm || searchable.includes(searchTerm));
+        });
         view().innerHTML = `
           <section class="page-head glass podcast-hero"><div><p class="eyebrow">Historias de fe</p><h1>Historias que Edifican</h1><p>Testimonios, milagros, predicaciones especiales y experiencias de fe para escuchar y compartir.</p></div><span class="podcast-hero-mark"><img src="/assets/historias-que-edifican.png" alt="Historias que Edifican"></span></section>
-          <section class="podcast-filters glass" aria-label="Categorías de Historias que Edifican">${["Todos", ...PODCAST_CATEGORIES].map(category => `<button type="button" class="podcast-filter ${activeCategory === category ? "active" : ""}" data-podcast-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join("")}</section>
-          <section class="podcast-grid">${items.map(item => `<article class="podcast-card glass ${item.featured ? "is-featured" : ""}"><div class="podcast-media${item.cover && assetSource(item.cover, "display") ? " has-cover" : ""}"${item.cover && assetSource(item.cover, "display") ? ` style="background-image:linear-gradient(145deg,rgba(0,51,141,.72),rgba(8,123,136,.72)),url('${escapeHtml(assetSource(item.cover, "display"))}')"` : ""}>${podcastMediaMarkup(item)}</div><div class="podcast-copy"><div class="podcast-card-head"><span class="status-chip">${escapeHtml(item.category || "Experiencias de fe")}</span>${item.featured ? `<span class="podcast-featured">Destacado</span>` : ""}</div><h2>${escapeHtml(item.title || "Historias que Edifican")}</h2><p>${escapeHtml(item.description || "Una historia que edifica nuestra fe.")}</p><small>${item.createdAt ? `Publicado ${escapeHtml(formatDateShort(String(item.createdAt).slice(0, 10)))}` : "Contenido IPUC Villa del Río"}</small></div></article>`).join("") || emptyText(activeCategory === "Todos" ? "Aún no hay episodios publicados. Pronto encontrarás aquí testimonios y predicaciones de la iglesia." : "No hay episodios en esta categoría.")}</section>`;
+          <section class="podcast-browser" aria-label="Buscar y filtrar Historias que Edifican"><label class="podcast-search"><span>Buscar testimonios y predicaciones</span><input type="search" data-podcast-search placeholder="Escribe un título o palabra clave" value="${escapeHtml(platform.podcastSearch || "")}"></label><div class="podcast-filters" aria-label="Categorías de Historias que Edifican">${["Todos", ...PODCAST_CATEGORIES].map(category => `<button type="button" class="podcast-filter ${activeCategory === category ? "active" : ""}" data-podcast-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join("")}</div><p class="podcast-result-count" data-podcast-result-count aria-live="polite">${items.length} ${items.length === 1 ? "historia" : "historias"}</p></section>
+          <section class="podcast-grid">${items.map(item => `<article class="podcast-card glass ${item.featured ? "is-featured" : ""}"><div class="podcast-media${item.cover && assetSource(item.cover, "display") ? " has-cover" : ""}"${item.cover && assetSource(item.cover, "display") ? ` style="background-image:linear-gradient(145deg,rgba(0,51,141,.72),rgba(8,123,136,.72)),url('${escapeHtml(assetSource(item.cover, "display"))}')"` : ""}>${podcastMediaMarkup(item)}</div><div class="podcast-copy"><div class="podcast-card-head"><span class="status-chip">${escapeHtml(item.category || "Experiencias de fe")}</span>${item.featured ? `<span class="podcast-featured">Destacado</span>` : ""}</div><h2>${escapeHtml(item.title || "Historias que Edifican")}</h2><p>${escapeHtml(item.description || "Una historia que edifica nuestra fe.")}</p><small>${item.createdAt ? `Publicado ${escapeHtml(formatDateShort(String(item.createdAt).slice(0, 10)))}` : "Contenido IPUC Villa del Río"}</small></div></article>`).join("") || emptyText(searchTerm ? "No hay historias que coincidan con esta búsqueda." : activeCategory === "Todos" ? "Aún no hay episodios publicados. Pronto encontrarás aquí testimonios y predicaciones de la iglesia." : "No hay episodios en esta categoría.")}</section>`;
+        const search = view().querySelector("[data-podcast-search]");
+        search.oninput = () => {
+          platform.podcastSearch = search.value;
+          const term = search.value.trim().toLocaleLowerCase("es");
+          let visible = 0;
+          view().querySelectorAll(".podcast-card").forEach(card => {
+            const matches = !term || card.textContent.toLocaleLowerCase("es").includes(term);
+            card.hidden = !matches;
+            if (matches) visible++;
+          });
+          const count = view().querySelector("[data-podcast-result-count]");
+          if (count) count.textContent = `${visible} ${visible === 1 ? "historia" : "historias"}`;
+        };
         view().querySelectorAll("[data-podcast-category]").forEach(button => {
           button.onclick = () => { platform.podcastCategory = button.dataset.podcastCategory || "Todos"; renderPodcastPage(); };
         });
@@ -1993,19 +2016,87 @@ const TYPES = {
       }
 
       function renderLocationPage() {
-        view().innerHTML = `<section class="page-head glass"><div><p class="eyebrow">Encuéntranos</p><h1>IPUC Villa del Río</h1><p>Consulta la ubicación de la congregación y planea tu llegada.</p></div></section><section class="location-card glass"><div class="location-info"><p class="eyebrow">Ubicación</p><h2>Estamos aquí para recibirte</h2><p>Villa del Río · Colombia</p><div class="location-actions"><a class="map-button primary" href="https://www.google.com/maps/dir/?api=1&destination=5.065963,-75.491681" target="_blank" rel="noopener">Cómo llegar</a><a class="map-button" href="https://www.google.com/maps?q=5.065963,-75.491681" target="_blank" rel="noopener">Abrir mapa</a></div></div><iframe class="map-frame" title="Mapa de IPUC Villa del Río" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=5.065963,-75.491681&z=17&output=embed"></iframe></section>${worshipScheduleMarkup()}`;
+        view().innerHTML = `<section class="page-head glass"><div><p class="eyebrow">Encuéntranos</p><h1>IPUC Villa del Río</h1><p>Consulta la ubicación de la congregación y planea tu llegada.</p></div></section><section class="location-card glass"><div class="location-info"><p class="eyebrow">Ubicación</p><h2>Estamos aquí para recibirte</h2><p>Villa del Río · Colombia</p><div class="location-actions"><a class="map-button primary" href="https://www.google.com/maps/dir/?api=1&destination=5.065963,-75.491681" target="_blank" rel="noopener">Cómo llegar</a><a class="map-button" href="https://www.google.com/maps?q=5.065963,-75.491681" target="_blank" rel="noopener">Abrir mapa</a></div><div class="visit-note"><span class="visit-note-mark" aria-hidden="true">01</span><div><strong>¿Nos visitas por primera vez?</strong><p>Consulta los horarios habituales y elige el momento que mejor te convenga.</p><a href="/calendario" data-route-link="calendario">Ver cronograma <span aria-hidden="true">→</span></a></div></div></div><iframe class="map-frame" title="Mapa de IPUC Villa del Río" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=5.065963,-75.491681&z=17&output=embed"></iframe></section>${worshipScheduleMarkup()}`;
         bindWorshipSchedule();
       }
 
+      function fileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(new Error("No se pudo preparar la foto para el carnet."));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function membershipCardSvg(member) {
+        const response = await fetch("/assets/member-card-template.svg", { cache: "no-cache" });
+        if (!response.ok) throw new Error("No se pudo cargar la plantilla del carnet.");
+        const xml = new DOMParser().parseFromString(await response.text(), "image/svg+xml");
+        if (xml.querySelector("parsererror")) throw new Error("La plantilla editable del carnet no se pudo leer.");
+        const ns = "http://www.w3.org/2000/svg";
+        const name = xml.querySelector("text.st10");
+        const code = xml.querySelector("text.st11");
+        const role = xml.querySelector("text.st2");
+        if (!name || !code || !role || !member.photoDataUrl) throw new Error("Faltan campos en la plantilla del carnet.");
+
+        [[name, member.fullName, 162.06, 10], [code, `CARNÉ ${member.memberNumber}`, 173.56, 8], [role, member.churchRole, 195.35, 9]].forEach(([node, value, y, baseSize]) => {
+          node.textContent = value;
+          node.removeAttribute("transform");
+          node.setAttribute("x", "77.955");
+          node.setAttribute("y", String(y));
+          node.setAttribute("text-anchor", "middle");
+          node.style.fontSize = `${Math.min(baseSize, Math.max(6, 145 / (String(value).length * .58)))}px`;
+        });
+
+        const defs = xml.querySelector("defs");
+        const clip = xml.createElementNS(ns, "clipPath");
+        clip.setAttribute("id", "memberPhotoClip");
+        clip.setAttribute("clipPathUnits", "userSpaceOnUse");
+        const clipRect = xml.createElementNS(ns, "rect");
+        ["x", "y", "width", "height", "rx"].forEach((key, index) => clipRect.setAttribute(key, ["51.63", "78.05", "52.92", "71.07", "5.35"][index]));
+        clip.append(clipRect); defs.append(clip);
+
+        const photo = xml.createElementNS(ns, "image");
+        photo.setAttribute("x", "51.63"); photo.setAttribute("y", "78.05");
+        photo.setAttribute("width", "52.92"); photo.setAttribute("height", "71.07");
+        photo.setAttribute("preserveAspectRatio", "xMidYMid slice");
+        photo.setAttribute("clip-path", "url(#memberPhotoClip)");
+        photo.setAttribute("href", member.photoDataUrl);
+        photo.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", member.photoDataUrl);
+        const frame = xml.createElementNS(ns, "rect");
+        frame.setAttribute("x", "51.63"); frame.setAttribute("y", "78.05");
+        frame.setAttribute("width", "52.92"); frame.setAttribute("height", "71.07");
+        frame.setAttribute("rx", "5.35"); frame.setAttribute("fill", "none");
+        frame.setAttribute("stroke", "#1d1d1b"); frame.setAttribute("stroke-width", ".8");
+        const firstText = xml.querySelector("text");
+        if (!firstText) throw new Error("La plantilla del carnet no tiene campos de texto.");
+        firstText.before(photo, frame);
+        return new XMLSerializer().serializeToString(xml.documentElement);
+      }
+
+      async function prepareMemberCardPreview(member) {
+        const svg = await membershipCardSvg(member);
+        member.svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+      }
+
       function renderMembershipPage() {
-        const card = platform.memberCard;
-        view().innerHTML = `<section class="page-head"><div><p class="eyebrow">Familia IPUC</p><h1>Registro de membresía</h1><p>Actualiza tus datos para ayudarnos a cuidar mejor la comunidad y llevar el registro de asistencia.</p></div></section>
-          ${card ? `<section class="membership-success"><p class="eyebrow">Registro recibido</p><h2>Gracias, ${escapeHtml(card.fullName)}</h2><p>Tu solicitud quedó pendiente de validación por la iglesia.</p><article class="member-card" aria-label="Credencial provisional de membresía"><img class="member-card-brand" src="/assets/ipuc-villa-del-rio-brand.png" alt="IPUC Villa del Río">${card.photoUrl ? `<img class="member-card-photo" src="${escapeHtml(card.photoUrl)}" alt="Foto de ${escapeHtml(card.fullName)}">` : `<span class="member-card-initials" aria-hidden="true">${escapeHtml(card.fullName.slice(0, 1).toUpperCase())}</span>`}<div><small>MEMBRESÍA · DISTRITO 4</small><strong>${escapeHtml(card.fullName)}</strong><span>${escapeHtml(card.memberNumber)}</span>${card.churchRole ? `<span>${escapeHtml(card.churchRole)}</span>` : ""}<em>Solicitud pendiente de aprobación</em></div></article><button class="small-action" type="button" data-print-member>Imprimir credencial</button></section>` : `<form class="membership-form" id="membershipForm" novalidate><div class="membership-form-heading"><span>01</span><div><h2>Tus datos</h2><p>La información de este registro solo la consultará el equipo administrativo autorizado.</p></div></div><div class="membership-fields"><label>Nombre completo<input name="fullName" autocomplete="name" required maxlength="140"></label><label>Dirección de residencia<input name="address" autocomplete="street-address" required maxlength="240"></label><label>Correo electrónico<input name="email" type="email" autocomplete="email" required maxlength="254"></label><label>Teléfono<input name="phone" type="tel" autocomplete="tel" required maxlength="32"></label><label class="member-photo-field">Foto para la credencial · opcional<input name="photo" type="file" accept="image/jpeg,image/png,image/webp"><small>JPG, PNG o WebP · máximo 3 MB. No es necesaria para registrarte.</small><img data-member-photo-preview alt="Vista previa de tu foto" hidden></label><label class="member-role-toggle"><input name="hasChurchRole" type="checkbox" data-member-role-toggle> ¿Tienes un cargo en la iglesia?</label><label class="member-role-field" data-member-role-field hidden>¿Cuál es tu cargo?<input name="churchRole" maxlength="120" placeholder="Ej. Presidente DECOM" disabled></label></div><label class="member-consent"><input name="sensitiveDataConsent" type="checkbox" required><span>Autorizo de forma previa, expresa e informada a IPUC Villa del Río a tratar mis datos identificativos y el hecho de mi vinculación como miembro (dato que puede revelar mi afiliación religiosa) para gestionar esta solicitud y mi membresía. Esta autorización no es necesaria para asistir a los cultos. Podré conocer, actualizar, rectificar o solicitar la supresión de mis datos o revocar esta autorización escribiendo a <a href="mailto:decomvilladelrio@gmail.com">decomvilladelrio@gmail.com</a>. El registro será consultable solo por personal administrativo autorizado.</span></label><label class="member-consent"><input name="photoConsent" type="checkbox"><span>Opcional: autorizo expresamente el uso y almacenamiento privado de mi fotografía de rostro para elaborar mi credencial. La fotografía es un dato sensible y no es necesaria para registrar mi membresía.</span></label><label class="member-consent"><input name="attendanceConsent" type="checkbox"><span>Opcional: autorizo registrar mi asistencia a eventos de la iglesia para control interno. Puedo registrarme sin activar esta función.</span></label><p class="member-form-status" data-member-status role="status" aria-live="polite"></p><button class="primary-link" type="submit">Enviar registro</button></form>`}`;
+        const registration = platform.memberCard;
+        const card = registration?.hasChurchRole ? registration : null;
+        view().innerHTML = `<section class="page-head"><div><p class="eyebrow">Familia IPUC</p><h1>Registro de membresía</h1><p>Comparte tus datos con la administración de la iglesia para mantener actualizado el registro de membresía.</p></div></section>
+          ${registration ? `<section class="membership-success"><p class="eyebrow">Registro recibido</p><h2>Gracias, ${escapeHtml(registration.fullName)}</h2><p>Tu solicitud quedó pendiente de validación por la iglesia.</p>${card ? `<article class="member-card-preview" aria-label="Vista previa del carnet IPUC">${card.svgUrl ? `<img src="${escapeHtml(card.svgUrl)}" alt="Carnet de ${escapeHtml(card.fullName)} con cargo ${escapeHtml(card.churchRole)}">` : `<div class="member-card-placeholder">Carnet listo para descargar</div>`}</article><p class="member-card-note">El carnet se genera solo para quien declaró un cargo. Tu carnet se prepara en este dispositivo; los datos y la foto no se descargan desde el registro administrativo.</p><div class="member-card-downloads"><button class="primary-link" type="button" data-download-member-card="png">Descargar carnet</button><button class="small-action" type="button" data-download-member-card="svg">Descargar editable (SVG)</button></div><p class="member-form-status" data-member-status role="status" aria-live="polite"></p>` : `<div class="membership-no-card"><strong>Registro guardado</strong><p>Como indicaste que no tienes un cargo, no se generó un carnet.</p></div>`}</section>` : `<form class="membership-form" id="membershipForm" novalidate><div class="membership-form-heading"><span>01</span><div><h2>Tus datos</h2><p>La información de este registro solo la consultará el equipo administrativo autorizado.</p></div></div><div class="membership-fields"><label>Nombre completo<input name="fullName" autocomplete="name" required maxlength="140"></label><label>Dirección de residencia<input name="address" autocomplete="street-address" required maxlength="240"></label><label>Correo electrónico<input name="email" type="email" autocomplete="email" required maxlength="254"></label><label>Teléfono<input name="phone" type="tel" autocomplete="tel" required maxlength="32"></label><label class="member-photo-field">Foto de rostro para identificación y control de membresía<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG o WebP · máximo 3 MB. Se guarda de forma privada. La foto no se publica.</small><img data-member-photo-preview alt="Vista previa de tu foto" hidden></label><fieldset class="member-role-question"><legend>¿Tienes un cargo en la iglesia?</legend><div class="member-role-options"><label><input name="hasChurchRole" type="radio" value="si" required> Sí</label><label><input name="hasChurchRole" type="radio" value="no" required> No</label></div></fieldset><label class="member-role-field" data-member-role-field hidden>¿Cuál es tu cargo?<input name="churchRole" maxlength="120" placeholder="Ej. Presidente DECOM" disabled></label></div><label class="member-consent"><input name="sensitiveDataConsent" type="checkbox" required><span>Autorizo de forma previa, expresa e informada a IPUC Villa del Río a tratar mis datos identificativos y el hecho de mi vinculación como miembro (dato que puede revelar mi afiliación religiosa) para gestionar esta solicitud y mi membresía. Esta autorización no es necesaria para asistir a los cultos. Podré conocer, actualizar, rectificar o solicitar la supresión de mis datos o revocar esta autorización escribiendo a <a href="mailto:decomvilladelrio@gmail.com">decomvilladelrio@gmail.com</a>. El registro será consultable solo por personal administrativo autorizado.</span></label><label class="member-consent"><input name="photoConsent" type="checkbox" required><span>Autorizo expresamente el almacenamiento privado de mi fotografía para identificarme y elaborar el carnet de membresía. Esta autorización no permite publicar la foto en anuncios o material promocional; para eso se solicitará permiso aparte.</span></label><label class="member-consent"><input name="attendanceConsent" type="checkbox"><span>Opcional: autorizo registrar mi asistencia a eventos de la iglesia para control interno. Puedo registrarme sin activar esta función.</span></label><p class="member-form-status" data-member-status role="status" aria-live="polite"></p><button class="primary-link" type="submit">Enviar registro</button></form>`}`;
         const form = document.getElementById("membershipForm");
         if (form) {
-          const roleToggle = form.elements.namedItem("hasChurchRole");
           const roleField = form.querySelector("[data-member-role-field]");
-          roleToggle.addEventListener("change", () => { roleField.hidden = !roleToggle.checked; roleField.querySelector("input").disabled = !roleToggle.checked; roleField.querySelector("input").required = roleToggle.checked; });
+          const roleInput = roleField.querySelector("input");
+          const syncRoleField = () => {
+            const hasRole = form.querySelector('[name="hasChurchRole"]:checked')?.value === "si";
+            roleField.hidden = !hasRole;
+            roleInput.disabled = !hasRole;
+            roleInput.required = hasRole;
+            if (!hasRole) roleInput.value = "";
+          };
+          form.querySelectorAll('[name="hasChurchRole"]').forEach(input => input.addEventListener("change", syncRoleField));
           const photoInput = form.elements.namedItem("photo");
           const preview = form.querySelector("[data-member-photo-preview]");
           photoInput.addEventListener("change", () => { const file = photoInput.files?.[0]; if (preview.dataset.url) URL.revokeObjectURL(preview.dataset.url); preview.hidden = !file; if (file) { preview.dataset.url = URL.createObjectURL(file); preview.src = preview.dataset.url; } });
@@ -2016,9 +2107,11 @@ const TYPES = {
             const submit = form.querySelector("button[type=submit]"); submit.disabled = true; status.textContent = "Enviando de forma segura…";
             const data = new FormData(form);
             const selectedPhoto = photoInput.files?.[0];
+            const hasRole = form.querySelector('[name="hasChurchRole"]:checked')?.value === "si";
             const photoConsent = form.elements.namedItem("photoConsent").checked;
-            if (selectedPhoto && !photoConsent) { status.textContent = "La foto es opcional; para incluirla, marca su autorización expresa."; submit.disabled = false; return; }
-            if (selectedPhoto && selectedPhoto.size > 3 * 1024 * 1024) {
+            if (!selectedPhoto || !selectedPhoto.size) { status.textContent = "Selecciona una foto para completar el registro."; submit.disabled = false; return; }
+            if (!photoConsent) { status.textContent = "Debes autorizar el almacenamiento privado de la foto."; submit.disabled = false; return; }
+            if (selectedPhoto.size > 3 * 1024 * 1024) {
               try {
                 const bitmap = await createImageBitmap(selectedPhoto);
                 const scale = Math.min(1, 1200 / Math.max(bitmap.width, bitmap.height));
@@ -2033,17 +2126,51 @@ const TYPES = {
             data.set("sensitiveDataConsent", String(form.elements.namedItem("sensitiveDataConsent").checked));
             data.set("photoConsent", String(photoConsent));
             data.set("attendanceConsent", String(form.elements.namedItem("attendanceConsent").checked));
-            data.set("hasChurchRole", String(roleToggle.checked)); data.set("consentVersion", "2026-09-v1");
+            data.set("hasChurchRole", String(hasRole)); data.set("consentVersion", "2026-09-v1");
+            let photoDataUrl = "";
+            if (hasRole) {
+              try { photoDataUrl = await fileAsDataUrl(data.get("photo")); }
+              catch (error) { status.textContent = error.message; submit.disabled = false; return; }
+            }
             try {
               const response = await fetch(`${SUPABASE_CONFIG.url}/functions/v1/member-registration`, { method: "POST", headers: { apikey: SUPABASE_CONFIG.publishableKey }, body: data });
               const result = await response.json(); if (!response.ok || !result.ok) throw new Error(result.error || "No se pudo completar el registro.");
-              const photo = photoInput.files?.[0]; platform.memberCard = { fullName: String(data.get("fullName")).trim(), memberNumber: result.memberNumber, churchRole: roleToggle.checked ? String(data.get("churchRole")).trim() : "", photoUrl: photo?.size ? URL.createObjectURL(photo) : "" };
+              platform.memberCard = { fullName: String(data.get("fullName")).trim(), memberNumber: result.memberNumber, hasChurchRole: hasRole, churchRole: hasRole ? String(data.get("churchRole")).trim() : "", photoDataUrl, svgUrl: "" };
+              if (hasRole) { try { await prepareMemberCardPreview(platform.memberCard); } catch (error) { console.warn("El carnet se podrá volver a generar desde el botón de descarga.", error); } }
               renderMembershipPage();
             } catch (error) { status.textContent = error.message || "No se pudo enviar el formulario. Inténtalo de nuevo."; submit.disabled = false; }
           });
         }
-        const print = view().querySelector("[data-print-member]");
-        if (print) print.onclick = () => window.print();
+        view().querySelectorAll("[data-download-member-card]").forEach(download => {
+          if (!card) return;
+          download.onclick = async () => {
+            const status = view().querySelector("[data-member-status]");
+            download.disabled = true;
+            let temporaryUrl = "";
+            try {
+              if (!card.svgUrl) await prepareMemberCardPreview(card);
+              const format = download.dataset.downloadMemberCard;
+              let url = card.svgUrl;
+              if (format === "png") {
+                const image = new Image(); image.src = card.svgUrl; await image.decode();
+                const canvas = document.createElement("canvas"); canvas.width = 624; canvas.height = 964;
+                const context = canvas.getContext("2d"); context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                const png = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+                if (!png) throw new Error("No se pudo exportar el carnet como imagen.");
+                temporaryUrl = URL.createObjectURL(png); url = temporaryUrl;
+              }
+              const link = document.createElement("a");
+              link.href = url; link.download = `Carnet-IPUC-${safeFileName(card.fullName)}.${format}`;
+              document.body.appendChild(link); link.click(); link.remove();
+              if (temporaryUrl) URL.revokeObjectURL(temporaryUrl);
+              renderMembershipPage();
+            } catch (error) {
+              if (temporaryUrl) URL.revokeObjectURL(temporaryUrl);
+              if (status) status.textContent = error.message || "No se pudo generar el carnet.";
+              download.disabled = false;
+            }
+          };
+        });
       }
 
       function parseRoute() {
@@ -3698,6 +3825,26 @@ const TYPES = {
             if (platform.adminSection === "membresia") loadMembershipAdmin();
           };
         });
+        const memberSearch = view().querySelector("[data-member-search]");
+        const memberStatusFilter = view().querySelector("[data-member-filter-status]");
+        const memberResultCount = view().querySelector("[data-member-result-count]");
+        const memberFilterEmpty = view().querySelector("[data-member-filter-empty]");
+        const filterMembers = () => {
+          if (!memberSearch || !memberStatusFilter) return;
+          const term = memberSearch.value.trim().toLocaleLowerCase("es");
+          const status = memberStatusFilter.value;
+          let visible = 0;
+          view().querySelectorAll(".member-admin-row").forEach(row => {
+            const matches = (!term || row.textContent.toLocaleLowerCase("es").includes(term)) && (status === "todos" || row.querySelector(".member-status-chip")?.textContent.trim() === status);
+            row.hidden = !matches;
+            if (matches) visible++;
+          });
+          if (memberResultCount) memberResultCount.textContent = `${visible} ${visible === 1 ? "persona" : "personas"}`;
+          if (memberFilterEmpty) memberFilterEmpty.hidden = visible !== 0;
+        };
+        memberSearch?.addEventListener("input", () => { platform.memberSearch = memberSearch.value; filterMembers(); });
+        memberStatusFilter?.addEventListener("change", () => { platform.memberStatusFilter = memberStatusFilter.value; filterMembers(); });
+        filterMembers();
         view().querySelectorAll("[data-member-save-status]").forEach(button => {
           button.onclick = runAdminAction(async () => {
             const row = button.closest("[data-member-id]");
@@ -4595,8 +4742,9 @@ const TYPES = {
         return `<section class="admin-module" data-admin-module="membresia" ${platform.adminSection === "membresia" ? "" : "hidden"}>
           <article class="content-card admin-card-wide member-admin-module"><div class="section-title"><p class="eyebrow">Datos privados · acceso administrativo</p><h2>Membresía y asistencia</h2><p>Revisa solicitudes, aprueba miembros y registra asistencia por evento. Las fotos se consultan mediante enlaces temporales privados.</p></div>
           <div class="member-admin-stats"><span><strong>${members.length}</strong>Total</span><span><strong>${counts.pendiente}</strong>Pendientes</span><span><strong>${counts.activo}</strong>Activos</span><span><strong>${counts.inactivo}</strong>Inactivos</span></div>
+          <div class="member-directory-tools"><label>Buscar miembro<input type="search" data-member-search placeholder="Nombre, correo, teléfono o cargo" value="${escapeHtml(platform.memberSearch || "")}"></label><label>Estado<select data-member-filter-status><option value="todos" ${platform.memberStatusFilter === "todos" ? "selected" : ""}>Todos los estados</option><option value="pendiente" ${platform.memberStatusFilter === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${platform.memberStatusFilter === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${platform.memberStatusFilter === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><span data-member-result-count aria-live="polite">${members.length} ${members.length === 1 ? "persona" : "personas"}</span></div>
           <label class="member-event-select">Evento para registrar asistencia<select data-member-event><option value="">Selecciona un evento</option>${events.map(event => `<option value="${escapeHtml(event.id)}">${escapeHtml(formatDateShort(event.date))} · ${escapeHtml(event.title)}</option>`).join("")}</select></label>
-          <div class="member-admin-list">${members.map(member => { const attendanceCount = (platform.memberAttendance || []).filter(row => row.member_id === member.id).length; return `<article class="member-admin-row" data-member-id="${escapeHtml(member.id)}"><div class="member-admin-identity"><span class="member-avatar">${escapeHtml(String(member.full_name || "?").slice(0, 1).toUpperCase())}</span><div><strong>${escapeHtml(member.full_name)}</strong><small>${escapeHtml(member.member_number)} · ${escapeHtml(member.email)}</small><small>${escapeHtml(member.phone)} · ${escapeHtml(member.address)}</small>${member.has_church_role ? `<small>Cargo: ${escapeHtml(member.church_role)}</small>` : ""}<small>Asistencias: ${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</small></div></div><div class="member-admin-actions"><span class="member-status-chip status-${escapeHtml(member.status)}">${escapeHtml(member.status)}</span>${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>` : ""}<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div></article>`; }).join("") || `<p class="member-empty">Aún no hay solicitudes de membresía.</p>`}</div></article>
+          <div class="member-admin-list">${members.map(member => { const attendanceCount = (platform.memberAttendance || []).filter(row => row.member_id === member.id).length; return `<article class="member-admin-row" data-member-id="${escapeHtml(member.id)}"><div class="member-admin-identity"><span class="member-avatar">${escapeHtml(String(member.full_name || "?").slice(0, 1).toUpperCase())}</span><div><strong>${escapeHtml(member.full_name)}</strong><small>${escapeHtml(member.member_number)} · ${escapeHtml(member.email)}</small><small>${escapeHtml(member.phone)} · ${escapeHtml(member.address)}</small>${member.has_church_role ? `<small>Cargo: ${escapeHtml(member.church_role)}</small>` : ""}<small>Asistencias: ${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</small></div></div><div class="member-admin-actions"><span class="member-status-chip status-${escapeHtml(member.status)}">${escapeHtml(member.status)}</span>${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>` : ""}<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div></article>`; }).join("") || `<p class="member-empty">Aún no hay solicitudes de membresía.</p>`}<p class="member-filter-empty" data-member-filter-empty hidden>No hay personas que coincidan con esta búsqueda.</p></div></article>
         </section>`;
       }
 
@@ -4933,30 +5081,48 @@ const TYPES = {
             startForm.append("size", String(file.size));
             startForm.append("folderKey", folderKey);
             if (folderKey === "event" && event) startForm.append("eventFolder", `${event.date || "evento"} - ${event.title || eventId}`);
-            const started = await cloud.app.functions.invoke(SUPABASE_CONFIG.driveFunction, { body: startForm });
-            if (started.error || started.data?.error || !started.data?.sessionUrl) throw new Error(started.data?.error || started.error?.message || "Drive no inició la carga del video.");
+            const started = await invokeDriveUpload(startForm, "Drive no inició la carga del video.");
+            if (!started?.sessionUrl) throw new Error("Drive no devolvió una sesión válida para cargar el video.");
             const chunkSize = 4 * 1024 * 1024;
             let uploadedBytes = 0;
             while (uploadedBytes < file.size) {
               const end = Math.min(uploadedBytes + chunkSize, file.size);
               const chunkForm = new FormData();
               chunkForm.append("action", "upload-chunk");
-              chunkForm.append("sessionUrl", started.data.sessionUrl);
+              chunkForm.append("sessionUrl", started.sessionUrl);
               chunkForm.append("start", String(uploadedBytes));
               chunkForm.append("total", String(file.size));
               chunkForm.append("chunk", file.slice(uploadedBytes, end, file.type || "application/octet-stream"), file.name);
-              const result = await cloud.app.functions.invoke(SUPABASE_CONFIG.driveFunction, { body: chunkForm });
-              if (result.error || result.data?.error) throw new Error(result.data?.error || result.error?.message || "Drive rechazó un bloque del video.");
-              if (result.data?.complete) return { ...result.data.asset, label, name: result.data.asset?.name || file.name, type: result.data.asset?.type || file.type, size: result.data.asset?.size || file.size };
-              const acknowledgedBytes = Number(result.data?.received);
+              let result;
+              try {
+                result = await invokeDriveUpload(chunkForm, "Drive rechazó un bloque del video.");
+              } catch (transferError) {
+                const statusForm = new FormData();
+                statusForm.append("action", "upload-status");
+                statusForm.append("sessionUrl", started.sessionUrl);
+                statusForm.append("total", String(file.size));
+                try {
+                  const status = await invokeDriveUpload(statusForm, "No se pudo verificar el avance de Drive.");
+                  if (status.complete && status.asset) {
+                    return { ...status.asset, label, name: status.asset.name || file.name, type: status.asset.type || file.type, size: status.asset.size || file.size };
+                  }
+                  const received = Number(status.received);
+                  if (!Number.isSafeInteger(received) || received < uploadedBytes || received > end) throw transferError;
+                  if (received === uploadedBytes) result = await invokeDriveUpload(chunkForm, "Drive rechazó el bloque del video.");
+                  else result = status;
+                } catch (recoveryError) {
+                  throw recoveryError instanceof Error && recoveryError !== transferError ? recoveryError : transferError;
+                }
+              }
+              if (result?.complete) return { ...result.asset, label, name: result.asset?.name || file.name, type: result.asset?.type || file.type, size: result.asset?.size || file.size };
+              const acknowledgedBytes = Number(result?.received);
               if (!Number.isSafeInteger(acknowledgedBytes) || acknowledgedBytes <= uploadedBytes || acknowledgedBytes > end) throw new Error("Drive no confirmó completamente el bloque enviado. La carga se detuvo para evitar un video incompleto.");
               uploadedBytes = acknowledgedBytes;
               setUploadProgressState({ active: true, label: `Subiendo ${file.name}`, detail: `${label} · Google Drive · ${humanFileSize(uploadedBytes)} de ${humanFileSize(file.size)}`, percent: (uploadedBytes / file.size) * 100, tone: "loading" });
             }
             throw new Error("Drive recibió el video pero no confirmó el archivo terminado. Inténtalo nuevamente.");
           }
-          const { data, error } = await cloud.app.functions.invoke(SUPABASE_CONFIG.driveFunction, { body: form });
-          if (error || data?.error) throw new Error(data?.error || error?.message || "No se pudo subir el archivo a Google Drive.");
+          const data = await invokeDriveUpload(form, "No se pudo subir el archivo a Google Drive.");
           setUploadProgressState({ label: "Archivo cargado", detail: `${label} · guardando el enlace`, percent: 100, tone: "loading" });
           return { ...data, label, name: data.name || file.name, type: data.type || file.type || "application/octet-stream", size: data.size || file.size };
         } catch (error) {
@@ -4996,6 +5162,20 @@ const TYPES = {
       function reflectionForDate(date) {
         const index = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000) % REFLECTIONS.length;
         return APP_STATE.reflections[dateKey(date)] || REFLECTIONS[index];
+      }
+
+      async function invokeDriveUpload(body, fallback) {
+        const { data, error } = await cloud.app.functions.invoke(SUPABASE_CONFIG.driveFunction, { body });
+        if (!error && !data?.error) return data;
+        let serverMessage = "";
+        try {
+          const context = error?.context;
+          if (context && typeof context.clone === "function") {
+            const payload = await context.clone().json();
+            serverMessage = payload?.error || payload?.message || "";
+          }
+        } catch { /* conserva el mensaje original del SDK */ }
+        throw new Error(data?.error || serverMessage || error?.message || fallback);
       }
 
       function youtubeEmbedUrl(url, options = {}) {
@@ -5580,18 +5760,18 @@ const TYPES = {
         @media (max-width: 620px) {
           html, body.platform-body { max-width: 100%; overflow-x: hidden !important; }
           body.platform-body .nav-backdrop {
-            z-index: 110 !important;
+            z-index: 1290 !important;
             appearance: none !important;
             -webkit-appearance: none !important;
             padding: 0 !important;
             border: 0 !important;
-            background: rgba(2, 7, 18, .34) !important;
+            background: rgba(2, 7, 18, .18) !important;
           }
-          body.platform-body .platform-top.is-compact { z-index: 120 !important; }
-          body.platform-body .nav-backdrop.is-visible { background: rgba(2, 7, 18, .34) !important; }
+          body.platform-body .platform-top.is-compact { z-index: 1300 !important; }
+          body.platform-body .nav-backdrop.is-visible { background: rgba(2, 7, 18, .18) !important; }
           /* El header crea su propio contexto de apilado; al abrir el menú
              debe quedar por encima de la capa que cierra la navegación. */
-          body.platform-body .platform-top:has(.platform-nav.open) { z-index: 120 !important; }
+          body.platform-body .platform-top:has(.platform-nav.open) { z-index: 1300 !important; }
           body.platform-body .platform-top.is-compact .platform-nav.open {
             background: rgba(3, 14, 30, .97) !important;
             border: 1px solid rgba(245, 189, 55, .28) !important;
@@ -5647,6 +5827,14 @@ const TYPES = {
           body.platform-body .month-calendar-view, body.platform-body .month-grid, body.platform-body .week-head, body.platform-body .decom-calendar-shell, body.platform-body .decom-week-head, body.platform-body .decom-calendar-grid { width: 100% !important; min-width: 0 !important; max-width: 100% !important; box-sizing: border-box; }
           body.platform-body .month-grid, body.platform-body .decom-calendar-grid { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; }
           body.platform-body .month-day, body.platform-body .decom-day { min-width: 0 !important; overflow: hidden; }
+        }
+        /* Mantener la capa para cerrar detrás del header y de los enlaces del menú. */
+        @media (max-width: 900px) {
+          body.platform-body .nav-backdrop.is-visible { z-index: 998 !important; }
+          body.platform-body .platform-top:has(.platform-nav.open) { z-index: 999 !important; }
+          body.platform-body .platform-top .platform-nav.open,
+          body.platform-body .platform-top.is-compact .platform-nav.open { z-index: 1000 !important; pointer-events: auto !important; }
+          body.platform-body .platform-top .platform-nav.open a { position: relative !important; z-index: 1 !important; pointer-events: auto !important; touch-action: manipulation; }
         }
       `;
       document.head.appendChild(style);

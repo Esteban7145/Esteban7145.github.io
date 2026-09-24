@@ -820,9 +820,24 @@ body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .page-head,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .calendar-page,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .location-card {
-  border-color: rgba(170, 185, 201, .18);
-  background: #08172a;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, .2);
+  border-color: rgba(170, 185, 201, .14);
+  background: rgba(8, 23, 42, .72);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .page-head {
+  border-color: rgba(0, 159, 218, .2);
+  background: transparent;
+}
+
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .content-card,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .podcast-card,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .announcement-public,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .event-card-public {
+  border-radius: 14px;
+  background: rgba(8, 23, 42, .52);
 }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) h1,
@@ -834,6 +849,31 @@ body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .muted { color: var(--public-muted); }
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .eyebrow,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .section-kicker { color: var(--public-gold); }
+
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .visit-note {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-top: 8px;
+  padding: 16px 0 0;
+  border-top: 1px solid rgba(170, 185, 201, .16);
+}
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .visit-note-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(245, 189, 55, .45);
+  border-radius: 50%;
+  color: var(--public-gold);
+  font-size: .76rem;
+  font-weight: 700;
+}
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .visit-note strong { color: var(--public-text); }
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .visit-note p { margin: 5px 0 8px; color: var(--public-muted); line-height: 1.5; }
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .visit-note a { color: #7bd6f5; font-weight: 650; text-decoration: none; }
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .visit-note a:hover { color: var(--public-gold); }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) button,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .primary-link,
@@ -959,6 +999,33 @@ body.platform-body:has(.home-verse) .home-verse cite {
   font-weight: 750;
 }
 
+/* Archivo de mensajes: búsqueda directa y controles discretos. */
+body.platform-body .podcast-browser { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(0, 1.8fr); align-items: center; gap: 12px 20px; padding: 16px 0; border-bottom: 1px solid rgba(170,185,201,.16); }
+body.platform-body .podcast-search { display: grid; gap: 6px; color: #aab9c9; font-size: .78rem; font-weight: 750; }
+body.platform-body .podcast-search input { width: 100%; min-height: 44px; padding: 0 14px; border: 1px solid rgba(170,185,201,.22); border-radius: 10px; color: #f7fbff; background: #061326; font: inherit; }
+body.platform-body .podcast-search input:focus-visible { border-color: #009fda; outline: 2px solid rgba(0,159,218,.28); outline-offset: 2px; }
+body.platform-body .podcast-browser .podcast-filters { display: flex; flex-wrap: wrap; gap: 7px; padding: 0; border: 0; background: transparent; }
+body.platform-body .podcast-browser .podcast-filter { min-height: 36px; padding: 7px 12px; border: 1px solid rgba(170,185,201,.2); border-radius: 999px; color: #dce7f2; background: transparent; box-shadow: none; }
+body.platform-body .podcast-browser .podcast-filter:hover { border-color: rgba(0,159,218,.6); transform: none; }
+body.platform-body .podcast-browser .podcast-filter.active { border-color: #f5bd37; color: #fff; background: #10253b; }
+body.platform-body .podcast-result-count { grid-column: 2; justify-self: end; margin: -6px 0 0; color: #aab9c9; font-size: .75rem; }
+
+/* Menos superficies decorativas; la jerarquía la dan el espacio y la tipografía. */
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-card,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .podcast-card,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .announcement-public,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .event-card-public,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .agenda-item,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .mini-card {
+  border-radius: 12px;
+  box-shadow: none;
+}
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-card:hover,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .podcast-card:hover,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .event-card-public:hover,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .agenda-item:hover,
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .mini-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,.2); }
+
 body.platform-body:has(.membership-form) .membership-form,
 body.platform-body:has(.membership-success) .membership-success {
   width: min(860px, 100%);
@@ -976,20 +1043,27 @@ body.platform-body:has(.membership-form) .membership-form h2,
 body.platform-body:has(.membership-success) .membership-success h2 { margin: 0 0 6px; color: #f7fbff; }
 body.platform-body:has(.membership-form) .membership-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 body.platform-body:has(.membership-form) .membership-fields label { display: grid; align-content: start; gap: 8px; color: #dce7f2; font-size: .9rem; font-weight: 750; }
-body.platform-body:has(.membership-form) .membership-fields input:not([type="checkbox"]),
-body.platform-body:has(.membership-form) .membership-fields input[type="file"] { width: 100%; min-height: 46px; box-sizing: border-box; padding: 11px 13px; border: 1px solid rgba(170, 185, 201, .24); border-radius: 10px; color: #f7fbff; background: #04101f; font: inherit; }
+body.platform-body:has(.membership-form) .membership-fields input:not([type="checkbox"]):not([type="radio"]) { width: 100%; min-height: 46px; box-sizing: border-box; padding: 11px 13px; border: 1px solid rgba(170, 185, 201, .24); border-radius: 10px; color: #f7fbff; background: #04101f; font: inherit; }
 body.platform-body:has(.membership-form) .membership-fields input:focus-visible { outline: 2px solid #009fda; outline-offset: 2px; }
 body.platform-body:has(.membership-form) .member-photo-field { grid-column: 1 / -1; }
 body.platform-body:has(.membership-form) .member-photo-field img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
 body.platform-body:has(.membership-form) [hidden] { display: none !important; }
-body.platform-body:has(.membership-form) .member-role-toggle,
+body.platform-body:has(.membership-form) .member-role-question { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 16px; border: 1px solid rgba(170,185,201,.2); border-radius: 12px; }
+body.platform-body:has(.membership-form) .member-role-question legend { padding: 0 8px; color: #f7fbff; font-weight: 800; }
+body.platform-body:has(.membership-form) .member-role-options { display: flex; flex-wrap: wrap; gap: 10px; }
+body.platform-body:has(.membership-form) .member-role-options label { display: flex; min-width: 112px; min-height: 44px; grid-template-columns: none; align-items: center; justify-content: center; gap: 9px; padding: 8px 14px; border: 1px solid rgba(170,185,201,.22); border-radius: 10px; background: #061326; cursor: pointer; }
+body.platform-body:has(.membership-form) .member-role-options input { width: 18px; height: 18px; margin: 0; accent-color: #f5bd37; }
+body.platform-body:has(.membership-form) .member-role-field { grid-column: 1 / -1; }
 body.platform-body:has(.membership-form) .member-consent { display: flex; align-items: flex-start; gap: 10px; }
-body.platform-body:has(.membership-form) .member-role-toggle { grid-column: 1 / -1; padding: 12px 0; }
-body.platform-body:has(.membership-form) .member-role-toggle input,
 body.platform-body:has(.membership-form) .member-consent input { flex: 0 0 auto; width: 18px; height: 18px; accent-color: #009fda; }
 body.platform-body:has(.membership-form) .member-consent { margin: 22px 0 14px; color: #aab9c9; font-size: .84rem; line-height: 1.55; }
 body.platform-body:has(.membership-form) .member-consent a { color: #9bdfff; }
 body.platform-body:has(.membership-form) .member-form-status { min-height: 1.4em; color: #f5bd37; }
+body.platform-body:has(.membership-success) .member-card-preview { width: min(100%, 300px); margin: 24px 0 16px; }
+body.platform-body:has(.membership-success) .member-card-preview img { display: block; width: 100%; height: auto; border-radius: 10px; box-shadow: 0 16px 34px rgba(0,0,0,.3); }
+body.platform-body:has(.membership-success) .member-card-note { max-width: 58ch; color: #aab9c9; line-height: 1.55; }
+body.platform-body:has(.membership-success) .member-card-downloads { display: flex; flex-wrap: wrap; gap: 10px; }
+body.platform-body:has(.membership-success) .membership-no-card { margin-top: 24px; padding: 18px 0; border-top: 1px solid rgba(170,185,201,.2); }
 body.platform-body:has(.membership-success) .member-card { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px 18px; align-items: center; max-width: 540px; margin: 24px 0; padding: 20px; border-left: 3px solid #f5bd37; color: #f7fbff; background: #061326; }
 body.platform-body:has(.membership-success) .member-card-photo,
 body.platform-body:has(.membership-success) .member-card-initials { flex: 0 0 88px; width: 88px; height: 106px; border-radius: 8px; object-fit: cover; }
@@ -1013,11 +1087,13 @@ body.platform-body .member-photo-dialog img { display: block; max-width: min(80v
 }
 
 @media (max-width: 900px) {
+  body.platform-body:has(.membership-form) .membership-fields { grid-template-columns: minmax(0, 1fr); }
   body.platform-body .nav-backdrop[hidden] { display: none !important; }
-  body.platform-body .nav-backdrop.is-visible { position: fixed !important; inset: 0 !important; z-index: 1290 !important; display: block !important; width: 100vw !important; height: 100dvh !important; padding: 0 !important; border: 0 !important; background: rgba(2, 7, 18, .56) !important; }
+  body.platform-body .nav-backdrop.is-visible { position: fixed !important; inset: 0 !important; z-index: 1290 !important; display: block !important; width: 100vw !important; height: 100dvh !important; padding: 0 !important; border: 0 !important; background: rgba(2, 7, 18, .18) !important; }
   body.platform-body .platform-top:has(.platform-nav.open) { z-index: 1300 !important; }
   body.platform-body .platform-top .platform-nav.open,
-  body.platform-body .platform-top.is-compact .platform-nav.open { position: fixed !important; top: 72px !important; right: 10px !important; left: 10px !important; z-index: 1301 !important; display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; width: auto !important; max-height: calc(100dvh - 84px) !important; overflow-y: auto !important; padding: 12px !important; border: 1px solid rgba(170, 185, 201, .2) !important; border-radius: 16px !important; color: #f7fbff !important; background: #061326 !important; box-shadow: 0 20px 46px rgba(0, 0, 0, .58) !important; }
+  body.platform-body .platform-top.is-compact .platform-nav.open { position: fixed !important; top: 72px !important; right: 10px !important; left: 10px !important; z-index: 1301 !important; display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; width: auto !important; max-height: calc(100dvh - 84px) !important; overflow-y: auto !important; padding: 12px !important; border: 1px solid rgba(170, 185, 201, .2) !important; border-radius: 16px !important; color: #f7fbff !important; background: #061326 !important; box-shadow: 0 20px 46px rgba(0, 0, 0, .58) !important; touch-action: pan-y; }
+  body.platform-body .platform-top .platform-nav.open a { position: relative; z-index: 1; min-height: 48px; touch-action: manipulation; -webkit-tap-highlight-color: rgba(245, 189, 55, .18); }
   body.platform-body .platform-top .platform-nav.open a,
   body.platform-body .platform-top .platform-nav.open a.active,
   body.platform-body .platform-top .platform-nav.open a[aria-current="page"] { min-width: 0 !important; min-height: 46px !important; justify-content: center !important; padding: 8px !important; border: 1px solid rgba(170,185,201,.16) !important; border-radius: 10px !important; color: #f7fbff !important; background: #0a2039 !important; text-align: center !important; white-space: normal !important; overflow-wrap: anywhere; box-shadow: none !important; }
@@ -1046,6 +1122,10 @@ body.platform-body .member-photo-dialog img { display: block; max-width: min(80v
 }
 
 @media (max-width: 620px) {
+  body.platform-body .podcast-browser { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  body.platform-body .podcast-browser .podcast-filters { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+  body.platform-body .podcast-browser .podcast-filter { flex: 0 0 auto; }
+  body.platform-body .podcast-result-count { grid-column: 1; justify-self: start; margin: 0; }
   body.platform-body:has(.membership-form) .membership-fields { grid-template-columns: minmax(0, 1fr); }
   body.platform-body:has(.membership-form) .membership-form,
   body.platform-body:has(.membership-success) .membership-success { padding: 18px; }

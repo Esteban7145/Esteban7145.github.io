@@ -1294,3 +1294,10 @@ body.platform-body .committee-picker.full .committee-option span {
     padding: 4px;
   }
 }
+/* Mobile navigation: explicit JS state is reliable without CSS :has() support. */
+@media (max-width: 900px) {
+  body.platform-body .nav-backdrop.is-visible { z-index: 1290 !important; }
+  body.platform-body .platform-top.menu-open.menu-open.menu-open { position: relative !important; z-index: 1300 !important; }
+  body.platform-body .platform-top.menu-open.menu-open .platform-nav.open { z-index: 1301 !important; pointer-events: auto !important; }
+  body.platform-body .platform-top.menu-open.menu-open .platform-nav.open a { position: relative; z-index: 1; pointer-events: auto !important; touch-action: manipulation; }
+}

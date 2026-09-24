@@ -48,9 +48,10 @@ Deno.serve(async req => {
     }
     if (hasChurchRole && (!churchRole || churchRole.length > 120)) return json(req, { error: "Especifica el cargo que desempeñas en la iglesia." }, 400);
     if (!consent || !sensitiveDataConsent) return json(req, { error: "Debes aceptar de forma expresa el tratamiento de datos para crear el registro de membresía." }, 400);
-    if (photo instanceof File && photo.size > 0 && !photoConsent) return json(req, { error: "Para guardar la foto debes dar autorización expresa. La foto es opcional." }, 400);
-    if (photo instanceof File && photo.size > 0 && (!["image/jpeg", "image/png", "image/webp"].includes(photo.type) || photo.size > 3 * 1024 * 1024)) {
-      return json(req, { error: "La foto opcional debe ser JPG, PNG o WebP y pesar máximo 3 MB." }, 400);
+    if (!(photo instanceof File) || photo.size === 0) return json(req, { error: "Selecciona una foto de rostro para identificarte y generar tu carnet." }, 400);
+    if (!photoConsent) return json(req, { error: "Debes autorizar el almacenamiento privado de la foto para generar tu carnet." }, 400);
+    if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type) || photo.size > 3 * 1024 * 1024) {
+      return json(req, { error: "La foto debe ser JPG, PNG o WebP y pesar máximo 3 MB." }, 400);
     }
 
     const forwarded = req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim();
@@ -62,15 +63,13 @@ Deno.serve(async req => {
     if (Number(attempts) > 5) return json(req, { error: "Se alcanzó el límite temporal de registros. Inténtalo de nuevo en 15 minutos." }, 429);
 
     const id = crypto.randomUUID();
-    if (photo instanceof File && photo.size > 0) {
-      const extension = photo.type === "image/png" ? "png" : photo.type === "image/webp" ? "webp" : "jpg";
-      photoPath = `${id}/${crypto.randomUUID()}.${extension}`;
-      const { error: uploadError } = await supabaseAdmin.storage.from("membership-photos").upload(photoPath, photo, { contentType: photo.type, upsert: false });
-      if (uploadError) throw uploadError;
-    }
+    const extension = photo.type === "image/png" ? "png" : photo.type === "image/webp" ? "webp" : "jpg";
+    photoPath = `${id}/${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await supabaseAdmin.storage.from("membership-photos").upload(photoPath, photo, { contentType: photo.type, upsert: false });
+    if (uploadError) throw uploadError;
     const { data, error: insertError } = await supabaseAdmin.from("church_members").insert({
       id, full_name: fullName, address, email, phone, has_church_role: hasChurchRole,
-      church_role: churchRole, photo_path: photoPath || null, photo_consent: photoConsent && Boolean(photoPath), photo_consent_at: photoConsent && photoPath ? new Date().toISOString() : null,
+      church_role: churchRole, photo_path: photoPath, photo_consent: true, photo_consent_at: new Date().toISOString(),
       attendance_consent: attendanceConsent, attendance_consent_at: attendanceConsent ? new Date().toISOString() : null,
       sensitive_data_consent: sensitiveDataConsent, sensitive_data_consent_at: sensitiveDataConsent ? new Date().toISOString() : null, consent_version: "2026-09-v1",
     }).select("id,member_number").single();

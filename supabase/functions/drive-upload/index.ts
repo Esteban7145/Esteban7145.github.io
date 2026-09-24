@@ -189,29 +189,54 @@ async function sendResumableDriveChunk(sessionUrl: string, chunk: Blob, start: n
   }
   const uploaded = await result.json().catch(() => ({}));
   if (!result.ok) throw new Error(uploaded?.error?.message || "Google Drive rechazó un bloque del video.");
+  return { complete: true, asset: await publishDriveUpload(uploaded, total) };
+}
+
+function resumableReceivedBytes(range: string | null) {
+  const match = String(range || "").match(/(?:bytes=|bytes\s+)?0-(\d+)$/i);
+  return match ? Number(match[1]) + 1 : 0;
+}
+
+async function publishDriveUpload(uploaded: Record<string, unknown>, total: number) {
+  const id = String(uploaded.id || "");
+  if (!id) throw new Error("Drive terminó la transferencia, pero no devolvió el identificador del archivo.");
   const token = await googleAccessToken();
-  await driveRequest(token, `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(uploaded.id)}/permissions?sendNotificationEmail=false`, {
+  await driveRequest(token, `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}/permissions?sendNotificationEmail=false`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ type: "anyone", role: "reader", allowFileDiscovery: false }),
   });
   return {
-    complete: true,
-    asset: {
-      id: `drive-${uploaded.id}`,
-      driveFileId: uploaded.id,
-      provider: "google-drive",
-      name: uploaded.name || "video",
-      type: uploaded.mimeType || "application/octet-stream",
-      size: Number(uploaded.size || total),
-      url: `https://drive.google.com/uc?export=download&id=${uploaded.id}`,
-      previewUrl: `https://drive.google.com/uc?export=view&id=${uploaded.id}`,
-      webViewLink: uploaded.webViewLink || `https://drive.google.com/file/d/${uploaded.id}/view`,
-      uploadedAt: new Date().toISOString(),
-      path: `drive/${uploaded.id}`,
-      public: true,
-    },
+    id: `drive-${id}`,
+    driveFileId: id,
+    provider: "google-drive",
+    name: uploaded.name || "video",
+    type: uploaded.mimeType || "application/octet-stream",
+    size: Number(uploaded.size || total),
+    url: `https://drive.google.com/uc?export=download&id=${id}`,
+    previewUrl: `https://drive.google.com/uc?export=view&id=${id}`,
+    webViewLink: uploaded.webViewLink || `https://drive.google.com/file/d/${id}/view`,
+    uploadedAt: new Date().toISOString(),
+    path: `drive/${id}`,
+    public: true,
   };
+}
+
+async function queryResumableDriveUpload(sessionUrl: string, total: number) {
+  const target = new URL(sessionUrl);
+  if (target.protocol !== "https:" || target.hostname !== "www.googleapis.com" || !target.pathname.startsWith("/upload/drive/v3/files")) {
+    throw new Error("La sesión de carga de Google Drive no es válida.");
+  }
+  if (!Number.isSafeInteger(total) || total <= 0) throw new Error("El tamaño total del video no es válido.");
+  const result = await fetch(target, {
+    method: "PUT",
+    headers: { "Content-Length": "0", "Content-Range": `bytes */${total}` },
+    body: new Blob([]),
+  });
+  if (result.status === 308) return { complete: false, received: resumableReceivedBytes(result.headers.get("Range")) };
+  const uploaded = await result.json().catch(() => ({}));
+  if (!result.ok) throw new Error(uploaded?.error?.message || "Drive no pudo consultar el estado de la carga.");
+  return { complete: true, asset: await publishDriveUpload(uploaded, total) };
 }
 
 async function deleteFromDrive(token: string, fileId: string) {
@@ -330,6 +355,10 @@ Deno.serve(async req => {
       const chunk = form.get("chunk");
       if (!(chunk instanceof Blob)) return response(req, { error: "No se recibió el bloque del video." }, 400);
       const result = await sendResumableDriveChunk(String(form.get("sessionUrl") || ""), chunk, Number(form.get("start") || 0), Number(form.get("total") || 0));
+      return response(req, result);
+    }
+    if (action === "upload-status") {
+      const result = await queryResumableDriveUpload(String(form.get("sessionUrl") || ""), Number(form.get("total") || 0));
       return response(req, result);
     }
     if (action === "status") {
