@@ -1509,6 +1509,8 @@ const TYPES = {
         memberCard: null
       };
 
+      const MEMBERSHIP_COMMITTEES = ["Junta Local", "Red de Familia", "Caballeros", "Damas Dorcas", "DECOM", "Jóvenes", "Recepción", "Música", "Sonido", "Misiones", "Evangelismo", "Escuela Dominical", "Edad Dorada"];
+
       installPlatformStyles();
       document.body.classList.add("platform-body");
       const shell = document.querySelector("main.app");
@@ -2087,8 +2089,6 @@ const TYPES = {
         const svg = await membershipCardSvg(member);
         member.svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
       }
-
-      const MEMBERSHIP_COMMITTEES = ["Junta Local", "Red de Familia", "Caballeros", "Damas Dorcas", "DECOM", "Jóvenes", "Recepción", "Música", "Sonido", "Misiones", "Evangelismo", "Escuela Dominical", "Edad Dorada"];
 
       function renderMembershipPage() {
         const registration = platform.memberCard;
