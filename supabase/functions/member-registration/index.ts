@@ -101,12 +101,14 @@ Deno.serve(async req => {
     if (limitError) throw new Error("El registro no está disponible en este momento.");
     if (Number(attempts) > 5) return json(req, { error: "Se alcanzó el límite temporal de registros. Inténtalo de nuevo en 15 minutos." }, 429);
 
-    const { data: byDocument, error: documentLookupError } = await supabaseAdmin.from("church_members").select("id,email").eq("document_type", documentType).eq("document_number", documentNumber).maybeSingle();
+    const { data: byDocument, error: documentLookupError } = hasChurchRole
+      ? await supabaseAdmin.from("church_members").select("id,email").eq("document_type", documentType).eq("document_number", documentNumber).maybeSingle()
+      : { data: null, error: null };
     if (documentLookupError) throw documentLookupError;
     let existingMemberId = byDocument?.id || null;
     let existingMemberEmail = String(byDocument?.email || "").trim().toLowerCase();
     if (!existingMemberId) {
-      const { data: legacyMatches, error: legacyLookupError } = await supabaseAdmin.from("church_members").select("id,email").eq("email", email).is("document_type", null).limit(2);
+      const { data: legacyMatches, error: legacyLookupError } = await supabaseAdmin.from("church_members").select("id,email").eq("email", email).limit(2);
       if (legacyLookupError) throw legacyLookupError;
       if ((legacyMatches || []).length > 1) return json(req, { error: "Encontramos más de un registro anterior con ese correo. Contacta a administración para validar tu identidad." }, 409);
       existingMemberId = legacyMatches?.[0]?.id || null;
