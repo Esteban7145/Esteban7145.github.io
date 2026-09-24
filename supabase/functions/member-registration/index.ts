@@ -38,6 +38,8 @@ Deno.serve(async req => {
     const phone = String(form.get("phone") || "").trim();
     const hasChurchRole = form.get("hasChurchRole") === "true";
     const churchRole = hasChurchRole ? String(form.get("churchRole") || "").trim() : null;
+    const documentType = hasChurchRole ? String(form.get("documentType") || "").trim().toUpperCase() : null;
+    const documentNumber = hasChurchRole ? String(form.get("documentNumber") || "").trim().toUpperCase() : null;
     const consent = form.get("consent") === "true" && form.get("consentVersion") === "2026-09-v1";
     const sensitiveDataConsent = form.get("sensitiveDataConsent") === "true";
     const photoConsent = form.get("photoConsent") === "true";
@@ -47,6 +49,9 @@ Deno.serve(async req => {
       return json(req, { error: "Revisa el nombre, la dirección, el correo y el teléfono." }, 400);
     }
     if (hasChurchRole && (!churchRole || churchRole.length > 120)) return json(req, { error: "Especifica el cargo que desempeñas en la iglesia." }, 400);
+    if (hasChurchRole && (!documentType || !["CC", "TI", "CE", "PA", "RC", "PPT"].includes(documentType) || !documentNumber || !/^[A-Z0-9][A-Z0-9.-]{2,31}$/.test(documentNumber))) {
+      return json(req, { error: "Selecciona el tipo de documento e ingresa un número válido para elaborar el carnet." }, 400);
+    }
     if (!consent || !sensitiveDataConsent) return json(req, { error: "Debes aceptar de forma expresa el tratamiento de datos para crear el registro de membresía." }, 400);
     if (!(photo instanceof File) || photo.size === 0) return json(req, { error: "Selecciona una foto de rostro para identificarte y generar tu carnet." }, 400);
     if (!photoConsent) return json(req, { error: "Debes autorizar el almacenamiento privado de la foto para generar tu carnet." }, 400);
@@ -69,7 +74,8 @@ Deno.serve(async req => {
     if (uploadError) throw uploadError;
     const { data, error: insertError } = await supabaseAdmin.from("church_members").insert({
       id, full_name: fullName, address, email, phone, has_church_role: hasChurchRole,
-      church_role: churchRole, photo_path: photoPath, photo_consent: true, photo_consent_at: new Date().toISOString(),
+      church_role: churchRole, document_type: documentType, document_number: documentNumber,
+      photo_path: photoPath, photo_consent: true, photo_consent_at: new Date().toISOString(),
       attendance_consent: attendanceConsent, attendance_consent_at: attendanceConsent ? new Date().toISOString() : null,
       sensitive_data_consent: sensitiveDataConsent, sensitive_data_consent_at: sensitiveDataConsent ? new Date().toISOString() : null, consent_version: "2026-09-v1",
     }).select("id,member_number").single();
@@ -77,7 +83,7 @@ Deno.serve(async req => {
     return json(req, { ok: true, id: data.id, memberNumber: data.member_number }, 201);
   } catch (error) {
     if (photoPath) await supabaseAdmin.storage.from("membership-photos").remove([photoPath]).catch(() => {});
-    console.error("member-registration", error);
+    console.error("member-registration", error instanceof Error ? error.message : "No se pudo guardar el registro.");
     return json(req, { error: "No se pudo guardar el registro. Revisa los datos o intenta de nuevo." }, 400);
   }
 });

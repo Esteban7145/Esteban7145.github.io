@@ -1043,8 +1043,8 @@ body.platform-body:has(.membership-form) .membership-form h2,
 body.platform-body:has(.membership-success) .membership-success h2 { margin: 0 0 6px; color: #f7fbff; }
 body.platform-body:has(.membership-form) .membership-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 body.platform-body:has(.membership-form) .membership-fields label { display: grid; align-content: start; gap: 8px; color: #dce7f2; font-size: .9rem; font-weight: 750; }
-body.platform-body:has(.membership-form) .membership-fields input:not([type="checkbox"]):not([type="radio"]) { width: 100%; min-height: 46px; box-sizing: border-box; padding: 11px 13px; border: 1px solid rgba(170, 185, 201, .24); border-radius: 10px; color: #f7fbff; background: #04101f; font: inherit; }
-body.platform-body:has(.membership-form) .membership-fields input:focus-visible { outline: 2px solid #009fda; outline-offset: 2px; }
+body.platform-body:has(.membership-form) .membership-fields :is(input:not([type="checkbox"]):not([type="radio"]), select) { width: 100%; min-height: 46px; box-sizing: border-box; padding: 11px 13px; border: 1px solid rgba(170, 185, 201, .24); border-radius: 10px; color: #f7fbff; background: #04101f; font: inherit; }
+body.platform-body:has(.membership-form) .membership-fields :is(input, select):focus-visible { outline: 2px solid #009fda; outline-offset: 2px; }
 body.platform-body:has(.membership-form) .member-photo-field { grid-column: 1 / -1; }
 body.platform-body:has(.membership-form) .member-photo-field img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
 body.platform-body:has(.membership-form) [hidden] { display: none !important; }
@@ -1054,6 +1054,7 @@ body.platform-body:has(.membership-form) .member-role-options { display: flex; f
 body.platform-body:has(.membership-form) .member-role-options label { display: flex; min-width: 112px; min-height: 44px; grid-template-columns: none; align-items: center; justify-content: center; gap: 9px; padding: 8px 14px; border: 1px solid rgba(170,185,201,.22); border-radius: 10px; background: #061326; cursor: pointer; }
 body.platform-body:has(.membership-form) .member-role-options input { width: 18px; height: 18px; margin: 0; accent-color: #f5bd37; }
 body.platform-body:has(.membership-form) .member-role-field { grid-column: 1 / -1; }
+body.platform-body:has(.membership-form) .member-document-fields { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 body.platform-body:has(.membership-form) .member-consent { display: flex; align-items: flex-start; gap: 10px; }
 body.platform-body:has(.membership-form) .member-consent input { flex: 0 0 auto; width: 18px; height: 18px; accent-color: #009fda; }
 body.platform-body:has(.membership-form) .member-consent { margin: 22px 0 14px; color: #aab9c9; font-size: .84rem; line-height: 1.55; }
@@ -1088,6 +1089,7 @@ body.platform-body .member-photo-dialog img { display: block; max-width: min(80v
 
 @media (max-width: 900px) {
   body.platform-body:has(.membership-form) .membership-fields { grid-template-columns: minmax(0, 1fr); }
+  body.platform-body:has(.membership-form) .member-document-fields { grid-template-columns: minmax(0, 1fr); }
   body.platform-body .nav-backdrop[hidden] { display: none !important; }
   body.platform-body .nav-backdrop.is-visible { position: fixed !important; inset: 0 !important; z-index: 1290 !important; display: block !important; width: 100vw !important; height: 100dvh !important; padding: 0 !important; border: 0 !important; background: rgba(2, 7, 18, .18) !important; }
   body.platform-body .platform-top:has(.platform-nav.open) { z-index: 1300 !important; }

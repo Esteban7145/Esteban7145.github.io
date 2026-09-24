@@ -1624,7 +1624,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260923-local-ideas-2").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260924-member-documents-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -2040,7 +2040,9 @@ const TYPES = {
         const role = xml.querySelector("text.st2");
         if (!name || !code || !role || !member.photoDataUrl) throw new Error("Faltan campos en la plantilla del carnet.");
 
-        [[name, member.fullName, 162.06, 10], [code, `CARNÉ ${member.memberNumber}`, 173.56, 8], [role, member.churchRole, 195.35, 9]].forEach(([node, value, y, baseSize]) => {
+        const documentLabels = { CC: "C.C.", TI: "T.I.", CE: "C.E.", PA: "Pasaporte", RC: "R.C.", PPT: "P.P.T." };
+        const documentText = `${documentLabels[member.documentType] || member.documentType} ${member.documentNumber}`;
+        [[name, member.fullName, 162.06, 10], [code, documentText, 173.56, 8], [role, member.churchRole, 195.35, 9]].forEach(([node, value, y, baseSize]) => {
           node.textContent = value;
           node.removeAttribute("transform");
           node.setAttribute("x", "77.955");
@@ -2089,12 +2091,20 @@ const TYPES = {
         if (form) {
           const roleField = form.querySelector("[data-member-role-field]");
           const roleInput = roleField.querySelector("input");
+          const documentFields = document.createElement("div");
+          documentFields.className = "member-document-fields";
+          documentFields.hidden = true;
+          documentFields.innerHTML = `<label>Tipo de documento<select name="documentType" disabled><option value="">Selecciona el tipo</option><option value="CC">Cédula de ciudadanía (C.C.)</option><option value="TI">Tarjeta de identidad (T.I.)</option><option value="CE">Cédula de extranjería (C.E.)</option><option value="PA">Pasaporte</option><option value="RC">Registro civil (R.C.)</option><option value="PPT">Permiso por Protección Temporal (P.P.T.)</option></select></label><label>Número de documento<input name="documentNumber" type="text" inputmode="text" autocomplete="off" minlength="3" maxlength="32" pattern="[A-Za-z0-9][A-Za-z0-9.-]{2,31}" placeholder="Número sin espacios" disabled></label>`;
+          roleField.insertAdjacentElement("afterend", documentFields);
+          const documentInputs = documentFields.querySelectorAll("input, select");
           const syncRoleField = () => {
             const hasRole = form.querySelector('[name="hasChurchRole"]:checked')?.value === "si";
             roleField.hidden = !hasRole;
             roleInput.disabled = !hasRole;
             roleInput.required = hasRole;
             if (!hasRole) roleInput.value = "";
+            documentFields.hidden = !hasRole;
+            documentInputs.forEach(input => { input.disabled = !hasRole; input.required = hasRole; if (!hasRole) input.value = ""; });
           };
           form.querySelectorAll('[name="hasChurchRole"]').forEach(input => input.addEventListener("change", syncRoleField));
           const photoInput = form.elements.namedItem("photo");
@@ -2135,7 +2145,7 @@ const TYPES = {
             try {
               const response = await fetch(`${SUPABASE_CONFIG.url}/functions/v1/member-registration`, { method: "POST", headers: { apikey: SUPABASE_CONFIG.publishableKey }, body: data });
               const result = await response.json(); if (!response.ok || !result.ok) throw new Error(result.error || "No se pudo completar el registro.");
-              platform.memberCard = { fullName: String(data.get("fullName")).trim(), memberNumber: result.memberNumber, hasChurchRole: hasRole, churchRole: hasRole ? String(data.get("churchRole")).trim() : "", photoDataUrl, svgUrl: "" };
+              platform.memberCard = { fullName: String(data.get("fullName")).trim(), memberNumber: result.memberNumber, hasChurchRole: hasRole, churchRole: hasRole ? String(data.get("churchRole")).trim() : "", documentType: hasRole ? String(data.get("documentType")) : "", documentNumber: hasRole ? String(data.get("documentNumber")).trim().toUpperCase() : "", photoDataUrl, svgUrl: "" };
               if (hasRole) { try { await prepareMemberCardPreview(platform.memberCard); } catch (error) { console.warn("El carnet se podrá volver a generar desde el botón de descarga.", error); } }
               renderMembershipPage();
             } catch (error) { status.textContent = error.message || "No se pudo enviar el formulario. Inténtalo de nuevo."; submit.disabled = false; }
@@ -4742,9 +4752,9 @@ const TYPES = {
         return `<section class="admin-module" data-admin-module="membresia" ${platform.adminSection === "membresia" ? "" : "hidden"}>
           <article class="content-card admin-card-wide member-admin-module"><div class="section-title"><p class="eyebrow">Datos privados · acceso administrativo</p><h2>Membresía y asistencia</h2><p>Revisa solicitudes, aprueba miembros y registra asistencia por evento. Las fotos se consultan mediante enlaces temporales privados.</p></div>
           <div class="member-admin-stats"><span><strong>${members.length}</strong>Total</span><span><strong>${counts.pendiente}</strong>Pendientes</span><span><strong>${counts.activo}</strong>Activos</span><span><strong>${counts.inactivo}</strong>Inactivos</span></div>
-          <div class="member-directory-tools"><label>Buscar miembro<input type="search" data-member-search placeholder="Nombre, correo, teléfono o cargo" value="${escapeHtml(platform.memberSearch || "")}"></label><label>Estado<select data-member-filter-status><option value="todos" ${platform.memberStatusFilter === "todos" ? "selected" : ""}>Todos los estados</option><option value="pendiente" ${platform.memberStatusFilter === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${platform.memberStatusFilter === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${platform.memberStatusFilter === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><span data-member-result-count aria-live="polite">${members.length} ${members.length === 1 ? "persona" : "personas"}</span></div>
+          <div class="member-directory-tools"><label>Buscar miembro<input type="search" data-member-search placeholder="Nombre, correo, documento o cargo" value="${escapeHtml(platform.memberSearch || "")}"></label><label>Estado<select data-member-filter-status><option value="todos" ${platform.memberStatusFilter === "todos" ? "selected" : ""}>Todos los estados</option><option value="pendiente" ${platform.memberStatusFilter === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${platform.memberStatusFilter === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${platform.memberStatusFilter === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><span data-member-result-count aria-live="polite">${members.length} ${members.length === 1 ? "persona" : "personas"}</span></div>
           <label class="member-event-select">Evento para registrar asistencia<select data-member-event><option value="">Selecciona un evento</option>${events.map(event => `<option value="${escapeHtml(event.id)}">${escapeHtml(formatDateShort(event.date))} · ${escapeHtml(event.title)}</option>`).join("")}</select></label>
-          <div class="member-admin-list">${members.map(member => { const attendanceCount = (platform.memberAttendance || []).filter(row => row.member_id === member.id).length; return `<article class="member-admin-row" data-member-id="${escapeHtml(member.id)}"><div class="member-admin-identity"><span class="member-avatar">${escapeHtml(String(member.full_name || "?").slice(0, 1).toUpperCase())}</span><div><strong>${escapeHtml(member.full_name)}</strong><small>${escapeHtml(member.member_number)} · ${escapeHtml(member.email)}</small><small>${escapeHtml(member.phone)} · ${escapeHtml(member.address)}</small>${member.has_church_role ? `<small>Cargo: ${escapeHtml(member.church_role)}</small>` : ""}<small>Asistencias: ${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</small></div></div><div class="member-admin-actions"><span class="member-status-chip status-${escapeHtml(member.status)}">${escapeHtml(member.status)}</span>${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>` : ""}<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div></article>`; }).join("") || `<p class="member-empty">Aún no hay solicitudes de membresía.</p>`}<p class="member-filter-empty" data-member-filter-empty hidden>No hay personas que coincidan con esta búsqueda.</p></div></article>
+          <div class="member-admin-list">${members.map(member => { const attendanceCount = (platform.memberAttendance || []).filter(row => row.member_id === member.id).length; return `<article class="member-admin-row" data-member-id="${escapeHtml(member.id)}"><div class="member-admin-identity"><span class="member-avatar">${escapeHtml(String(member.full_name || "?").slice(0, 1).toUpperCase())}</span><div><strong>${escapeHtml(member.full_name)}</strong><small>${escapeHtml(member.member_number)} · ${escapeHtml(member.email)}</small><small>${escapeHtml(member.phone)} · ${escapeHtml(member.address)}</small>${member.has_church_role ? `<small>Cargo: ${escapeHtml(member.church_role)}</small>` : ""}${member.document_type && member.document_number ? `<small>Documento: ${escapeHtml(({ CC: "C.C.", TI: "T.I.", CE: "C.E.", PA: "Pasaporte", RC: "R.C.", PPT: "P.P.T." })[member.document_type] || member.document_type)} ${escapeHtml(member.document_number)}</small>` : ""}<small>Asistencias: ${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</small></div></div><div class="member-admin-actions"><span class="member-status-chip status-${escapeHtml(member.status)}">${escapeHtml(member.status)}</span>${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>` : ""}<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div></article>`; }).join("") || `<p class="member-empty">Aún no hay solicitudes de membresía.</p>`}<p class="member-filter-empty" data-member-filter-empty hidden>No hay personas que coincidan con esta búsqueda.</p></div></article>
         </section>`;
       }
 
