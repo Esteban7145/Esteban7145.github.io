@@ -1046,6 +1046,18 @@ body.platform-body:has(.membership-form) .membership-fields label { display: gri
 body.platform-body:has(.membership-form) .membership-fields :is(input:not([type="checkbox"]):not([type="radio"]), select) { width: 100%; min-height: 46px; box-sizing: border-box; padding: 11px 13px; border: 1px solid rgba(170, 185, 201, .24); border-radius: 10px; color: #f7fbff; background: #04101f; font: inherit; }
 body.platform-body:has(.membership-form) .membership-fields :is(input, select):focus-visible { outline: 2px solid #009fda; outline-offset: 2px; }
 body.platform-body:has(.membership-form) .member-photo-field { grid-column: 1 / -1; }
+body.platform-body:has(.membership-form) .member-profile-fields { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+body.platform-body:has(.membership-form) .member-profile-fields label { display: grid; align-content: start; gap: 8px; color: #dce7f2; font-size: .9rem; font-weight: 750; }
+body.platform-body:has(.membership-form) .member-profile-fields input:not([type="radio"]) { width: 100%; min-height: 46px; box-sizing: border-box; padding: 11px 13px; border: 1px solid rgba(170,185,201,.24); border-radius: 10px; color: #f7fbff; background: #04101f; font: inherit; }
+body.platform-body:has(.membership-form) .member-profile-fields input:focus-visible { outline: 2px solid #009fda; outline-offset: 2px; }
+body.platform-body:has(.membership-form) .member-profile-fields fieldset { grid-column: 1 / -1; }
+body.platform-body:has(.membership-form) .member-baptism-date { grid-column: 1 / -1; }
+body.platform-body:has(.membership-form) .member-guardian-fields { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 18px; border: 1px solid rgba(0,159,218,.28); border-radius: 14px; background: rgba(0,51,141,.12); }
+body.platform-body:has(.membership-form) .member-guardian-fields[hidden] { display: none; }
+body.platform-body:has(.membership-form) .member-guardian-fields h3,
+body.platform-body:has(.membership-form) .member-guardian-fields > p { grid-column: 1 / -1; margin: 0; }
+body.platform-body:has(.membership-form) .member-guardian-fields h3 { color: #f7fbff; font-size: 1rem; }
+body.platform-body:has(.membership-form) .member-guardian-fields > p { color: #aab9c9; font-size: .88rem; }
 body.platform-body:has(.membership-form) .member-photo-field img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
 body.platform-body:has(.membership-form) [hidden] { display: none !important; }
 body.platform-body:has(.membership-form) .member-role-question { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 16px; border: 1px solid rgba(170,185,201,.2); border-radius: 12px; }
@@ -1090,6 +1102,8 @@ body.platform-body .member-photo-dialog img { display: block; max-width: min(80v
 @media (max-width: 900px) {
   body.platform-body:has(.membership-form) .membership-fields { grid-template-columns: minmax(0, 1fr); }
   body.platform-body:has(.membership-form) .member-document-fields { grid-template-columns: minmax(0, 1fr); }
+  body.platform-body:has(.membership-form) .member-profile-fields { grid-template-columns: minmax(0, 1fr); }
+  body.platform-body:has(.membership-form) .member-guardian-fields { grid-template-columns: minmax(0, 1fr); padding: 14px; }
   body.platform-body .nav-backdrop[hidden] { display: none !important; }
   body.platform-body .nav-backdrop.is-visible { position: fixed !important; inset: 0 !important; z-index: 1290 !important; display: block !important; width: 100vw !important; height: 100dvh !important; padding: 0 !important; border: 0 !important; background: rgba(2, 7, 18, .18) !important; }
   body.platform-body .platform-top:has(.platform-nav.open) { z-index: 1300 !important; }

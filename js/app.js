@@ -1624,7 +1624,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260924-member-documents-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260924-member-profile-guardian-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -2084,27 +2084,65 @@ const TYPES = {
 
       function renderMembershipPage() {
         const registration = platform.memberCard;
-        const card = registration?.hasChurchRole ? registration : null;
+        const card = registration?.hasChurchRole && !registration?.changeRequest ? registration : null;
         view().innerHTML = `<section class="page-head"><div><p class="eyebrow">Familia IPUC</p><h1>Registro de membresía</h1><p>Comparte tus datos con la administración de la iglesia para mantener actualizado el registro de membresía.</p></div></section>
-          ${registration ? `<section class="membership-success"><p class="eyebrow">Registro recibido</p><h2>Gracias, ${escapeHtml(registration.fullName)}</h2><p>Tu solicitud quedó pendiente de validación por la iglesia.</p>${card ? `<article class="member-card-preview" aria-label="Vista previa del carnet IPUC">${card.svgUrl ? `<img src="${escapeHtml(card.svgUrl)}" alt="Carnet de ${escapeHtml(card.fullName)} con cargo ${escapeHtml(card.churchRole)}">` : `<div class="member-card-placeholder">Carnet listo para descargar</div>`}</article><p class="member-card-note">El carnet se genera solo para quien declaró un cargo. Tu carnet se prepara en este dispositivo; los datos y la foto no se descargan desde el registro administrativo.</p><div class="member-card-downloads"><button class="primary-link" type="button" data-download-member-card="png">Descargar carnet</button><button class="small-action" type="button" data-download-member-card="svg">Descargar editable (SVG)</button></div><p class="member-form-status" data-member-status role="status" aria-live="polite"></p>` : `<div class="membership-no-card"><strong>Registro guardado</strong><p>Como indicaste que no tienes un cargo, no se generó un carnet.</p></div>`}</section>` : `<form class="membership-form" id="membershipForm" novalidate><div class="membership-form-heading"><span>01</span><div><h2>Tus datos</h2><p>La información de este registro solo la consultará el equipo administrativo autorizado.</p></div></div><div class="membership-fields"><label>Nombre completo<input name="fullName" autocomplete="name" required maxlength="140"></label><label>Dirección de residencia<input name="address" autocomplete="street-address" required maxlength="240"></label><label>Correo electrónico<input name="email" type="email" autocomplete="email" required maxlength="254"></label><label>Teléfono<input name="phone" type="tel" autocomplete="tel" required maxlength="32"></label><label class="member-photo-field">Foto de rostro para identificación y control de membresía<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG o WebP · máximo 3 MB. Se guarda de forma privada. La foto no se publica.</small><img data-member-photo-preview alt="Vista previa de tu foto" hidden></label><fieldset class="member-role-question"><legend>¿Tienes un cargo en la iglesia?</legend><div class="member-role-options"><label><input name="hasChurchRole" type="radio" value="si" required> Sí</label><label><input name="hasChurchRole" type="radio" value="no" required> No</label></div></fieldset><label class="member-role-field" data-member-role-field hidden>¿Cuál es tu cargo?<input name="churchRole" maxlength="120" placeholder="Ej. Presidente DECOM" disabled></label></div><label class="member-consent"><input name="sensitiveDataConsent" type="checkbox" required><span>Autorizo de forma previa, expresa e informada a IPUC Villa del Río a tratar mis datos identificativos y el hecho de mi vinculación como miembro (dato que puede revelar mi afiliación religiosa) para gestionar esta solicitud y mi membresía. Esta autorización no es necesaria para asistir a los cultos. Podré conocer, actualizar, rectificar o solicitar la supresión de mis datos o revocar esta autorización escribiendo a <a href="mailto:decomvilladelrio@gmail.com">decomvilladelrio@gmail.com</a>. El registro será consultable solo por personal administrativo autorizado.</span></label><label class="member-consent"><input name="photoConsent" type="checkbox" required><span>Autorizo expresamente el almacenamiento privado de mi fotografía para identificarme y elaborar el carnet de membresía. Esta autorización no permite publicar la foto en anuncios o material promocional; para eso se solicitará permiso aparte.</span></label><label class="member-consent"><input name="attendanceConsent" type="checkbox"><span>Opcional: autorizo registrar mi asistencia a eventos de la iglesia para control interno. Puedo registrarme sin activar esta función.</span></label><p class="member-form-status" data-member-status role="status" aria-live="polite"></p><button class="primary-link" type="submit">Enviar registro</button></form>`}`;
+          ${registration ? `<section class="membership-success"><p class="eyebrow">${registration.changeRequest ? "Actualización pendiente" : "Registro recibido"}</p><h2>${registration.changeRequest ? "Solicitud enviada" : `Gracias, ${escapeHtml(registration.fullName)}`}</h2><p>${registration.changeRequest ? "Tus datos no se han modificado todavía. Un administrador debe revisar y aprobar los cambios para actualizar el registro oficial." : "Tu solicitud quedó pendiente de validación por la iglesia."}</p>${registration.changeRequest ? `<div class="membership-no-card"><strong>Esperando revisión administrativa</strong><p>La iglesia revisará la información antes de aplicarla al registro y al carnet.</p></div>` : card ? `<article class="member-card-preview" aria-label="Vista previa del carnet IPUC">${card.svgUrl ? `<img src="${escapeHtml(card.svgUrl)}" alt="Carnet de ${escapeHtml(card.fullName)} con cargo ${escapeHtml(card.churchRole)}">` : `<div class="member-card-placeholder">Carnet listo para descargar</div>`}</article><p class="member-card-note">El carnet se genera solo para quien declaró un cargo. Tu carnet se prepara en este dispositivo; los datos y la foto no se descargan desde el registro administrativo.</p><div class="member-card-downloads"><button class="primary-link" type="button" data-download-member-card="png">Descargar carnet</button><button class="small-action" type="button" data-download-member-card="svg">Descargar editable (SVG)</button></div><p class="member-form-status" data-member-status role="status" aria-live="polite"></p>` : `<div class="membership-no-card"><strong>Registro guardado</strong><p>Como indicaste que no tienes un cargo, no se generó un carnet.</p></div>`}</section>` : `<form class="membership-form" id="membershipForm" novalidate><div class="membership-form-heading"><span>01</span><div><h2>Tus datos</h2><p>La información de este registro solo la consultará el equipo administrativo autorizado.</p></div></div><div class="membership-fields"><label>Nombre completo<input name="fullName" autocomplete="name" required maxlength="140"></label><label>Dirección de residencia<input name="address" autocomplete="street-address" required maxlength="240"></label><label>Correo electrónico<input name="email" type="email" autocomplete="email" required maxlength="254"></label><label>Teléfono<input name="phone" type="tel" autocomplete="tel" required maxlength="32"></label><label class="member-photo-field">Foto de rostro para identificación y control de membresía<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG o WebP · máximo 3 MB. Se guarda de forma privada. La foto no se publica.</small><img data-member-photo-preview alt="Vista previa de tu foto" hidden></label><fieldset class="member-role-question"><legend>¿Tienes un cargo en la iglesia?</legend><div class="member-role-options"><label><input name="hasChurchRole" type="radio" value="si" required> Sí</label><label><input name="hasChurchRole" type="radio" value="no" required> No</label></div></fieldset><label class="member-role-field" data-member-role-field hidden>¿Cuál es tu cargo?<input name="churchRole" maxlength="120" placeholder="Ej. Presidente DECOM" disabled></label></div><label class="member-consent"><input name="sensitiveDataConsent" type="checkbox" required><span>Autorizo de forma previa, expresa e informada a IPUC Villa del Río a tratar mis datos identificativos, fecha de nacimiento, información sobre bautismo y llenura del Espíritu Santo y mi vinculación como miembro, para gestionar esta solicitud y mi membresía. Estos datos religiosos son sensibles y solo serán consultados por administración autorizada. Esta autorización no es necesaria para asistir a los cultos. Podré conocer, actualizar, rectificar o solicitar la supresión de mis datos o revocar esta autorización escribiendo a <a href="mailto:decomvilladelrio@gmail.com">decomvilladelrio@gmail.com</a>.</span></label><label class="member-consent"><input name="photoConsent" type="checkbox" required><span>Autorizo expresamente el almacenamiento privado de mi fotografía para identificarme y elaborar el carnet de membresía. Esta autorización no permite publicar la foto en anuncios o material promocional; para eso se solicitará permiso aparte.</span></label><label class="member-consent"><input name="attendanceConsent" type="checkbox"><span>Opcional: autorizo registrar mi asistencia a eventos de la iglesia para control interno. Puedo registrarme sin activar esta función.</span></label><p class="member-form-status" data-member-status role="status" aria-live="polite"></p><button class="primary-link" type="submit">Enviar registro</button></form>`}`;
         const form = document.getElementById("membershipForm");
         if (form) {
           const roleField = form.querySelector("[data-member-role-field]");
           const roleInput = roleField.querySelector("input");
+          const profileFields = document.createElement("div");
+          profileFields.className = "member-profile-fields";
+          profileFields.innerHTML = `<label>Fecha de nacimiento<input name="birthDate" type="date" required></label><fieldset class="member-role-question"><legend>¿Ya eres bautizado en agua?</legend><div class="member-role-options"><label><input name="isBaptized" type="radio" value="true" required> Sí</label><label><input name="isBaptized" type="radio" value="false" required> No</label></div></fieldset><label class="member-baptism-date" data-member-baptism-date hidden>Fecha de bautismo<input name="baptismDate" type="date" disabled></label><fieldset class="member-role-question"><legend>¿Eres lleno del Espíritu Santo?</legend><div class="member-role-options"><label><input name="filledWithHolySpirit" type="radio" value="true" required> Sí</label><label><input name="filledWithHolySpirit" type="radio" value="false" required> No</label></div></fieldset><section class="member-guardian-fields" data-member-guardian-fields hidden><h3>Autorización para menores de edad</h3><p>Al registrar a una persona menor de 18 años, debe completar esta sección su padre, madre o representante legal.</p><label>Nombre completo del padre, madre o representante<input name="guardianFullName" maxlength="140" autocomplete="name" disabled></label><label class="member-consent"><input name="guardianConsent" type="checkbox" disabled><span>Como padre, madre o representante legal, autorizo el tratamiento de los datos personales y sensibles del menor para gestionar su registro de membresía.</span></label><label class="member-consent"><input name="minorInformedConsent" type="checkbox" disabled><span>He informado al menor sobre este registro y he tenido en cuenta su opinión.</span></label></section>`;
+          form.querySelector(".member-role-question").insertAdjacentElement("beforebegin", profileFields);
+          const birthDateInput = profileFields.querySelector('[name="birthDate"]');
+          const todayInBogota = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
+          birthDateInput.max = todayInBogota();
+          const guardianFields = profileFields.querySelector("[data-member-guardian-fields]");
+          const guardianNameInput = guardianFields.querySelector('[name="guardianFullName"]');
+          const guardianConsentInput = guardianFields.querySelector('[name="guardianConsent"]');
+          const minorConsentInput = guardianFields.querySelector('[name="minorInformedConsent"]');
+          const isMinor = value => {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+            const [year, month, day] = value.split("-").map(Number);
+            const [nowYear, nowMonth, nowDay] = todayInBogota().split("-").map(Number);
+            return nowYear - year < 18 || (nowYear - year === 18 && (nowMonth < month || (nowMonth === month && nowDay < day)));
+          };
+          const syncGuardianFields = () => {
+            const minor = isMinor(birthDateInput.value);
+            guardianFields.hidden = !minor;
+            [guardianNameInput, guardianConsentInput, minorConsentInput].forEach(input => {
+              input.disabled = !minor;
+              input.required = minor;
+              if (!minor) input.type === "checkbox" ? input.checked = false : input.value = "";
+            });
+          };
+          const baptizedInputs = profileFields.querySelectorAll('[name="isBaptized"]');
+          const baptismDateField = profileFields.querySelector("[data-member-baptism-date]");
+          const baptismDateInput = baptismDateField.querySelector("input");
+          const syncBaptismDate = () => {
+            const baptized = form.querySelector('[name="isBaptized"]:checked')?.value === "true";
+            baptismDateField.hidden = !baptized;
+            baptismDateInput.disabled = !baptized;
+            baptismDateInput.required = baptized;
+            baptismDateInput.min = birthDateInput.value || "1900-01-01";
+            baptismDateInput.max = todayInBogota();
+            if (!baptized) baptismDateInput.value = "";
+          };
+          baptizedInputs.forEach(input => input.addEventListener("change", syncBaptismDate));
+          birthDateInput.addEventListener("change", syncBaptismDate);
+          birthDateInput.addEventListener("change", syncGuardianFields);
+          syncGuardianFields();
           const documentFields = document.createElement("div");
           documentFields.className = "member-document-fields";
-          documentFields.hidden = true;
-          documentFields.innerHTML = `<label>Tipo de documento<select name="documentType" disabled><option value="">Selecciona el tipo</option><option value="CC">Cédula de ciudadanía (C.C.)</option><option value="TI">Tarjeta de identidad (T.I.)</option><option value="CE">Cédula de extranjería (C.E.)</option><option value="PA">Pasaporte</option><option value="RC">Registro civil (R.C.)</option><option value="PPT">Permiso por Protección Temporal (P.P.T.)</option></select></label><label>Número de documento<input name="documentNumber" type="text" inputmode="text" autocomplete="off" minlength="3" maxlength="32" pattern="[A-Za-z0-9][A-Za-z0-9.-]{2,31}" placeholder="Número sin espacios" disabled></label>`;
+          documentFields.innerHTML = `<label>Tipo de documento<select name="documentType" required><option value="">Selecciona el tipo</option><option value="CC">Cédula de ciudadanía (C.C.)</option><option value="TI">Tarjeta de identidad (T.I.)</option><option value="CE">Cédula de extranjería (C.E.)</option><option value="PA">Pasaporte</option><option value="RC">Registro civil (R.C.)</option><option value="PPT">Permiso por Protección Temporal (P.P.T.)</option></select></label><label>Número de documento<input name="documentNumber" type="text" inputmode="text" autocomplete="off" minlength="3" maxlength="32" pattern="[A-Za-z0-9][A-Za-z0-9.-]{2,31}" placeholder="Número sin espacios" required></label>`;
           roleField.insertAdjacentElement("afterend", documentFields);
-          const documentInputs = documentFields.querySelectorAll("input, select");
           const syncRoleField = () => {
             const hasRole = form.querySelector('[name="hasChurchRole"]:checked')?.value === "si";
             roleField.hidden = !hasRole;
             roleInput.disabled = !hasRole;
             roleInput.required = hasRole;
             if (!hasRole) roleInput.value = "";
-            documentFields.hidden = !hasRole;
-            documentInputs.forEach(input => { input.disabled = !hasRole; input.required = hasRole; if (!hasRole) input.value = ""; });
           };
           form.querySelectorAll('[name="hasChurchRole"]').forEach(input => input.addEventListener("change", syncRoleField));
           const photoInput = form.elements.namedItem("photo");
@@ -2136,16 +2174,35 @@ const TYPES = {
             data.set("sensitiveDataConsent", String(form.elements.namedItem("sensitiveDataConsent").checked));
             data.set("photoConsent", String(photoConsent));
             data.set("attendanceConsent", String(form.elements.namedItem("attendanceConsent").checked));
-            data.set("hasChurchRole", String(hasRole)); data.set("consentVersion", "2026-09-v1");
+            data.set("hasChurchRole", String(hasRole)); data.set("consentVersion", "2026-09-v3");
+            data.set("guardianConsent", String(form.elements.namedItem("guardianConsent").checked));
+            data.set("minorInformedConsent", String(form.elements.namedItem("minorInformedConsent").checked));
+            data.set("isBaptized", String(form.querySelector('[name="isBaptized"]:checked')?.value === "true"));
+            data.set("filledWithHolySpirit", String(form.querySelector('[name="filledWithHolySpirit"]:checked')?.value === "true"));
             let photoDataUrl = "";
             if (hasRole) {
               try { photoDataUrl = await fileAsDataUrl(data.get("photo")); }
               catch (error) { status.textContent = error.message; submit.disabled = false; return; }
             }
             try {
-              const response = await fetch(`${SUPABASE_CONFIG.url}/functions/v1/member-registration`, { method: "POST", headers: { apikey: SUPABASE_CONFIG.publishableKey }, body: data });
-              const result = await response.json(); if (!response.ok || !result.ok) throw new Error(result.error || "No se pudo completar el registro.");
-              platform.memberCard = { fullName: String(data.get("fullName")).trim(), memberNumber: result.memberNumber, hasChurchRole: hasRole, churchRole: hasRole ? String(data.get("churchRole")).trim() : "", documentType: hasRole ? String(data.get("documentType")) : "", documentNumber: hasRole ? String(data.get("documentNumber")).trim().toUpperCase() : "", photoDataUrl, svgUrl: "" };
+              const sendRegistration = () => fetch(`${SUPABASE_CONFIG.url}/functions/v1/member-registration`, { method: "POST", headers: { apikey: SUPABASE_CONFIG.publishableKey }, body: data });
+              let response = await sendRegistration();
+              let result = await response.json();
+              if (response.status === 409 && result.code === "existing_member") {
+                const wantsChanges = window.confirm("Ya existe un registro de membresía con este documento. ¿Deseas enviar una solicitud para actualizar tus datos? Los cambios solo se aplicarán después de que administración los revise y apruebe.");
+                if (!wantsChanges) { status.textContent = "No se hicieron cambios en tu registro."; submit.disabled = false; return; }
+                data.set("requestChanges", "true");
+                status.textContent = "Enviando solicitud para revisión…";
+                response = await sendRegistration();
+                result = await response.json();
+              }
+              if (!response.ok || !result.ok) throw new Error(result.error || "No se pudo completar el registro.");
+              if (result.changeRequest) {
+                platform.memberCard = { fullName: String(data.get("fullName")).trim(), changeRequest: true };
+                renderMembershipPage();
+                return;
+              }
+              platform.memberCard = { fullName: String(data.get("fullName")).trim(), memberNumber: result.memberNumber, hasChurchRole: hasRole, churchRole: hasRole ? String(data.get("churchRole")).trim() : "", documentType: String(data.get("documentType")), documentNumber: String(data.get("documentNumber")).trim().toUpperCase(), photoDataUrl, svgUrl: "" };
               if (hasRole) { try { await prepareMemberCardPreview(platform.memberCard); } catch (error) { console.warn("El carnet se podrá volver a generar desde el botón de descarga.", error); } }
               renderMembershipPage();
             } catch (error) { status.textContent = error.message || "No se pudo enviar el formulario. Inténtalo de nuevo."; submit.disabled = false; }
@@ -3874,9 +3931,10 @@ const TYPES = {
             await loadMembershipAdmin();
           });
         });
-        view().querySelectorAll("[data-member-photo]").forEach(button => {
+        view().querySelectorAll("[data-member-photo], [data-change-photo]").forEach(button => {
           button.onclick = runAdminAction(async () => {
-            const { data, error } = await cloud.storage.from("membership-photos").createSignedUrl(button.dataset.memberPhoto, 600);
+            const photoPath = button.dataset.memberPhoto || button.dataset.changePhoto;
+            const { data, error } = await cloud.storage.from("membership-photos").createSignedUrl(photoPath, 600);
             if (error) throw error;
             const dialog = document.createElement("dialog");
             dialog.className = "member-photo-dialog";
@@ -3884,6 +3942,21 @@ const TYPES = {
             dialog.querySelector("img").src = data.signedUrl;
             dialog.addEventListener("close", () => dialog.remove(), { once: true });
             document.body.append(dialog); dialog.showModal();
+          });
+        });
+        view().querySelectorAll("[data-approve-member-change], [data-reject-member-change]").forEach(button => {
+          button.onclick = runAdminAction(async () => {
+            const row = button.closest("[data-change-request-id]");
+            const request = platform.memberChangeRequests.find(item => item.id === row?.dataset.changeRequestId);
+            if (!request) throw new Error("La solicitud ya no está disponible.");
+            const approve = button.hasAttribute("data-approve-member-change");
+            const { error } = await cloud.db.rpc("review_member_change_request", { p_request_id: request.id, p_approve: approve });
+            if (error) throw error;
+            if (!approve && request.photo_path) {
+              const removed = await cloud.storage.from("membership-photos").remove([request.photo_path]);
+              if (removed.error) console.warn("No se pudo eliminar la foto privada de la solicitud rechazada.", removed.error);
+            }
+            await loadMembershipAdmin();
           });
         });
         view().querySelectorAll("[data-member-delete]").forEach(button => {
@@ -4729,19 +4802,37 @@ const TYPES = {
       async function loadMembershipAdmin() {
         if (!isAdmin() || !cloud.db) return;
         try {
-          const [members, attendance] = await Promise.all([
+          const [members, attendance, changes] = await Promise.all([
             cloud.db.from("church_members").select("*").order("created_at", { ascending: false }),
-            cloud.db.from("member_attendance").select("*").order("attended_at", { ascending: false })
+            cloud.db.from("member_attendance").select("*").order("attended_at", { ascending: false }),
+            cloud.db.from("member_change_requests").select("*").eq("status", "pendiente").order("created_at", { ascending: false })
           ]);
           if (members.error) throw members.error;
           if (attendance.error) throw attendance.error;
+          if (changes.error) throw changes.error;
           platform.members = members.data || [];
           platform.memberAttendance = attendance.data || [];
+          platform.memberChangeRequests = changes.data || [];
+          const photoPaths = [...new Set([...platform.members, ...platform.memberChangeRequests].map(member => member.photo_path).filter(Boolean))];
+          if (photoPaths.length) {
+            const { data: signedPhotos, error: signedPhotoError } = await cloud.storage.from("membership-photos").createSignedUrls(photoPaths, 600);
+            if (signedPhotoError) console.warn("No se pudieron cargar algunas fotos privadas.", signedPhotoError);
+            const photoUrls = new Map((signedPhotos || []).map(photo => [photo.path, photo.signedUrl]));
+            platform.members.forEach(member => { member.photo_preview_url = photoUrls.get(member.photo_path) || ""; });
+            platform.memberChangeRequests.forEach(request => { request.photo_preview_url = photoUrls.get(request.photo_path) || ""; });
+          }
           if (parseRoute().name === "admin" && platform.adminSection === "membresia") renderAdminPage();
         } catch (error) {
           cloud.storageError = `No se pudo cargar el registro privado: ${error.message}`;
           if (parseRoute().name === "admin") renderAdminPage();
         }
+      }
+
+      function renderMemberChangeQueue() {
+        const requests = platform.memberChangeRequests || [];
+        if (!requests.length) return `<section class="member-change-queue"><div class="section-title"><p class="eyebrow">Revisión administrativa</p><h3>Solicitudes de actualización</h3></div><p class="member-empty">No hay cambios pendientes de aprobación.</p></section>`;
+        const labels = { CC: "C.C.", TI: "T.I.", CE: "C.E.", PA: "Pasaporte", RC: "R.C.", PPT: "P.P.T." };
+        return `<section class="member-change-queue"><div class="section-title"><p class="eyebrow">Revisión administrativa · ${requests.length} pendiente${requests.length === 1 ? "" : "s"}</p><h3>Solicitudes de actualización</h3><p>Los datos oficiales permanecen iguales hasta que un administrador apruebe cada cambio.</p></div>${requests.map(request => `<article class="member-change-request" data-change-request-id="${escapeHtml(request.id)}"><div class="member-change-request-photo">${request.photo_preview_url ? `<img src="${escapeHtml(request.photo_preview_url)}" alt="Foto enviada por ${escapeHtml(request.full_name)}">` : `<span>${escapeHtml(String(request.full_name || "?").slice(0, 1).toUpperCase())}</span>`}</div><div class="member-change-request-details"><strong>${escapeHtml(request.full_name)}</strong><small>${escapeHtml(labels[request.document_type] || request.document_type)} ${escapeHtml(request.document_number)} · ${escapeHtml(request.email)} · ${escapeHtml(request.phone)}</small><small>${escapeHtml(request.address)}</small><small>Nacimiento: ${escapeHtml(request.birth_date)} · Bautizado: ${request.is_baptized ? `Sí, ${escapeHtml(request.baptism_date || "")}` : "No"} · Lleno del Espíritu Santo: ${request.filled_with_holy_spirit ? "Sí" : "No"}</small>${request.guardian_consent ? `<small>Representante: ${escapeHtml(request.guardian_full_name || "No indicado")} · autorización confirmada · menor informado: ${request.minor_informed_consent ? "Sí" : "No"}</small>` : ""}<small>${request.has_church_role ? `Cargo: ${escapeHtml(request.church_role)}` : "Sin cargo"}</small><small>Enviada: ${escapeHtml(new Date(request.created_at).toLocaleString("es-CO"))}</small></div><div class="member-change-request-actions">${request.photo_path ? `<button type="button" class="small-action" data-change-photo="${escapeHtml(request.photo_path)}">Ver foto</button>` : ""}<button type="button" class="primary-link" data-approve-member-change>Aprobar cambios</button><button type="button" class="small-action danger-action" data-reject-member-change>Rechazar</button></div></article>`).join("")}</section>`;
       }
 
       function renderMembershipAdminModule() {
@@ -4752,9 +4843,10 @@ const TYPES = {
         return `<section class="admin-module" data-admin-module="membresia" ${platform.adminSection === "membresia" ? "" : "hidden"}>
           <article class="content-card admin-card-wide member-admin-module"><div class="section-title"><p class="eyebrow">Datos privados · acceso administrativo</p><h2>Membresía y asistencia</h2><p>Revisa solicitudes, aprueba miembros y registra asistencia por evento. Las fotos se consultan mediante enlaces temporales privados.</p></div>
           <div class="member-admin-stats"><span><strong>${members.length}</strong>Total</span><span><strong>${counts.pendiente}</strong>Pendientes</span><span><strong>${counts.activo}</strong>Activos</span><span><strong>${counts.inactivo}</strong>Inactivos</span></div>
+          ${renderMemberChangeQueue()}
           <div class="member-directory-tools"><label>Buscar miembro<input type="search" data-member-search placeholder="Nombre, correo, documento o cargo" value="${escapeHtml(platform.memberSearch || "")}"></label><label>Estado<select data-member-filter-status><option value="todos" ${platform.memberStatusFilter === "todos" ? "selected" : ""}>Todos los estados</option><option value="pendiente" ${platform.memberStatusFilter === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${platform.memberStatusFilter === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${platform.memberStatusFilter === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><span data-member-result-count aria-live="polite">${members.length} ${members.length === 1 ? "persona" : "personas"}</span></div>
           <label class="member-event-select">Evento para registrar asistencia<select data-member-event><option value="">Selecciona un evento</option>${events.map(event => `<option value="${escapeHtml(event.id)}">${escapeHtml(formatDateShort(event.date))} · ${escapeHtml(event.title)}</option>`).join("")}</select></label>
-          <div class="member-admin-list">${members.map(member => { const attendanceCount = (platform.memberAttendance || []).filter(row => row.member_id === member.id).length; return `<article class="member-admin-row" data-member-id="${escapeHtml(member.id)}"><div class="member-admin-identity"><span class="member-avatar">${escapeHtml(String(member.full_name || "?").slice(0, 1).toUpperCase())}</span><div><strong>${escapeHtml(member.full_name)}</strong><small>${escapeHtml(member.member_number)} · ${escapeHtml(member.email)}</small><small>${escapeHtml(member.phone)} · ${escapeHtml(member.address)}</small>${member.has_church_role ? `<small>Cargo: ${escapeHtml(member.church_role)}</small>` : ""}${member.document_type && member.document_number ? `<small>Documento: ${escapeHtml(({ CC: "C.C.", TI: "T.I.", CE: "C.E.", PA: "Pasaporte", RC: "R.C.", PPT: "P.P.T." })[member.document_type] || member.document_type)} ${escapeHtml(member.document_number)}</small>` : ""}<small>Asistencias: ${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</small></div></div><div class="member-admin-actions"><span class="member-status-chip status-${escapeHtml(member.status)}">${escapeHtml(member.status)}</span>${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>` : ""}<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div></article>`; }).join("") || `<p class="member-empty">Aún no hay solicitudes de membresía.</p>`}<p class="member-filter-empty" data-member-filter-empty hidden>No hay personas que coincidan con esta búsqueda.</p></div></article>
+          <div class="member-admin-list">${members.map(member => { const attendanceCount = (platform.memberAttendance || []).filter(row => row.member_id === member.id).length; return `<article class="member-admin-row" data-member-id="${escapeHtml(member.id)}"><div class="member-admin-identity"><span class="member-avatar">${member.photo_preview_url ? `<img src="${escapeHtml(member.photo_preview_url)}" alt="Foto de ${escapeHtml(member.full_name)}">` : escapeHtml(String(member.full_name || "?").slice(0, 1).toUpperCase())}</span><div><strong>${escapeHtml(member.full_name)}</strong><small>${escapeHtml(member.member_number)} · ${escapeHtml(member.email)}</small><small>${escapeHtml(member.phone)} · ${escapeHtml(member.address)}</small>${member.has_church_role ? `<small>Cargo: ${escapeHtml(member.church_role)}</small>` : ""}${member.document_type && member.document_number ? `<small>Documento: ${escapeHtml(({ CC: "C.C.", TI: "T.I.", CE: "C.E.", PA: "Pasaporte", RC: "R.C.", PPT: "P.P.T." })[member.document_type] || member.document_type)} ${escapeHtml(member.document_number)}</small>` : ""}${member.birth_date ? `<small>Nacimiento: ${escapeHtml(member.birth_date)}</small>` : ""}${member.is_baptized !== null && member.is_baptized !== undefined ? `<small>Bautizado: ${member.is_baptized ? `Sí${member.baptism_date ? ` · ${escapeHtml(member.baptism_date)}` : ""}` : "No"} · Lleno del Espíritu Santo: ${member.filled_with_holy_spirit ? "Sí" : "No"}</small>` : ""}${member.guardian_consent ? `<small>Representante: ${escapeHtml(member.guardian_full_name || "No indicado")} · consentimiento confirmado</small>` : ""}<small>Asistencias: ${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</small></div></div><div class="member-admin-actions"><span class="member-status-chip status-${escapeHtml(member.status)}">${escapeHtml(member.status)}</span>${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>` : ""}<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div></article>`; }).join("") || `<p class="member-empty">Aún no hay solicitudes de membresía.</p>`}<p class="member-filter-empty" data-member-filter-empty hidden>No hay personas que coincidan con esta búsqueda.</p></div></article>
         </section>`;
       }
 
