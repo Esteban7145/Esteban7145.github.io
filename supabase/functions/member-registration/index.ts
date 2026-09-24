@@ -37,14 +37,38 @@ Deno.serve(async req => {
     const email = String(form.get("email") || "").trim().toLowerCase();
     const phone = String(form.get("phone") || "").trim();
     const hasChurchRole = form.get("hasChurchRole") === "true";
-    const churchRole = hasChurchRole ? String(form.get("churchRole") || "").trim() : null;
-    const requestedCommittee = hasChurchRole ? String(form.get("churchCommittee") || "").trim().replace(/\s+/g, " ") : null;
-    const committeeIsCustom = form.get("churchCommitteeIsCustom") === "true";
+    const legacyChurchRole = hasChurchRole ? String(form.get("churchRole") || "").trim() : "";
+    const legacyCommittee = hasChurchRole ? String(form.get("churchCommittee") || "").trim() : "";
     const normalizeCommittee = (value: string) => value.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const allowedCommittees = ["Junta Local", "Red de Familia", "Caballeros", "Damas Dorcas", "DECOM", "Jóvenes", "Recepción", "Música", "Sonido", "Misiones", "Evangelismo", "Escuela Dominical", "Edad Dorada"];
-    const churchCommittee = !hasChurchRole ? null : committeeIsCustom
-      ? requestedCommittee && requestedCommittee.length <= 80 && !/[<>]/.test(requestedCommittee) ? requestedCommittee : null
-      : allowedCommittees.find(name => normalizeCommittee(name) === normalizeCommittee(requestedCommittee || "")) || null;
+    let requestedAssignments: Array<{ role: string; committee: string; custom?: boolean }> = [];
+    if (hasChurchRole) {
+      const rawAssignments = String(form.get("churchAssignments") || "");
+      if (rawAssignments) {
+        if (rawAssignments.length > 12000) return json(req, { error: "El número de cargos ingresado es demasiado grande." }, 400);
+        try {
+          const parsed: unknown = JSON.parse(rawAssignments);
+          if (!Array.isArray(parsed)) throw new Error("invalid assignments");
+          requestedAssignments = parsed.map(value => {
+            if (!value || typeof value !== "object") throw new Error("invalid assignment");
+            const item = value as Record<string, unknown>;
+            return { role: String(item.role || "").trim().replace(/\s+/g, " "), committee: String(item.committee || "").trim().replace(/\s+/g, " "), custom: item.custom === true };
+          });
+        } catch {
+          return json(req, { error: "Revisa los cargos y comités ingresados." }, 400);
+        }
+      } else if (legacyChurchRole || legacyCommittee) {
+        requestedAssignments = [{ role: legacyChurchRole, committee: legacyCommittee, custom: form.get("churchCommitteeIsCustom") === "true" }];
+      }
+    }
+    const assignments = requestedAssignments.map(item => {
+      const committee = item.custom
+        ? item.committee && item.committee.length <= 80 && !/[<>|]/.test(item.committee) ? item.committee : ""
+        : allowedCommittees.find(name => normalizeCommittee(name) === normalizeCommittee(item.committee)) || "";
+      return { role: item.role, committee };
+    });
+    const churchRole = hasChurchRole ? assignments.map(item => item.role).join(" | ") : null;
+    const churchCommittee = hasChurchRole ? assignments.map(item => item.committee).join(" | ") : null;
     const documentType = hasChurchRole ? String(form.get("documentType") || "").trim().toUpperCase() : "";
     const documentNumber = hasChurchRole ? String(form.get("documentNumber") || "").trim().toUpperCase() : "";
     const birthDate = String(form.get("birthDate") || "").trim();
@@ -72,8 +96,7 @@ Deno.serve(async req => {
     if (fullName.length < 3 || fullName.length > 140 || address.length < 5 || address.length > 240 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254 || phone.length < 7 || phone.length > 32) {
       return json(req, { error: "Revisa el nombre, la dirección, el correo y el teléfono." }, 400);
     }
-    if (hasChurchRole && (!churchRole || churchRole.length > 120)) return json(req, { error: "Especifica el cargo que desempeñas en la iglesia." }, 400);
-    if (hasChurchRole && (!churchCommittee || churchCommittee.length > 80)) return json(req, { error: "Selecciona un comité o escribe el nombre del otro comité." }, 400);
+    if (hasChurchRole && (!assignments.length || assignments.length > 20 || assignments.some(item => !item.role || item.role.length > 120 || item.role.includes("|") || !item.committee))) return json(req, { error: "Cada cargo debe tener un comité válido. Puedes registrar hasta 20 cargos o comités." }, 400);
     if (hasChurchRole && (!["CC", "TI", "CE", "PA", "RC", "PPT"].includes(documentType) || !/^[A-Z0-9][A-Z0-9.-]{2,31}$/.test(documentNumber))) {
       return json(req, { error: "Selecciona el tipo de documento e ingresa un número válido." }, 400);
     }
@@ -89,8 +112,8 @@ Deno.serve(async req => {
     if (!consent || !sensitiveDataConsent) return json(req, { error: "Debes aceptar de forma expresa el tratamiento de datos para crear el registro de membresía." }, 400);
     if (!(photo instanceof File) || photo.size === 0) return json(req, { error: "Selecciona una foto de rostro para identificarte y generar tu carnet." }, 400);
     if (!photoConsent) return json(req, { error: "Debes autorizar el almacenamiento privado de la foto para generar tu carnet." }, 400);
-    if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type) || photo.size > 3 * 1024 * 1024) {
-      return json(req, { error: "La foto debe ser JPG, PNG o WebP y pesar máximo 3 MB." }, 400);
+    if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type) || photo.size > 50 * 1024 * 1024) {
+      return json(req, { error: "La foto debe ser JPG, PNG o WebP y pesar máximo 50 MB." }, 400);
     }
 
     const forwarded = req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim();
