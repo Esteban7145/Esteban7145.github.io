@@ -38,15 +38,29 @@ Deno.serve(async req => {
     const phone = String(form.get("phone") || "").trim();
     const hasChurchRole = form.get("hasChurchRole") === "true";
     const churchRole = hasChurchRole ? String(form.get("churchRole") || "").trim() : null;
-    const documentType = String(form.get("documentType") || "").trim().toUpperCase();
-    const documentNumber = String(form.get("documentNumber") || "").trim().toUpperCase();
+    const requestedCommittee = hasChurchRole ? String(form.get("churchCommittee") || "").trim().replace(/\s+/g, " ") : null;
+    const committeeIsCustom = form.get("churchCommitteeIsCustom") === "true";
+    const normalizeCommittee = (value: string) => value.toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const allowedCommittees = ["Junta Local", "Red de Familia", "Caballeros", "Damas Dorcas", "DECOM", "Jóvenes", "Recepción", "Música", "Sonido", "Misiones", "Evangelismo", "Escuela Dominical", "Edad Dorada"];
+    const churchCommittee = !hasChurchRole ? null : committeeIsCustom
+      ? requestedCommittee && requestedCommittee.length <= 80 && !/[<>]/.test(requestedCommittee) ? requestedCommittee : null
+      : allowedCommittees.find(name => normalizeCommittee(name) === normalizeCommittee(requestedCommittee || "")) || null;
+    const documentType = hasChurchRole ? String(form.get("documentType") || "").trim().toUpperCase() : "";
+    const documentNumber = hasChurchRole ? String(form.get("documentNumber") || "").trim().toUpperCase() : "";
     const birthDate = String(form.get("birthDate") || "").trim();
     const isBaptizedValue = String(form.get("isBaptized") || "");
     const isBaptized = isBaptizedValue === "true";
-    const baptismDate = isBaptized ? String(form.get("baptismDate") || "").trim() : null;
     const filledValue = String(form.get("filledWithHolySpirit") || "");
     const filledWithHolySpirit = filledValue === "true";
     const requestChanges = form.get("requestChanges") === "true";
+    let verifiedEmail = "";
+    if (requestChanges) {
+      const bearer = req.headers.get("Authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+      if (!bearer) return json(req, { error: "Verifica el correo registrado antes de solicitar cambios." }, 401);
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(bearer);
+      if (authError || !user?.email_confirmed_at || !user.email) return json(req, { error: "La verificación del correo venció. Solicita un código nuevo." }, 401);
+      verifiedEmail = user.email.trim().toLowerCase();
+    }
     const consent = form.get("consent") === "true" && form.get("consentVersion") === "2026-09-v3";
     const sensitiveDataConsent = form.get("sensitiveDataConsent") === "true";
     const guardianFullName = String(form.get("guardianFullName") || "").trim().replace(/\s+/g, " ");
@@ -59,7 +73,8 @@ Deno.serve(async req => {
       return json(req, { error: "Revisa el nombre, la dirección, el correo y el teléfono." }, 400);
     }
     if (hasChurchRole && (!churchRole || churchRole.length > 120)) return json(req, { error: "Especifica el cargo que desempeñas en la iglesia." }, 400);
-    if (!["CC", "TI", "CE", "PA", "RC", "PPT"].includes(documentType) || !/^[A-Z0-9][A-Z0-9.-]{2,31}$/.test(documentNumber)) {
+    if (hasChurchRole && (!churchCommittee || churchCommittee.length > 80)) return json(req, { error: "Selecciona un comité o escribe el nombre del otro comité." }, 400);
+    if (hasChurchRole && (!["CC", "TI", "CE", "PA", "RC", "PPT"].includes(documentType) || !/^[A-Z0-9][A-Z0-9.-]{2,31}$/.test(documentNumber))) {
       return json(req, { error: "Selecciona el tipo de documento e ingresa un número válido." }, 400);
     }
     const dateParts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
@@ -71,7 +86,6 @@ Deno.serve(async req => {
     const isMinor = todayParts[0] - birthParts[0] < 18 || (todayParts[0] - birthParts[0] === 18 && (todayParts[1] < birthParts[1] || (todayParts[1] === birthParts[1] && todayParts[2] < birthParts[2])));
     if (isMinor && (guardianFullName.length < 3 || guardianFullName.length > 140 || !guardianConsent || !minorInformedConsent)) return json(req, { error: "Para una persona menor de edad, completa los datos y las autorizaciones de su representante legal." }, 400);
     if (!["true", "false"].includes(isBaptizedValue) || !["true", "false"].includes(filledValue)) return json(req, { error: "Responde las preguntas de bautismo y Espíritu Santo." }, 400);
-    if (isBaptized && (!baptismDate || !isValidDate(baptismDate) || baptismDate < birthDate || baptismDate > today)) return json(req, { error: "Ingresa una fecha de bautismo válida, posterior a tu nacimiento." }, 400);
     if (!consent || !sensitiveDataConsent) return json(req, { error: "Debes aceptar de forma expresa el tratamiento de datos para crear el registro de membresía." }, 400);
     if (!(photo instanceof File) || photo.size === 0) return json(req, { error: "Selecciona una foto de rostro para identificarte y generar tu carnet." }, 400);
     if (!photoConsent) return json(req, { error: "Debes autorizar el almacenamiento privado de la foto para generar tu carnet." }, 400);
@@ -87,15 +101,18 @@ Deno.serve(async req => {
     if (limitError) throw new Error("El registro no está disponible en este momento.");
     if (Number(attempts) > 5) return json(req, { error: "Se alcanzó el límite temporal de registros. Inténtalo de nuevo en 15 minutos." }, 429);
 
-    const { data: byDocument, error: documentLookupError } = await supabaseAdmin.from("church_members").select("id").eq("document_type", documentType).eq("document_number", documentNumber).maybeSingle();
+    const { data: byDocument, error: documentLookupError } = await supabaseAdmin.from("church_members").select("id,email").eq("document_type", documentType).eq("document_number", documentNumber).maybeSingle();
     if (documentLookupError) throw documentLookupError;
     let existingMemberId = byDocument?.id || null;
+    let existingMemberEmail = String(byDocument?.email || "").trim().toLowerCase();
     if (!existingMemberId) {
-      const { data: legacyMatches, error: legacyLookupError } = await supabaseAdmin.from("church_members").select("id").eq("email", email).is("document_type", null).limit(2);
+      const { data: legacyMatches, error: legacyLookupError } = await supabaseAdmin.from("church_members").select("id,email").eq("email", email).is("document_type", null).limit(2);
       if (legacyLookupError) throw legacyLookupError;
       if ((legacyMatches || []).length > 1) return json(req, { error: "Encontramos más de un registro anterior con ese correo. Contacta a administración para validar tu identidad." }, 409);
       existingMemberId = legacyMatches?.[0]?.id || null;
+      existingMemberEmail = String(legacyMatches?.[0]?.email || "").trim().toLowerCase();
     }
+    if (existingMemberId && (email !== existingMemberEmail || (requestChanges && verifiedEmail !== existingMemberEmail))) return json(req, { ok: false, code: "member_email_mismatch", error: "El correo no coincide con el registrado. Contacta a administración para actualizarlo." }, 409);
     if (existingMemberId && !requestChanges) return json(req, { ok: false, code: "existing_member", error: "Ya existe un registro asociado a este documento." }, 409);
     if (!existingMemberId && requestChanges) return json(req, { ok: false, code: "member_not_found", error: "No encontramos un registro para actualizar. Envía una inscripción nueva." }, 404);
     if (existingMemberId && requestChanges) {
@@ -111,8 +128,8 @@ Deno.serve(async req => {
     if (uploadError) throw uploadError;
     const memberData = {
       id, full_name: fullName, address, email, phone, has_church_role: hasChurchRole,
-      church_role: churchRole, document_type: documentType, document_number: documentNumber,
-      birth_date: birthDate, is_baptized: isBaptized, baptism_date: baptismDate,
+      church_role: churchRole, church_committee: churchCommittee, document_type: hasChurchRole ? documentType : null, document_number: hasChurchRole ? documentNumber : null,
+      birth_date: birthDate, is_baptized: isBaptized, baptism_date: null,
       filled_with_holy_spirit: filledWithHolySpirit, photo_path: photoPath,
       guardian_full_name: isMinor ? guardianFullName : null, guardian_consent: isMinor && guardianConsent,
       minor_informed_consent: isMinor && minorInformedConsent,

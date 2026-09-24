@@ -1051,7 +1051,6 @@ body.platform-body:has(.membership-form) .member-profile-fields label { display:
 body.platform-body:has(.membership-form) .member-profile-fields input:not([type="radio"]) { width: 100%; min-height: 46px; box-sizing: border-box; padding: 11px 13px; border: 1px solid rgba(170,185,201,.24); border-radius: 10px; color: #f7fbff; background: #04101f; font: inherit; }
 body.platform-body:has(.membership-form) .member-profile-fields input:focus-visible { outline: 2px solid #009fda; outline-offset: 2px; }
 body.platform-body:has(.membership-form) .member-profile-fields fieldset { grid-column: 1 / -1; }
-body.platform-body:has(.membership-form) .member-baptism-date { grid-column: 1 / -1; }
 body.platform-body:has(.membership-form) .member-guardian-fields { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 18px; border: 1px solid rgba(0,159,218,.28); border-radius: 14px; background: rgba(0,51,141,.12); }
 body.platform-body:has(.membership-form) .member-guardian-fields[hidden] { display: none; }
 body.platform-body:has(.membership-form) .member-guardian-fields h3,
@@ -1060,12 +1059,14 @@ body.platform-body:has(.membership-form) .member-guardian-fields h3 { color: #f7
 body.platform-body:has(.membership-form) .member-guardian-fields > p { color: #aab9c9; font-size: .88rem; }
 body.platform-body:has(.membership-form) .member-photo-field img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
 body.platform-body:has(.membership-form) [hidden] { display: none !important; }
-body.platform-body:has(.membership-form) .member-role-question { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 16px; border: 1px solid rgba(170,185,201,.2); border-radius: 12px; }
+body.platform-body:has(.membership-form) .member-role-question { display: grid; gap: 12px; grid-column: 1 / -1; min-width: 0; margin: 0; padding: 16px; border: 1px solid rgba(170,185,201,.2); border-radius: 12px; }
 body.platform-body:has(.membership-form) .member-role-question legend { padding: 0 8px; color: #f7fbff; font-weight: 800; }
 body.platform-body:has(.membership-form) .member-role-options { display: flex; flex-wrap: wrap; gap: 10px; }
 body.platform-body:has(.membership-form) .member-role-options label { display: flex; min-width: 112px; min-height: 44px; grid-template-columns: none; align-items: center; justify-content: center; gap: 9px; padding: 8px 14px; border: 1px solid rgba(170,185,201,.22); border-radius: 10px; background: #061326; cursor: pointer; }
 body.platform-body:has(.membership-form) .member-role-options input { width: 18px; height: 18px; margin: 0; accent-color: #f5bd37; }
 body.platform-body:has(.membership-form) .member-role-field { grid-column: 1 / -1; }
+body.platform-body:has(.membership-form) .member-committee-field,
+body.platform-body:has(.membership-form) .member-custom-committee-field { grid-column: 1 / -1; }
 body.platform-body:has(.membership-form) .member-document-fields { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 body.platform-body:has(.membership-form) .member-consent { display: flex; align-items: flex-start; gap: 10px; }
 body.platform-body:has(.membership-form) .member-consent input { flex: 0 0 auto; width: 18px; height: 18px; accent-color: #009fda; }
