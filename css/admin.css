@@ -531,19 +531,19 @@ body.platform-body .existing-list article {
 /* Panel administrativo: superficies sólidas, jerarquía clara y menos capas. */
 body.platform-body:has(.admin-workspace) {
   color: #f7fbff;
-  background: radial-gradient(ellipse at 12% 0, rgba(0, 110, 185, .16), transparent 42rem), #020712;
+  background: radial-gradient(ellipse at 12% 0, rgba(25, 180, 223, .24), transparent 42rem), linear-gradient(145deg, #123455, #0b1d32 70%);
 }
 body.platform-body:has(.admin-workspace) .page-head:has(+ .admin-summary),
 body.platform-body:has(.admin-workspace) .admin-card-wide,
 body.platform-body:has(.admin-workspace) .admin-card-narrow {
   border: 1px solid rgba(156, 183, 212, .18);
-  background: #07182c;
-  box-shadow: 0 16px 42px rgba(0, 0, 0, .2);
+  background: #12304d;
+  box-shadow: 0 14px 34px rgba(0, 19, 40, .2);
 }
 body.platform-body:has(.admin-workspace) .admin-summary article {
   min-height: 72px;
   border: 0;
-  border-left: 2px solid rgba(0, 159, 218, .65);
+  border-left: 2px solid rgba(34, 190, 229, .8);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -558,7 +558,7 @@ body.platform-body:has(.admin-workspace) .admin-tabs {
   gap: 4px;
   padding: 0 0 8px;
   border: 0;
-  border-bottom: 1px solid rgba(156, 183, 212, .18);
+  border-bottom: 1px solid rgba(156, 204, 227, .24);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -568,23 +568,23 @@ body.platform-body:has(.admin-workspace) .admin-tab {
   border: 0;
   border-bottom: 2px solid transparent;
   border-radius: 10px 10px 0 0;
-  color: #dce7f2;
+  color: #e7f3fa;
   background: transparent;
   box-shadow: none;
 }
-body.platform-body:has(.admin-workspace) .admin-tab:hover { background: rgba(0, 159, 218, .08); transform: none; }
+body.platform-body:has(.admin-workspace) .admin-tab:hover { background: rgba(34, 190, 229, .12); transform: none; }
 body.platform-body:has(.admin-workspace) .admin-tab.active {
   border-bottom-color: #f5bd37;
   color: #fff;
-  background: rgba(0, 159, 218, .1);
+  background: rgba(34, 190, 229, .16);
   box-shadow: none;
 }
 body.platform-body:has(.admin-workspace) .admin-tab span { color: #aab9c9; }
 body.platform-body:has(.admin-workspace) .admin-form-section,
 body.platform-body:has(.admin-workspace) .upload-group {
-  border-color: rgba(156, 183, 212, .18);
+  border-color: rgba(156, 204, 227, .24);
   border-radius: 14px;
-  background: #0a2039;
+  background: #173a59;
   box-shadow: none;
 }
 body.platform-body:has(.admin-workspace) .admin-form-section h3,
@@ -595,33 +595,33 @@ body.platform-body:has(.admin-workspace) .form-grid label > input,
 body.platform-body:has(.admin-workspace) .form-grid label > select,
 body.platform-body:has(.admin-workspace) .form-grid label > textarea {
   border-color: rgba(156, 183, 212, .22);
-  background: #04101f;
+  background: #102b46;
   color: #f7fbff;
 }
 body.platform-body:has(.admin-workspace) .form-grid label > input:focus,
 body.platform-body:has(.admin-workspace) .form-grid label > select:focus,
-body.platform-body:has(.admin-workspace) .form-grid label > textarea:focus { background: #061629; }
+body.platform-body:has(.admin-workspace) .form-grid label > textarea:focus { background: #143957; }
 body.platform-body:has(.admin-workspace) .admin-tabs .admin-tab.active span { color: #aab9c9; }
 
 @media (prefers-reduced-motion: reduce) {
   body.platform-body:has(.admin-workspace) .admin-tab { transition: none; }
 }
 
-body.platform-body:has(.admin-workspace) .member-admin-module { padding: clamp(18px, 3vw, 30px); border: 1px solid rgba(156,183,212,.18); border-radius: 16px; background: #07182c; }
+body.platform-body:has(.admin-workspace) .member-admin-module { padding: clamp(18px, 3vw, 30px); border: 1px solid rgba(156,204,227,.24); border-radius: 16px; background: #12304d; }
 body.platform-body:has(.admin-workspace) .member-admin-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 20px 0; }
-body.platform-body:has(.admin-workspace) .member-admin-stats > span { display: grid; gap: 4px; padding: 13px; border-left: 2px solid #009fda; color: #aab9c9; background: #0a2039; font-size: .8rem; }
+body.platform-body:has(.admin-workspace) .member-admin-stats > span { display: grid; gap: 4px; padding: 13px; border-left: 2px solid #22bee5; color: #c3d5e3; background: #173a59; font-size: .8rem; }
 body.platform-body:has(.admin-workspace) .member-admin-stats strong { color: #f7fbff; font-size: 1.3rem; }
 body.platform-body:has(.admin-workspace) .member-directory-tools { display: grid; grid-template-columns: minmax(220px, 1.2fr) minmax(170px, .7fr) auto; align-items: end; gap: 12px; padding: 16px 0; border-bottom: 1px solid rgba(156,183,212,.16); }
 body.platform-body:has(.admin-workspace) .member-directory-tools label { display: grid; gap: 6px; color: #aab9c9; font-size: .78rem; font-weight: 750; }
 body.platform-body:has(.admin-workspace) .member-directory-tools input,
-body.platform-body:has(.admin-workspace) .member-directory-tools select { min-height: 42px; padding: 8px 11px; border: 1px solid rgba(156,183,212,.22); border-radius: 9px; color: #f7fbff; background: #04101f; font: inherit; }
+body.platform-body:has(.admin-workspace) .member-directory-tools select { min-height: 42px; padding: 8px 11px; border: 1px solid rgba(156,204,227,.28); border-radius: 9px; color: #f7fbff; background: #102b46; font: inherit; }
 body.platform-body:has(.admin-workspace) .member-directory-tools > span { padding: 10px 0; color: #aab9c9; font-size: .78rem; white-space: nowrap; }
 body.platform-body:has(.admin-workspace) .member-filter-empty { grid-column: 1 / -1; padding: 20px; color: #aab9c9; text-align: center; }
 body.platform-body:has(.admin-workspace) .member-event-select { display: grid; gap: 8px; max-width: 480px; margin: 18px 0; color: #dce7f2; font-weight: 750; }
 body.platform-body:has(.admin-workspace) .member-event-select select,
-body.platform-body:has(.admin-workspace) .member-admin-actions select { min-height: 42px; padding: 8px 11px; border: 1px solid rgba(156,183,212,.22); border-radius: 9px; color: #f7fbff; background: #04101f; }
+body.platform-body:has(.admin-workspace) .member-admin-actions select { min-height: 42px; padding: 8px 11px; border: 1px solid rgba(156,204,227,.28); border-radius: 9px; color: #f7fbff; background: #102b46; }
 body.platform-body:has(.admin-workspace) .member-admin-list { display: grid; gap: 10px; margin-top: 20px; }
-body.platform-body:has(.admin-workspace) .member-admin-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(190px, .8fr); gap: 16px; padding: 16px; border: 1px solid rgba(156,183,212,.13); border-radius: 12px; background: #091b30; }
+body.platform-body:has(.admin-workspace) .member-admin-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(190px, .8fr); gap: 16px; padding: 16px; border: 1px solid rgba(156,204,227,.2); border-radius: 12px; background: #173a59; }
 body.platform-body:has(.admin-workspace) .member-admin-identity { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
 body.platform-body:has(.admin-workspace) .member-admin-identity > div { display: grid; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
 body.platform-body:has(.admin-workspace) .member-admin-identity strong { color: #f7fbff; }
@@ -630,9 +630,9 @@ body.platform-body:has(.admin-workspace) .member-avatar { display: grid; flex: 0
 body.platform-body:has(.admin-workspace) .member-avatar { overflow: hidden; }
 body.platform-body:has(.admin-workspace) .member-avatar img,
 body.platform-body:has(.admin-workspace) .member-change-request-photo img { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
-body.platform-body:has(.admin-workspace) .member-change-queue { display: grid; gap: 14px; margin: 24px 0; padding: 18px; border: 1px solid rgba(0,159,218,.24); border-radius: 14px; background: rgba(4,16,31,.58); }
+body.platform-body:has(.admin-workspace) .member-change-queue { display: grid; gap: 14px; margin: 24px 0; padding: 18px; border: 1px solid rgba(34,190,229,.32); border-radius: 14px; background: rgba(16,43,70,.84); }
 body.platform-body:has(.admin-workspace) .member-change-queue .section-title { margin-bottom: 0; }
-body.platform-body:has(.admin-workspace) .member-change-request { display: grid; grid-template-columns: 58px minmax(0,1fr) auto; align-items: center; gap: 14px; padding: 14px; border: 1px solid rgba(156,183,212,.15); border-radius: 12px; background: #091b30; }
+body.platform-body:has(.admin-workspace) .member-change-request { display: grid; grid-template-columns: 58px minmax(0,1fr) auto; align-items: center; gap: 14px; padding: 14px; border: 1px solid rgba(156,204,227,.2); border-radius: 12px; background: #173a59; }
 body.platform-body:has(.admin-workspace) .member-change-request-photo { display: grid; width: 58px; height: 58px; overflow: hidden; place-items: center; border-radius: 50%; color: #fff; background: #00338d; font-weight: 900; }
 body.platform-body:has(.admin-workspace) .member-change-request-details { display: grid; gap: 5px; min-width: 0; overflow-wrap: anywhere; }
 body.platform-body:has(.admin-workspace) .member-change-request-details > strong { color: #f7fbff; }

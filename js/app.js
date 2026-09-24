@@ -1529,7 +1529,7 @@ const TYPES = {
           </div>
           <div class="site-loader-copy"><strong>IPUC Villa del Río</strong><span>Abriendo un espacio para crecer juntos</span></div>
         </div>
-        <div class="site-video-backdrop" aria-hidden="true"><video muted loop autoplay playsinline preload="auto" data-decorative-video><source src="/assets/ipuc-villa-del-rio-bg.mp4" type="video/mp4"></video><span></span></div>
+        <div class="site-video-backdrop" aria-hidden="true"><span></span></div>
         <a class="skip-link" href="#routeView">Saltar al contenido</a>
         <button class="nav-backdrop" type="button" data-nav-backdrop aria-label="Cerrar menú" tabindex="-1" hidden></button>
         <header class="platform-top glass">
@@ -1572,30 +1572,25 @@ const TYPES = {
       const navToggle = document.querySelector("[data-toggle-nav]");
       const navBackdrop = document.querySelector("[data-nav-backdrop]");
       const platformHeader = document.querySelector(".platform-top");
-      const setNavOpen = open => {
+      const navInertRegions = [view(), document.querySelector(".platform-footer"), document.querySelector(".music-widget")].filter(Boolean);
+      const setNavOpen = (open, { focusFirst = false, restoreFocus = false } = {}) => {
         nav?.classList.toggle("open", open);
         platformHeader?.classList.toggle("menu-open", open);
         navToggle?.setAttribute("aria-expanded", String(open));
         navToggle?.setAttribute("aria-label", open ? "Cerrar menú" : "Abrir menú");
-        navBackdrop?.classList.toggle("is-visible", open);
-        if (navBackdrop) navBackdrop.hidden = !open;
+        if (navBackdrop) { navBackdrop.classList.remove("is-visible"); navBackdrop.hidden = true; }
+        navInertRegions.forEach(region => { region.inert = open; });
         document.body.classList.toggle("nav-open", open);
+        if (focusFirst && open) requestAnimationFrame(() => (nav?.querySelector('[aria-current="page"]') || nav?.querySelector("a"))?.focus({ preventScroll: true }));
+        if (restoreFocus && !open) navToggle?.focus({ preventScroll: true });
       };
-      navToggle?.addEventListener("click", () => setNavOpen(!nav?.classList.contains("open")));
-      navBackdrop?.addEventListener("click", () => setNavOpen(false));
+      navToggle?.addEventListener("click", () => { const opening = !nav?.classList.contains("open"); setNavOpen(opening, { focusFirst: opening, restoreFocus: !opening }); });
       nav?.addEventListener("click", event => { if (event.target.closest("a")) setNavOpen(false); });
-      document.addEventListener("keydown", event => { if (event.key === "Escape") setNavOpen(false); });
-      const decorativeVideo = document.querySelector("[data-decorative-video]");
-      const staticMedia = window.matchMedia("(prefers-reduced-motion: reduce)").matches || navigator.connection?.saveData;
-      if (staticMedia && decorativeVideo) {
-        decorativeVideo.pause();
-        decorativeVideo.querySelectorAll("source").forEach(source => source.remove());
-        decorativeVideo.removeAttribute("src");
-      } else if (decorativeVideo) {
-        const startDecorativeVideo = () => { decorativeVideo.load(); decorativeVideo.play().catch(() => {}); };
-        if ("requestIdleCallback" in window) requestIdleCallback(startDecorativeVideo, { timeout: 1200 });
-        else setTimeout(startDecorativeVideo, 300);
-      }
+      document.addEventListener("pointerdown", event => {
+        if (!nav?.classList.contains("open") || platformHeader?.contains(event.target)) return;
+        setNavOpen(false);
+      });
+      document.addEventListener("keydown", event => { if (event.key === "Escape" && nav?.classList.contains("open")) setNavOpen(false, { restoreFocus: true }); });
       window.addEventListener("hashchange", renderRoute);
       window.addEventListener("popstate", renderRoute);
       document.addEventListener("click", event => {
@@ -1607,11 +1602,13 @@ const TYPES = {
           history.pushState({}, "", href.slice(1) || "/");
           window.scrollTo({ top: 0, left: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
           renderRoute();
+          focusRouteHeading();
         } else if (href?.startsWith("/")) {
           event.preventDefault();
           history.pushState({}, "", href);
           window.scrollTo({ top: 0, left: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
           renderRoute();
+          focusRouteHeading();
         }
       });
       window.addEventListener("ipuc-state-updated", renderRoute);
@@ -1624,7 +1621,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260924-member-profile-guardian-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260924-public-ui-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -1651,6 +1648,7 @@ const TYPES = {
         refreshAdminNav();
         setNavOpen(false);
         const route = parseRoute();
+        document.body.classList.toggle("public-inner-page", route.name !== "inicio" && !["admin", "login"].includes(route.name));
         const routeTitles = { inicio: "Inicio", calendario: "Cronograma", anuncios: "Anuncios", podcast: "Historias que Edifican", recursos: "Recursos", membresia: "Membresía", ubicacion: "Ubicación", admin: "Administración", login: "Iniciar sesión", eventos: "Eventos", archivo: "Archivo" };
         document.title = `${routeTitles[route.name] || "IPUC Villa del Río"} | IPUC Villa del Río`;
         trackLiveVisitorPage();
@@ -1675,6 +1673,13 @@ const TYPES = {
         else if (route.name === "login") renderPage = renderLoginPage;
         renderPage();
         animateRouteView();
+      }
+
+      function focusRouteHeading() {
+        const heading = view()?.querySelector("h1");
+        if (!heading) return;
+        if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
+        heading.focus({ preventScroll: true });
       }
 
       function animateRouteView() {

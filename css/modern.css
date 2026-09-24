@@ -705,20 +705,20 @@ body.platform-body .podcast-copy small { color: var(--muted); font-weight: 700; 
 }
 /* Public interior: the same visual language as the Earth hero, without WebGL. */
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) {
-  --public-bg: #020712;
-  --public-bg-2: #061326;
-  --public-blue: #00338d;
-  --public-cyan: #009fda;
-  --public-gold: #f5bd37;
+  --public-bg: #0c2440;
+  --public-bg-2: #174367;
+  --public-blue: #0c65b1;
+  --public-cyan: #22bee5;
+  --public-gold: #f4cb68;
   --public-text: #f7fbff;
-  --public-muted: #aab9c9;
-  --public-glass: rgba(8, 20, 38, .72);
+  --public-muted: #c7d9e7;
+  --public-glass: rgba(22, 57, 88, .94);
   min-height: 100vh;
   color: var(--public-text);
   background:
-    radial-gradient(circle at 12% 4%, rgba(0, 159, 218, .12), transparent 28rem),
-    radial-gradient(circle at 92% 82%, rgba(0, 51, 141, .18), transparent 34rem),
-    linear-gradient(160deg, var(--public-bg-2), var(--public-bg) 48%, #01040b);
+    radial-gradient(circle at 12% 4%, rgba(34, 190, 229, .24), transparent 30rem),
+    radial-gradient(circle at 92% 82%, rgba(12, 101, 177, .26), transparent 34rem),
+    linear-gradient(160deg, var(--public-bg-2), var(--public-bg) 58%, #0a1b30);
 }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card))::before,
@@ -741,10 +741,10 @@ body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.
   position: sticky;
   top: 14px;
   z-index: 120;
-  border: 1px solid rgba(170, 185, 201, .16);
+  border: 1px solid rgba(150, 208, 233, .24);
   border-radius: 22px;
-  background: rgba(2, 7, 18, .72);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, .3);
+  background: rgba(12, 37, 62, .94);
+  box-shadow: 0 16px 38px rgba(0, 17, 37, .2);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -753,14 +753,14 @@ body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.
   position: relative;
   border-color: transparent;
   border-radius: 0;
-  color: #dce7f2;
+  color: #e6f2fa;
   background: transparent;
   box-shadow: none;
 }
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .platform-nav a:hover,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .platform-nav a:focus-visible {
   color: #fff;
-  background: rgba(0, 159, 218, .08);
+  background: rgba(25, 180, 223, .12);
 }
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .platform-nav a.active,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .platform-nav a[aria-current="page"] {
@@ -790,8 +790,8 @@ body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.
   padding: 0 17px;
   border-color: rgba(245, 189, 55, .82);
   border-radius: 999px;
-  color: #fff3ca;
-  background: rgba(6, 19, 38, .72);
+  color: #fff7df;
+  background: rgba(16, 43, 71, .82);
   font-size: .78rem;
   font-weight: 900;
   letter-spacing: .04em;
@@ -820,16 +820,16 @@ body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .page-head,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .calendar-page,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .location-card {
-  border-color: rgba(170, 185, 201, .14);
-  background: rgba(8, 23, 42, .72);
+  border-color: rgba(150, 208, 233, .26);
+  background: rgba(21, 54, 83, .94);
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .page-head {
-  border-color: rgba(0, 159, 218, .2);
-  background: transparent;
+  border-color: rgba(34, 190, 229, .35);
+  background: linear-gradient(110deg, rgba(26, 68, 102, .82), rgba(18, 48, 76, .74));
 }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .content-card,
@@ -837,7 +837,7 @@ body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .announcement-public,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .event-card-public {
   border-radius: 14px;
-  background: rgba(8, 23, 42, .52);
+  background: rgba(25, 60, 91, .9);
 }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) h1,
@@ -872,7 +872,7 @@ body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.
 }
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .visit-note strong { color: var(--public-text); }
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .visit-note p { margin: 5px 0 8px; color: var(--public-muted); line-height: 1.5; }
-body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .visit-note a { color: #7bd6f5; font-weight: 650; text-decoration: none; }
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .visit-note a { color: #76dcf5; font-weight: 650; text-decoration: none; }
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .visit-note a:hover { color: var(--public-gold); }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) button,
@@ -881,18 +881,18 @@ body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .map-button,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-download,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-open {
-  border-color: rgba(0, 159, 218, .25);
+  border-color: rgba(61, 194, 231, .38);
   color: var(--public-text);
-  background: linear-gradient(135deg, rgba(0, 85, 167, .9), rgba(0, 51, 141, .88));
-  box-shadow: 0 10px 24px rgba(0, 25, 67, .3);
+  background: linear-gradient(135deg, #0b91c8, #0965b5);
+  box-shadow: 0 8px 18px rgba(0, 37, 79, .22);
 }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) input,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) select,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) textarea {
-  border-color: rgba(170, 185, 201, .24);
+  border-color: rgba(150, 208, 233, .32);
   color: var(--public-text);
-  background: rgba(2, 7, 18, .68);
+  background: rgba(12, 39, 64, .9);
 }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .view-switch,
@@ -904,8 +904,8 @@ body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-note,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-toolbar,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .podcast-filters {
-  border-color: rgba(170, 185, 201, .16);
-  background: rgba(5, 18, 35, .72);
+  border-color: rgba(150, 208, 233, .2);
+  background: rgba(20, 51, 79, .92);
 }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .month-day,
@@ -917,46 +917,46 @@ body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .event-card-public,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .agenda-item,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .mini-card {
-  border-color: rgba(170, 185, 201, .16);
+  border-color: rgba(150, 208, 233, .2);
   color: var(--public-text);
-  background: rgba(7, 24, 45, .82);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, .18);
+  background: rgba(25, 61, 92, .96);
+  box-shadow: 0 10px 24px rgba(0, 19, 40, .2);
 }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .month-day.today-day {
   border-color: rgba(245, 189, 55, .6);
-  background: linear-gradient(145deg, rgba(11, 48, 78, .95), rgba(7, 27, 51, .9));
-  box-shadow: inset 0 0 0 1px rgba(245, 189, 55, .28), 0 12px 28px rgba(0, 0, 0, .22);
+  background: linear-gradient(145deg, #1e608a, #164267);
+  box-shadow: inset 0 0 0 1px rgba(243, 200, 91, .34), 0 10px 24px rgba(0, 19, 40, .2);
 }
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .week-head span,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .day-number,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .month-summary,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .month-event-count,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .status-chip {
-  color: #dff5ff;
-  background: rgba(0, 159, 218, .14);
+  color: #e4f8ff;
+  background: rgba(25, 180, 223, .2);
 }
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .event-pill {
-  border-color: rgba(170, 185, 201, .16);
+  border-color: rgba(150, 208, 233, .2);
   border-left-color: var(--pill-color, var(--public-cyan));
   color: var(--public-text);
-  background: rgba(10, 31, 56, .94);
+  background: rgba(27, 66, 99, .98);
 }
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .event-pill:hover,
-body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .month-day:hover { background: rgba(13, 42, 73, .96); }
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .month-day:hover { background: #1b4b70; }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-search,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-folder-copy h3,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-card h3,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-results-head h2,
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .podcast-copy h2 { color: var(--public-text); }
-body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-preview { background: rgba(2, 11, 24, .62); }
-body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-folder-open:hover { background: rgba(0, 159, 218, .08); }
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-preview { background: rgba(8, 27, 45, .7); }
+body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .resource-folder-open:hover { background: rgba(25, 180, 223, .12); }
 
 body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .platform-footer {
-  border-color: rgba(170, 185, 201, .16);
+  border-color: rgba(150, 208, 233, .2);
   color: var(--public-muted);
-  background: rgba(2, 7, 18, .7);
+  background: rgba(12, 34, 56, .9);
 }
 
 body.platform-body:has(.home-verse) .home-verse {
@@ -1104,37 +1104,8 @@ body.platform-body .member-photo-dialog img { display: block; max-width: min(80v
   body.platform-body:has(.membership-form) .member-document-fields { grid-template-columns: minmax(0, 1fr); }
   body.platform-body:has(.membership-form) .member-profile-fields { grid-template-columns: minmax(0, 1fr); }
   body.platform-body:has(.membership-form) .member-guardian-fields { grid-template-columns: minmax(0, 1fr); padding: 14px; }
-  body.platform-body .nav-backdrop[hidden] { display: none !important; }
-  body.platform-body .nav-backdrop.is-visible { position: fixed !important; inset: 0 !important; z-index: 1290 !important; display: block !important; width: 100vw !important; height: 100dvh !important; padding: 0 !important; border: 0 !important; background: rgba(2, 7, 18, .18) !important; }
-  body.platform-body .platform-top:has(.platform-nav.open) { z-index: 1300 !important; }
-  body.platform-body .platform-top .platform-nav.open,
-  body.platform-body .platform-top.is-compact .platform-nav.open { position: fixed !important; top: 72px !important; right: 10px !important; left: 10px !important; z-index: 1301 !important; display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 8px !important; width: auto !important; max-height: calc(100dvh - 84px) !important; overflow-y: auto !important; padding: 12px !important; border: 1px solid rgba(170, 185, 201, .2) !important; border-radius: 16px !important; color: #f7fbff !important; background: #061326 !important; box-shadow: 0 20px 46px rgba(0, 0, 0, .58) !important; touch-action: pan-y; }
-  body.platform-body .platform-top .platform-nav.open a { position: relative; z-index: 1; min-height: 48px; touch-action: manipulation; -webkit-tap-highlight-color: rgba(245, 189, 55, .18); }
-  body.platform-body .platform-top .platform-nav.open a,
-  body.platform-body .platform-top .platform-nav.open a.active,
-  body.platform-body .platform-top .platform-nav.open a[aria-current="page"] { min-width: 0 !important; min-height: 46px !important; justify-content: center !important; padding: 8px !important; border: 1px solid rgba(170,185,201,.16) !important; border-radius: 10px !important; color: #f7fbff !important; background: #0a2039 !important; text-align: center !important; white-space: normal !important; overflow-wrap: anywhere; box-shadow: none !important; }
-  body.platform-body .platform-top .platform-nav.open a.active,
-  body.platform-body .platform-top .platform-nav.open a[aria-current="page"] { border-color: rgba(245,189,55,.72) !important; background: #172c3f !important; }
   body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .platform-shell { width: calc(100% - 20px); padding-top: 8px; }
   body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .platform-top { top: 8px; border-radius: 18px; }
-  body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .platform-nav.open {
-    position: fixed;
-    top: 70px;
-    right: 10px;
-    left: 10px;
-    z-index: 1210;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    max-height: calc(100dvh - 84px);
-    overflow-y: auto;
-    border: 1px solid rgba(170, 185, 201, .18);
-    background: rgba(2, 10, 23, .98);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, .52);
-  }
-  body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .platform-nav.open a { border-radius: 12px; }
-  body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .platform-nav.open a.active::after,
-  body.platform-body:not(:has(.earth-hero)):not(:has(.admin-workspace)):not(:has(.login-card)) .platform-nav.open a[aria-current="page"]::after { right: 14px; left: 14px; }
 }
 
 @media (max-width: 620px) {
