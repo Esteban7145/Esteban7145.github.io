@@ -625,22 +625,32 @@ body.platform-body:has(.admin-workspace) .member-filter-empty { grid-column: 1 /
 body.platform-body:has(.admin-workspace) .member-directory-tree { display: grid; gap: 12px; margin-top: 20px; }
 body.platform-body:has(.admin-workspace) .member-directory-tree [hidden] { display: none !important; }
 body.platform-body:has(.admin-workspace) .member-directory-folder,
-body.platform-body:has(.admin-workspace) .member-directory-subfolder { min-width: 0; border: 1px solid rgba(156,204,227,.2); border-radius: 12px; background: rgba(6,19,38,.38); }
+body.platform-body:has(.admin-workspace) .member-directory-subfolder,
+body.platform-body:has(.admin-workspace) .member-directory-subgroup { min-width: 0; border: 1px solid rgba(156,204,227,.2); border-radius: 12px; background: rgba(6,19,38,.38); }
 body.platform-body:has(.admin-workspace) .member-directory-folder > summary,
-body.platform-body:has(.admin-workspace) .member-directory-subfolder > summary { display: flex; min-height: 52px; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; color: #f7fbff; font-weight: 800; cursor: pointer; list-style: none; }
+body.platform-body:has(.admin-workspace) .member-directory-subfolder > summary,
+body.platform-body:has(.admin-workspace) .member-directory-subgroup > summary { display: flex; min-height: 52px; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; color: #f7fbff; font-weight: 800; cursor: pointer; list-style: none; }
 body.platform-body:has(.admin-workspace) .member-directory-folder > summary::-webkit-details-marker,
-body.platform-body:has(.admin-workspace) .member-directory-subfolder > summary::-webkit-details-marker { display: none; }
+body.platform-body:has(.admin-workspace) .member-directory-subfolder > summary::-webkit-details-marker,
+body.platform-body:has(.admin-workspace) .member-directory-subgroup > summary::-webkit-details-marker { display: none; }
 body.platform-body:has(.admin-workspace) .member-directory-folder > summary::before,
-body.platform-body:has(.admin-workspace) .member-directory-subfolder > summary::before { content: "＋"; color: #74d9f4; font-size: 1rem; }
+body.platform-body:has(.admin-workspace) .member-directory-subfolder > summary::before,
+body.platform-body:has(.admin-workspace) .member-directory-subgroup > summary::before { content: "＋"; color: #74d9f4; font-size: 1rem; }
 body.platform-body:has(.admin-workspace) .member-directory-folder[open] > summary::before,
-body.platform-body:has(.admin-workspace) .member-directory-subfolder[open] > summary::before { content: "−"; }
+body.platform-body:has(.admin-workspace) .member-directory-subfolder[open] > summary::before,
+body.platform-body:has(.admin-workspace) .member-directory-subgroup[open] > summary::before { content: "−"; }
 body.platform-body:has(.admin-workspace) .member-directory-folder > summary:focus-visible,
-body.platform-body:has(.admin-workspace) .member-directory-subfolder > summary:focus-visible { outline: 2px solid #22bee5; outline-offset: 2px; }
+body.platform-body:has(.admin-workspace) .member-directory-subfolder > summary:focus-visible,
+body.platform-body:has(.admin-workspace) .member-directory-subgroup > summary:focus-visible { outline: 2px solid #22bee5; outline-offset: 2px; }
 body.platform-body:has(.admin-workspace) .member-directory-folder > summary [data-folder-count],
-body.platform-body:has(.admin-workspace) .member-directory-subfolder > summary [data-folder-count] { margin-left: auto; padding: 3px 9px; border-radius: 99px; color: #c3d5e3; background: #173a59; font-size: .78rem; font-weight: 700; }
+body.platform-body:has(.admin-workspace) .member-directory-subfolder > summary [data-folder-count],
+body.platform-body:has(.admin-workspace) .member-directory-subgroup > summary [data-folder-count] { margin-left: auto; padding: 3px 9px; border-radius: 99px; color: #c3d5e3; background: #173a59; font-size: .78rem; font-weight: 700; }
 body.platform-body:has(.admin-workspace) .member-directory-subfolders { display: grid; gap: 8px; padding: 0 12px 12px; }
+body.platform-body:has(.admin-workspace) .member-directory-subgroups { display: grid; gap: 8px; padding: 0 12px 12px; }
 body.platform-body:has(.admin-workspace) .member-directory-subfolder { background: rgba(23,58,89,.42); }
+body.platform-body:has(.admin-workspace) .member-directory-subgroup { background: rgba(6,19,38,.28); }
 body.platform-body:has(.admin-workspace) .member-directory-subfolder > summary { min-height: 44px; padding-inline: 12px; font-size: .9rem; }
+body.platform-body:has(.admin-workspace) .member-directory-subgroup > summary { min-height: 40px; padding-inline: 12px; color: #c3d5e3; font-size: .84rem; }
 body.platform-body:has(.admin-workspace) .member-directory-tree .member-admin-list { margin: 0; padding: 0 10px 10px; }
 body.platform-body:has(.admin-workspace) .member-directory-tree .member-empty { margin: 0; padding: 9px 4px; color: #aab9c9; font-size: .84rem; }
 body.platform-body:has(.admin-workspace) .member-event-select { display: grid; gap: 8px; max-width: 480px; margin: 18px 0; color: #dce7f2; font-weight: 750; }
@@ -655,6 +665,7 @@ body.platform-body:has(.admin-workspace) .member-profile-content { display: grid
 body.platform-body:has(.admin-workspace) .member-profile-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-width: 0; }
 body.platform-body:has(.admin-workspace) .member-profile-heading > div { min-width: 0; }
 body.platform-body:has(.admin-workspace) .member-profile-kicker { color: #74d9f4; font-size: .7rem; font-weight: 750; letter-spacing: .07em; text-transform: uppercase; }
+body.platform-body:has(.admin-workspace) .member-leader-badge { display: inline-block; margin-top: 5px; color: #f5bd37; font-size: .78rem; font-weight: 750; }
 body.platform-body:has(.admin-workspace) .member-profile-heading h3 { margin: 3px 0 0; color: #f7fbff; font-size: 1.1rem; line-height: 1.35; overflow-wrap: anywhere; }
 body.platform-body:has(.admin-workspace) .member-profile-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; min-width: 0; }
 body.platform-body:has(.admin-workspace) .member-profile-facts > span { display: grid; gap: 3px; min-width: 0; overflow-wrap: anywhere; }

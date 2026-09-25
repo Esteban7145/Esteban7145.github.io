@@ -4989,18 +4989,38 @@ const TYPES = {
         return `<section class="member-change-queue"><div class="section-title"><p class="eyebrow">Revisión administrativa · ${requests.length} pendiente${requests.length === 1 ? "" : "s"}</p><h3>Solicitudes de actualización</h3><p>Los datos oficiales permanecen iguales hasta que un administrador apruebe cada cambio.</p></div>${requests.map(renderRequest).join("")}</section>`;
       }
 
-      function memberDirectoryCommittees(member) {
+      function normalizeMemberLabel(value) {
+        return String(value || "").toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+      }
+
+      function isCommitteeLeaderRole(role) {
+        return /\b(presidente|presidenta|vicepresidente|vicepresidenta|lider|coordinador|coordinadora|director|directora|encargado|encargada|responsable|jefe|jefa|pastor|pastora)\b/.test(normalizeMemberLabel(role));
+      }
+
+      function memberDirectoryAssignments(member) {
         if (!member?.has_church_role) return [];
-        const saved = String(member.church_committee || "").split(/\s*\|\s*/).map(value => value.trim()).filter(Boolean);
-        const normalize = value => String(value || "").toLocaleLowerCase("es").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
-        const committees = saved.map(value => MEMBERSHIP_COMMITTEES.find(name => normalize(name) === normalize(value)) || value);
-        return [...new Set(committees.length ? committees : ["Por clasificar"])];
+        const savedCommittees = String(member.church_committee || "").split(/\s*\|\s*/).map(value => value.trim()).filter(Boolean);
+        const roles = String(member.church_role || "").split(/\s*\|\s*/).map(value => value.trim()).filter(Boolean);
+        const committees = savedCommittees.length ? savedCommittees : ["Por clasificar"];
+        return committees.map((value, index) => ({
+          committee: MEMBERSHIP_COMMITTEES.find(name => normalizeMemberLabel(name) === normalizeMemberLabel(value)) || value,
+          role: roles[index] || roles[0] || "",
+        }));
+      }
+
+      function memberDirectoryCommittees(member) {
+        return [...new Set(memberDirectoryAssignments(member).map(item => item.committee))];
+      }
+
+      function memberLeadershipSummary(member) {
+        return memberDirectoryAssignments(member).filter(item => isCommitteeLeaderRole(item.role)).map(item => `${item.committee}: ${item.role}`);
       }
 
       function renderMemberDirectoryRow(member) {
         const attendanceCount = (platform.memberAttendance || []).filter(row => row.member_id === member.id).length;
         const committees = memberDirectoryCommittees(member);
         const committee = committees.join(" · ");
+        const leadership = memberLeadershipSummary(member);
         const documentLabel = { CC: "C.C.", TI: "T.I.", CE: "C.E.", PA: "Pasaporte", RC: "R.C.", PPT: "P.P.T." }[member.document_type] || member.document_type || "Documento";
         const initial = escapeHtml(String(member.full_name || "?").trim().slice(0, 1).toLocaleUpperCase("es"));
         const roleDetails = member.has_church_role
@@ -5011,7 +5031,7 @@ const TYPES = {
           : member.is_baptized === false ? "No" : "";
         return `<article class="member-admin-row member-profile-card" data-member-id="${escapeHtml(member.id)}" data-member-committee="${escapeHtml(committees.join("|"))}">
           <div class="member-profile-main"><div class="member-profile-photo">${member.photo_preview_url ? `<img src="${escapeHtml(member.photo_preview_url)}" alt="Foto de ${escapeHtml(member.full_name)}" loading="lazy" decoding="async">` : `<span aria-hidden="true">${initial}</span>`}</div>
-            <div class="member-profile-content"><div class="member-profile-heading"><div><small class="member-profile-kicker">Ficha de miembro · uso administrativo</small><h3>${escapeHtml(member.full_name)}</h3></div><span class="member-status-chip status-${escapeHtml(member.status)}">${escapeHtml(member.status)}</span></div>
+            <div class="member-profile-content"><div class="member-profile-heading"><div><small class="member-profile-kicker">Ficha de miembro · uso administrativo</small><h3>${escapeHtml(member.full_name)}</h3>${leadership.length ? `<span class="member-leader-badge">${leadership.map(escapeHtml).join(" · ")}</span>` : ""}</div><span class="member-status-chip status-${escapeHtml(member.status)}">${escapeHtml(member.status)}</span></div>
               <div class="member-profile-facts"><span><small>Número de miembro</small><strong>${escapeHtml(member.member_number || "Pendiente")}</strong></span><span><small>Correo y teléfono</small><strong>${escapeHtml(member.email || "Sin correo")} · ${escapeHtml(member.phone || "Sin teléfono")}</strong></span>${roleDetails}${member.birth_date ? `<span><small>Fecha de nacimiento</small><strong>${escapeHtml(member.birth_date)}</strong></span>` : ""}${baptismFact ? `<span><small>Bautismo</small><strong>${baptismFact}</strong></span>` : ""}${member.is_baptized !== null && member.is_baptized !== undefined ? `<span><small>Lleno del Espíritu Santo</small><strong>${member.filled_with_holy_spirit ? "Sí" : "No"}</strong></span>` : ""}<span><small>Dirección</small><strong>${escapeHtml(member.address || "Sin dirección")}</strong></span>${member.guardian_consent ? `<span><small>Representante</small><strong>${escapeHtml(member.guardian_full_name || "No indicado")} · consentimiento confirmado</strong></span>` : ""}<span><small>Asistencia registrada</small><strong>${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</strong></span></div>
             </div>
           </div>
@@ -5094,10 +5114,11 @@ const TYPES = {
           const rows = members.map(member => {
             const photo = photos.get(member.id);
             const committee = memberDirectoryCommittees(member).join(" · ");
-            const fields = [member.member_number, member.full_name, member.status, member.has_church_role ? "Sí" : "No", committee, member.church_role, member.document_number ? `${labels[member.document_type] || member.document_type} ${member.document_number}` : "", member.email, member.phone, member.address, member.birth_date, member.is_baptized === true ? "Sí" : member.is_baptized === false ? "No" : "", member.filled_with_holy_spirit ? "Sí" : "No", member.guardian_full_name, (platform.memberAttendance || []).filter(item => item.member_id === member.id).length, new Date(member.created_at).toLocaleDateString("es-CO")];
+            const leadership = memberLeadershipSummary(member).join(" · ");
+            const fields = [member.member_number, member.full_name, member.status, member.has_church_role ? "Sí" : "No", committee, leadership, member.church_role, member.document_number ? `${labels[member.document_type] || member.document_type} ${member.document_number}` : "", member.email, member.phone, member.address, member.birth_date, member.is_baptized === true ? "Sí" : member.is_baptized === false ? "No" : "", member.filled_with_holy_spirit ? "Sí" : "No", member.guardian_full_name, (platform.memberAttendance || []).filter(item => item.member_id === member.id).length, new Date(member.created_at).toLocaleDateString("es-CO")];
             return `<tr><td>${photo ? `<img class="member-photo" src="${photo}" alt="Foto de ${escapeHtml(member.full_name)}">` : "Sin foto"}</td>${fields.map(value => `<td>${escapeHtml(value || "")}</td>`).join("")}</tr>`;
           }).join("");
-          const columns = ["Foto", "N.º miembro", "Nombre", "Estado", "Tiene cargo", "Comité(s)", "Cargo(s)", "Documento", "Correo", "Teléfono", "Dirección", "Nacimiento", "Bautizado", "Lleno del Espíritu Santo", "Representante", "Asistencias", "Fecha de registro"];
+          const columns = ["Foto", "N.º miembro", "Nombre", "Estado", "Tiene cargo", "Comité(s)", "Liderazgo", "Cargo(s)", "Documento", "Correo", "Teléfono", "Dirección", "Nacimiento", "Bautizado", "Lleno del Espíritu Santo", "Representante", "Asistencias", "Fecha de registro"];
           const html = `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Directorio privado de membresía · IPUC Villa del Río</title><style>body{font:14px Arial,sans-serif;color:#172638;margin:24px}h1{color:#00338d;margin-bottom:4px}.note{color:#536578;margin:0 0 18px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5df;padding:7px;text-align:left;vertical-align:middle}th{background:#eaf2f8;position:sticky;top:0}.member-photo{width:58px;height:72px;object-fit:cover;border-radius:5px}@media print{body{margin:8mm;font-size:9px}.table-wrap{overflow:visible}th{position:static}tr{break-inside:avoid}}</style><h1>IPUC Villa del Río · Directorio de membresía</h1><p class="note">Documento privado para uso administrativo. Contiene datos personales y fotografías. Generado ${new Date().toLocaleString("es-CO")}.</p><div class="table-wrap"><table><thead><tr>${columns.map(column => `<th>${column}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></html>`;
           downloadPrivateFile(html, "text/html;charset=utf-8", "Directorio-privado-membresia-IPUC.html");
           if (status) status.textContent = `Listado con fotos descargado (${members.length} miembros). Mantén este archivo en un lugar privado.`;
@@ -5112,8 +5133,8 @@ const TYPES = {
         const members = platform.members || [];
         if (!members.length) throw new Error("Todavía no hay miembros para exportar.");
         const status = view().querySelector("[data-member-export-status]");
-        const columns = ["Número de miembro", "Nombre completo", "Estado", "Tiene cargo", "Comités", "Cargos", "Tipo de documento", "Número de documento", "Correo", "Teléfono", "Dirección", "Fecha de nacimiento", "Bautizado", "Lleno del Espíritu Santo", "Representante", "Asistencias", "Fecha de registro", "Foto incluida en el directorio HTML"];
-        const rows = members.map(member => [member.member_number, member.full_name, member.status, member.has_church_role ? "Sí" : "No", memberDirectoryCommittees(member).join(" | "), member.church_role, member.document_type, member.document_number, member.email, member.phone, member.address, member.birth_date, member.is_baptized === true ? "Sí" : member.is_baptized === false ? "No" : "", member.filled_with_holy_spirit ? "Sí" : "No", member.guardian_full_name, (platform.memberAttendance || []).filter(item => item.member_id === member.id).length, new Date(member.created_at).toLocaleDateString("es-CO"), member.photo_path ? "Sí" : "No"]);
+        const columns = ["Número de miembro", "Nombre completo", "Estado", "Tiene cargo", "Comités", "Liderazgo por comité", "Cargos", "Tipo de documento", "Número de documento", "Correo", "Teléfono", "Dirección", "Fecha de nacimiento", "Bautizado", "Lleno del Espíritu Santo", "Representante", "Asistencias", "Fecha de registro", "Foto incluida en el directorio HTML"];
+        const rows = members.map(member => [member.member_number, member.full_name, member.status, member.has_church_role ? "Sí" : "No", memberDirectoryCommittees(member).join(" | "), memberLeadershipSummary(member).join(" | "), member.church_role, member.document_type, member.document_number, member.email, member.phone, member.address, member.birth_date, member.is_baptized === true ? "Sí" : member.is_baptized === false ? "No" : "", member.filled_with_holy_spirit ? "Sí" : "No", member.guardian_full_name, (platform.memberAttendance || []).filter(item => item.member_id === member.id).length, new Date(member.created_at).toLocaleDateString("es-CO"), member.photo_path ? "Sí" : "No"]);
         downloadPrivateFile(`\ufeff${[columns, ...rows].map(row => row.map(membershipCsvValue).join(",")).join("\r\n")}`, "text/csv;charset=utf-8", "Directorio-privado-membresia-IPUC.csv");
         if (status) status.textContent = `Listado Excel (CSV) descargado (${members.length} miembros). Para fotos, descarga también el directorio HTML.`;
       }
@@ -5136,7 +5157,11 @@ const TYPES = {
           const folderNames = [...MEMBERSHIP_COMMITTEES, ...Array.from(new Set(servers.flatMap(memberDirectoryCommittees).filter(name => name && !MEMBERSHIP_COMMITTEES.includes(name)))).sort((a, b) => a.localeCompare(b, "es"))];
             const renderFolder = name => {
               const rows = servers.filter(member => memberDirectoryCommittees(member).includes(name));
-              return `<details class="member-directory-subfolder" data-member-folder ${rows.length ? "open" : ""}><summary>${escapeHtml(name)}<span data-folder-count>${rows.length}</span></summary><div class="member-admin-list">${rows.map(renderMemberDirectoryRow).join("") || `<p class="member-empty">Sin miembros en este comité.</p>`}</div></details>`;
+              const isLeaderForCommittee = member => memberDirectoryAssignments(member).some(item => item.committee === name && isCommitteeLeaderRole(item.role));
+              const leaders = rows.filter(isLeaderForCommittee);
+              const team = rows.filter(member => !isLeaderForCommittee(member));
+              const subgroup = (label, items) => `<details class="member-directory-subgroup" data-member-folder ${items.length ? "open" : ""}><summary>${label}<span data-folder-count>${items.length}</span></summary><div class="member-admin-list">${items.map(renderMemberDirectoryRow).join("") || `<p class="member-empty">Sin personas en este grupo.</p>`}</div></details>`;
+              return `<details class="member-directory-subfolder" data-member-folder ${rows.length ? "open" : ""}><summary>${escapeHtml(name)}<span data-folder-count>${rows.length}</span></summary><div class="member-directory-subgroups">${subgroup("Líderes", leaders)}${subgroup("Equipo del comité", team)}</div></details>`;
             };
             return `<details class="member-directory-folder" data-member-group="servers" open><summary>Servidores y líderes <span data-folder-count>${servers.length}</span></summary><p class="member-directory-hint">Organizados por comité. Los registros sin comité reconocido aparecen en “Por clasificar”.</p><div class="member-directory-subfolders">${folderNames.map(renderFolder).join("")}</div></details><details class="member-directory-folder" data-member-group="non-servers" open><summary>Miembros sin cargo <span data-folder-count>${nonServers.length}</span></summary><div class="member-admin-list">${nonServers.map(renderMemberDirectoryRow).join("") || `<p class="member-empty">Sin miembros en esta carpeta.</p>`}</div></details>`;
           })()}<p class="member-filter-empty" data-member-filter-empty hidden>No hay personas que coincidan con esta búsqueda.</p></div></article>
