@@ -112,8 +112,8 @@ Deno.serve(async req => {
     if (!consent || !sensitiveDataConsent) return json(req, { error: "Debes aceptar de forma expresa el tratamiento de datos para crear el registro de membresía." }, 400);
     if (!(photo instanceof File) || photo.size === 0) return json(req, { error: "Selecciona una foto de rostro para identificarte y generar tu carnet." }, 400);
     if (!photoConsent) return json(req, { error: "Debes autorizar el almacenamiento privado de la foto para generar tu carnet." }, 400);
-    if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type) || photo.size > 50 * 1024 * 1024) {
-      return json(req, { error: "La foto debe ser JPG, PNG o WebP y pesar máximo 50 MB." }, 400);
+    if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type) || photo.size > 5 * 1024 * 1024) {
+      return json(req, { error: "La foto debe ser JPG, PNG o WebP y pesar máximo 5 MB." }, 400);
     }
 
     const forwarded = req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim();
