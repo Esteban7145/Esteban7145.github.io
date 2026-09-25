@@ -1341,8 +1341,7 @@ const TYPES = {
         publishableKey: "sb_publishable_ZqqjaA95z6fwMSmQ8Rok9g_Wqhgc0ym",
         storageBucket: "event-media",
         leaderBucket: "leader-submissions",
-        driveFunction: "drive-upload",
-        memberCardEmailFunction: "member-card-email"
+        driveFunction: "drive-upload"
       };
       const MUSIC_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/1TQTIz_Vi7BN8CMkBIIMp2U98GF7dnbs6";
       // Public playback manifest for the single Música IPUC Villa del Río
@@ -2155,29 +2154,6 @@ const TYPES = {
           if (!blob) throw new Error("No se pudo exportar el carnet como imagen.");
           return blob;
         } finally { URL.revokeObjectURL(url); }
-      }
-
-      function blobToBase64(blob) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => typeof reader.result === "string" ? resolve(reader.result.split(",", 2)[1]) : reject(new Error("No se pudo preparar el adjunto del carnet."));
-          reader.onerror = () => reject(new Error("No se pudo preparar el adjunto del carnet."));
-          reader.readAsDataURL(blob);
-        });
-      }
-
-      async function sendMemberCardEmail(member, force = false) {
-        if (!member?.email || !member.has_church_role || !member.photo_path) throw new Error("El envío requiere un servidor con correo y foto registrados.");
-        const png = await membershipCardBlob(member, "png");
-        const { data, error } = await cloud.app.functions.invoke(SUPABASE_CONFIG.memberCardEmailFunction, {
-          body: { memberId: member.id, cardPngBase64: await blobToBase64(png), force },
-        });
-        if (error) {
-          const payload = error.context instanceof Response ? await error.context.clone().json().catch(() => null) : null;
-          throw new Error(payload?.error || error.message || "No se pudo enviar el carnet.");
-        }
-        if (data?.error) throw new Error(data.error);
-        return data;
       }
 
       async function prepareMemberCardPreview(member) {
@@ -4092,13 +4068,6 @@ const TYPES = {
             try {
               const { error } = await cloud.db.from("church_members").update({ status: nextStatus, updated_at: new Date().toISOString() }).eq("id", row.dataset.memberId);
               if (error) throw error;
-              if (nextStatus === "activo" && member?.has_church_role && member.photo_path && member.email && !member.card_email_sent_at) {
-                try { await sendMemberCardEmail(member); }
-                catch (mailError) {
-                  await loadMembershipAdmin();
-                  throw new Error(`El miembro quedó activo, pero no se pudo enviar el carnet: ${mailError.message}`);
-                }
-              }
               await loadMembershipAdmin();
             } finally { button.disabled = false; }
           });
@@ -4158,18 +4127,6 @@ const TYPES = {
               const format = button.dataset.memberCard;
               const blob = await membershipCardBlob(member, format);
               downloadPrivateFile(blob, blob.type, `Carnet-IPUC-${safeFileName(member.full_name)}.${format}`);
-            } finally { button.disabled = false; }
-          });
-        });
-        view().querySelectorAll("[data-member-email-card]").forEach(button => {
-          button.onclick = runAdminAction(async () => {
-            const member = platform.members.find(item => item.id === button.closest("[data-member-id]")?.dataset.memberId);
-            if (!member || member.status !== "activo") throw new Error("Primero guarda la aprobación del miembro; el carnet solo se envía a miembros activos.");
-            button.disabled = true;
-            try {
-              await sendMemberCardEmail(member, button.dataset.memberEmailCard === "resend");
-              await loadMembershipAdmin();
-              alert("Carnet enviado al correo registrado.");
             } finally { button.disabled = false; }
           });
         });
@@ -5113,10 +5070,10 @@ const TYPES = {
         return `<article class="member-admin-row member-profile-card" data-member-id="${escapeHtml(member.id)}" data-member-committee="${escapeHtml(committees.join("|"))}">
           <div class="member-profile-main"><div class="member-profile-photo">${member.photo_preview_url ? `<img src="${escapeHtml(member.photo_preview_url)}" alt="Foto de ${escapeHtml(member.full_name)}" loading="lazy" decoding="async">` : `<span aria-hidden="true">${initial}</span>`}</div>
             <div class="member-profile-content"><div class="member-profile-heading"><div><small class="member-profile-kicker">Ficha de miembro · uso administrativo</small><h3>${escapeHtml(member.full_name)}</h3>${leadership.length ? `<span class="member-leader-badge">${leadership.map(escapeHtml).join(" · ")}</span>` : ""}</div><span class="member-status-chip status-${escapeHtml(member.status)}">${escapeHtml(member.status)}</span></div>
-              <div class="member-profile-facts"><span><small>Número de miembro</small><strong>${escapeHtml(member.member_number || "Pendiente")}</strong></span><span><small>Correo y teléfono</small><strong>${escapeHtml(member.email || "Sin correo")} · ${escapeHtml(member.phone || "Sin teléfono")}</strong></span>${roleDetails}${member.has_church_role ? `<span><small>Envío del carnet</small><strong>${member.card_email_sent_at ? `Enviado ${escapeHtml(new Date(member.card_email_sent_at).toLocaleString("es-CO"))}` : member.card_email_error ? `Pendiente · ${escapeHtml(member.card_email_error)}` : "Se enviará al aprobar"}</strong></span>` : ""}${member.birth_date ? `<span><small>Fecha de nacimiento</small><strong>${escapeHtml(member.birth_date)}</strong></span>` : ""}${baptismFact ? `<span><small>Bautismo</small><strong>${baptismFact}</strong></span>` : ""}${member.is_baptized !== null && member.is_baptized !== undefined ? `<span><small>Lleno del Espíritu Santo</small><strong>${member.filled_with_holy_spirit ? "Sí" : "No"}</strong></span>` : ""}<span><small>Dirección</small><strong>${escapeHtml(member.address || "Sin dirección")}</strong></span>${member.guardian_consent ? `<span><small>Representante</small><strong>${escapeHtml(member.guardian_full_name || "No indicado")} · consentimiento confirmado</strong></span>` : ""}<span><small>Asistencia registrada</small><strong>${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</strong></span></div>
+              <div class="member-profile-facts"><span><small>Número de miembro</small><strong>${escapeHtml(member.member_number || "Pendiente")}</strong></span><span><small>Correo y teléfono</small><strong>${escapeHtml(member.email || "Sin correo")} · ${escapeHtml(member.phone || "Sin teléfono")}</strong></span>${roleDetails}${member.birth_date ? `<span><small>Fecha de nacimiento</small><strong>${escapeHtml(member.birth_date)}</strong></span>` : ""}${baptismFact ? `<span><small>Bautismo</small><strong>${baptismFact}</strong></span>` : ""}${member.is_baptized !== null && member.is_baptized !== undefined ? `<span><small>Lleno del Espíritu Santo</small><strong>${member.filled_with_holy_spirit ? "Sí" : "No"}</strong></span>` : ""}<span><small>Dirección</small><strong>${escapeHtml(member.address || "Sin dirección")}</strong></span>${member.guardian_consent ? `<span><small>Representante</small><strong>${escapeHtml(member.guardian_full_name || "No indicado")} · consentimiento confirmado</strong></span>` : ""}<span><small>Asistencia registrada</small><strong>${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</strong></span></div>
             </div>
           </div>
-          <div class="member-admin-actions">${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>${member.has_church_role ? `<button type="button" class="small-action" data-member-card="png">Descargar carnet</button><button type="button" class="small-action" data-member-card="svg">Carnet SVG</button>` : ""}` : ""}${member.has_church_role ? `<button type="button" class="small-action" data-member-edit-assignments aria-expanded="false">${committees.includes("Por clasificar") ? "Clasificar comité" : "Editar comités y cargos"}</button>` : ""}${member.has_church_role && member.photo_path ? `<button type="button" class="small-action" data-member-email-card="${member.card_email_sent_at ? "resend" : "send"}" ${member.status !== "activo" || !member.email ? "disabled" : ""}>${!member.email ? "Falta correo" : member.card_email_sent_at ? "Reenviar carnet" : member.status === "activo" ? "Enviar carnet por correo" : "Se enviará al aprobar"}</button>` : ""}<label class="member-status-control">Estado<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div>
+          <div class="member-admin-actions">${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>${member.has_church_role ? `<button type="button" class="small-action" data-member-card="png">Descargar carnet</button><button type="button" class="small-action" data-member-card="svg">Carnet SVG</button>` : ""}` : ""}${member.has_church_role ? `<button type="button" class="small-action" data-member-edit-assignments aria-expanded="false">${committees.includes("Por clasificar") ? "Clasificar comité" : "Editar comités y cargos"}</button>` : ""}<label class="member-status-control">Estado<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div>
           ${member.has_church_role ? `<div class="member-admin-assignment-editor" data-member-assignment-editor hidden><p>Asocia cada cargo con su comité. Puedes escribir un comité nuevo; se creará su carpeta automáticamente. Para varias asignaciones usa | y mantén el mismo orden.</p><div class="member-admin-assignment-fields"><label>Comité(s)<input type="text" data-member-committees list="membershipCommitteeOptions" value="${escapeHtml(member.church_committee || "")}" placeholder="Ej. DECOM | Música" maxlength="500"></label><label>Cargo(s)<input type="text" data-member-roles value="${escapeHtml(member.church_role || "")}" placeholder="Ej. Presidente | Director" maxlength="500"></label></div><button type="button" class="primary-link" data-member-save-assignments>Guardar clasificación</button></div>` : ""}
         </article>`;
       }
