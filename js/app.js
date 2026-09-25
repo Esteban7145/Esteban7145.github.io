@@ -2079,6 +2079,13 @@ const TYPES = {
         const xml = new DOMParser().parseFromString(await response.text(), "image/svg+xml");
         if (xml.querySelector("parsererror")) throw new Error("La plantilla editable del carnet no se pudo leer.");
         const ns = "http://www.w3.org/2000/svg";
+        const svgRoot = xml.documentElement;
+        const [, , cardWidth, cardHeight] = (svgRoot.getAttribute("viewBox") || "0 0 155.91 240.94").trim().split(/\s+/);
+        const whiteBackground = xml.createElementNS(ns, "rect");
+        whiteBackground.setAttribute("x", "0"); whiteBackground.setAttribute("y", "0");
+        whiteBackground.setAttribute("width", cardWidth); whiteBackground.setAttribute("height", cardHeight);
+        whiteBackground.setAttribute("fill", "#ffffff");
+        svgRoot.insertBefore(whiteBackground, svgRoot.firstChild);
         const textField = className => [...xml.getElementsByTagName("text")].find(node => node.classList.contains(className));
         const name = textField("st10");
         const code = textField("st11");
