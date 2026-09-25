@@ -1624,7 +1624,7 @@ const TYPES = {
         deferredInstallPrompt = null;
         renderRoute();
       });
-      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260925-membership-photo-5mb-1").catch(() => {});
+      if ("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js?v=20260925-membership-photo-fallback-1").catch(() => {});
       setupSiteLoader();
       setupChurchMusic();
       loadDriveMusic();
@@ -2049,13 +2049,24 @@ const TYPES = {
           canvas.width = Math.max(1, Math.round(bitmap.width * scale));
           canvas.height = Math.max(1, Math.round(bitmap.height * scale));
           const context = canvas.getContext("2d");
-          if (!context) throw new Error("No se pudo preparar la vista del carnet en este dispositivo.");
-          context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-          return canvas.toDataURL("image/jpeg", .86);
+          if (context) {
+            context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            const resized = canvas.toDataURL("image/jpeg", .86);
+            if (resized && resized !== "data:,") return resized;
+          }
+        } catch (error) {
+          console.warn("Se usará la foto original para el carnet.", error);
         } finally {
           if (bitmap?.close) bitmap.close();
           if (objectUrl) URL.revokeObjectURL(objectUrl);
         }
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => typeof reader.result === "string" ? resolve(reader.result) : reject(new Error("El dispositivo no pudo leer la foto seleccionada."));
+          reader.onerror = () => reject(new Error("El dispositivo no pudo leer la foto seleccionada."));
+          reader.onabort = () => reject(new Error("Se interrumpió la lectura de la foto."));
+          reader.readAsDataURL(file);
+        });
       }
 
       async function membershipCardSvg(member) {
@@ -2117,6 +2128,12 @@ const TYPES = {
         view().innerHTML = `<section class="page-head"><div><p class="eyebrow">Familia IPUC</p><h1>Registro de membresía</h1><p>Comparte tus datos con la administración de la iglesia para mantener actualizado el registro de membresía.</p></div></section>
           ${registration ? `<section class="membership-success"><p class="eyebrow">${registration.changeRequest ? "Actualización pendiente" : "Registro recibido"}</p><h2>${registration.changeRequest ? "Solicitud enviada" : `Gracias, ${escapeHtml(registration.fullName)}`}</h2><p>${registration.changeRequest ? "Tus datos no se han modificado todavía. Un administrador debe revisar y aprobar los cambios para actualizar el registro oficial." : "Tu solicitud quedó pendiente de validación por la iglesia."}</p>${registration.changeRequest ? `<div class="membership-no-card"><strong>Esperando revisión administrativa</strong><p>La iglesia revisará la información antes de aplicarla al registro y al carnet.</p></div>` : card ? `<article class="member-card-preview" aria-label="Vista previa del carnet IPUC">${card.svgUrl ? `<img src="${escapeHtml(card.svgUrl)}" alt="Carnet de ${escapeHtml(card.fullName)} con cargo ${escapeHtml(card.churchRole)}">` : `<div class="member-card-placeholder">Carnet listo para descargar</div>`}</article><p class="member-card-note">El carnet se genera solo para quien declaró un cargo. Tu carnet se prepara en este dispositivo; los datos y la foto no se descargan desde el registro administrativo.</p><div class="member-card-downloads"><button class="primary-link" type="button" data-download-member-card="png">Descargar carnet</button><button class="small-action" type="button" data-download-member-card="svg">Descargar editable (SVG)</button></div><p class="member-form-status" data-member-status role="status" aria-live="polite"></p>` : `<div class="membership-no-card"><strong>Registro guardado</strong><p>Como indicaste que no tienes un cargo, no se generó un carnet.</p></div>`}</section>` : `<form class="membership-form" id="membershipForm" novalidate><div class="membership-form-heading"><span>01</span><div><h2>Tus datos</h2><p>La información de este registro solo la consultará el equipo administrativo autorizado.</p></div></div><div class="membership-fields"><label>Nombre completo<input name="fullName" autocomplete="name" required maxlength="140"></label><label>Dirección de residencia<input name="address" autocomplete="street-address" required maxlength="240"></label><label>Correo electrónico<input name="email" type="email" autocomplete="email" required maxlength="254"></label><label>Teléfono<input name="phone" type="tel" autocomplete="tel" required maxlength="32"></label><label class="member-photo-field">Foto de rostro para identificación y control de membresía<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG o WebP · máximo 5 MB. Se guarda de forma privada. La foto no se publica.</small><img data-member-photo-preview alt="Vista previa de tu foto" hidden></label><fieldset class="member-role-question"><legend>¿Tienes un cargo en la iglesia?</legend><div class="member-role-options"><label><input name="hasChurchRole" type="radio" value="si" required> Sí</label><label><input name="hasChurchRole" type="radio" value="no" required> No</label></div></fieldset><label class="member-role-field" data-member-role-field hidden>¿Cuál es tu cargo?<input name="churchRole" maxlength="120" placeholder="Ej. Presidente DECOM" disabled></label><label class="member-committee-field" data-member-committee-field hidden>¿A qué comité perteneces?<select name="churchCommittee" disabled><option value="">Selecciona tu comité</option>${MEMBERSHIP_COMMITTEES.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}<option value="__otro__">Otro comité</option></select></label><label class="member-custom-committee-field" data-member-custom-committee-field hidden>Nombre del comité<input name="customChurchCommittee" maxlength="80" placeholder="Escribe el nombre del comité" disabled></label></div><label class="member-consent"><input name="sensitiveDataConsent" type="checkbox" required><span>Autorizo de forma previa, expresa e informada a IPUC Villa del Río a tratar mis datos identificativos, fecha de nacimiento, información sobre bautismo y llenura del Espíritu Santo y mi vinculación como miembro, para gestionar esta solicitud y mi membresía. Estos datos religiosos son sensibles y solo serán consultados por administración autorizada. Esta autorización no es necesaria para asistir a los cultos. Podré conocer, actualizar, rectificar o solicitar la supresión de mis datos o revocar esta autorización escribiendo a <a href="mailto:decomvilladelrio@gmail.com">decomvilladelrio@gmail.com</a>.</span></label><label class="member-consent"><input name="photoConsent" type="checkbox" required><span>Autorizo expresamente el almacenamiento privado de mi fotografía para identificarme y elaborar el carnet de membresía. Esta autorización no permite publicar la foto en anuncios o material promocional; para eso se solicitará permiso aparte.</span></label><label class="member-consent"><input name="attendanceConsent" type="checkbox"><span>Opcional: autorizo registrar mi asistencia a eventos de la iglesia para control interno. Puedo registrarme sin activar esta función.</span></label><p class="member-form-status" data-member-status role="status" aria-live="polite"></p><button class="primary-link" type="submit">Enviar registro</button></form>`}`;
         const form = document.getElementById("membershipForm");
+        const memberCardPlaceholder = view().querySelector(".member-card-placeholder");
+        if (memberCardPlaceholder && card && !card.photoDataUrl) memberCardPlaceholder.textContent = "Carnet sin vista previa en este dispositivo";
+        if (card?.photoPreparationWarning) {
+          const cardStatus = view().querySelector("[data-member-status]");
+          if (cardStatus) cardStatus.textContent = card.photoPreparationWarning;
+        }
         if (form) {
           form.querySelector(".member-photo-field small").textContent = "JPG, PNG o WebP · máximo 5 MB. Se guarda de forma privada. La foto no se publica.";
           const roleField = form.querySelector("[data-member-role-field]");
@@ -2247,9 +2264,13 @@ const TYPES = {
             data.set("isBaptized", String(form.querySelector('[name="isBaptized"]:checked')?.value === "true"));
             data.set("filledWithHolySpirit", String(form.querySelector('[name="filledWithHolySpirit"]:checked')?.value === "true"));
             let photoDataUrl = "";
+            let photoPreparationWarning = "";
             if (hasRole) {
               try { photoDataUrl = await prepareMemberCardPhoto(selectedPhoto); }
-              catch (error) { status.textContent = error.message; submit.disabled = false; return; }
+              catch (error) {
+                photoPreparationWarning = "La foto se enviará y guardará, pero este dispositivo no pudo preparar la vista del carnet. La iglesia podrá generarlo desde administración.";
+                console.warn("No se pudo preparar la vista local del carnet.", error);
+              }
             }
             try {
               let verifiedAccessToken = "";
@@ -2281,8 +2302,8 @@ const TYPES = {
                 renderMembershipPage();
                 return;
               }
-              platform.memberCard = { fullName: String(data.get("fullName")).trim(), memberNumber: result.memberNumber, hasChurchRole: hasRole, churchRole: hasRole ? String(data.get("churchRole")).trim() : "", documentType: hasRole ? String(data.get("documentType")) : "", documentNumber: hasRole ? String(data.get("documentNumber")).trim().toUpperCase() : "", photoDataUrl, svgUrl: "" };
-              if (hasRole) { try { await prepareMemberCardPreview(platform.memberCard); } catch (error) { console.warn("El carnet se podrá volver a generar desde el botón de descarga.", error); } }
+              platform.memberCard = { fullName: String(data.get("fullName")).trim(), memberNumber: result.memberNumber, hasChurchRole: hasRole, churchRole: hasRole ? String(data.get("churchRole")).trim() : "", documentType: hasRole ? String(data.get("documentType")) : "", documentNumber: hasRole ? String(data.get("documentNumber")).trim().toUpperCase() : "", photoDataUrl, photoPreparationWarning, svgUrl: "" };
+              if (hasRole && photoDataUrl) { try { await prepareMemberCardPreview(platform.memberCard); } catch (error) { platform.memberCard.photoPreparationWarning = "Tu registro sí se guardó. No se pudo mostrar el carnet aquí; la foto quedó almacenada para administración."; console.warn("El carnet se podrá volver a generar desde el botón de descarga.", error); } }
               renderMembershipPage();
             } catch (error) { status.textContent = error.message || "No se pudo enviar el formulario. Inténtalo de nuevo."; submit.disabled = false; }
           });
