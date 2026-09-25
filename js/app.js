@@ -2070,15 +2070,21 @@ const TYPES = {
       }
 
       async function membershipCardSvg(member) {
+        if (!member.photoDataUrl && member.photoFile) {
+          member.photoDataUrl = await prepareMemberCardPhoto(member.photoFile);
+          member.photoPreparationWarning = "";
+        }
         const response = await fetch("/assets/member-card-template.svg", { cache: "no-cache" });
         if (!response.ok) throw new Error("No se pudo cargar la plantilla del carnet.");
         const xml = new DOMParser().parseFromString(await response.text(), "image/svg+xml");
         if (xml.querySelector("parsererror")) throw new Error("La plantilla editable del carnet no se pudo leer.");
         const ns = "http://www.w3.org/2000/svg";
-        const name = xml.querySelector("text.st10");
-        const code = xml.querySelector("text.st11");
-        const role = xml.querySelector("text.st2");
-        if (!name || !code || !role || !member.photoDataUrl) throw new Error("Faltan campos en la plantilla del carnet.");
+        const textField = className => [...xml.getElementsByTagName("text")].find(node => node.classList.contains(className));
+        const name = textField("st10");
+        const code = textField("st11");
+        const role = textField("st2");
+        if (!name || !code || !role) throw new Error("La plantilla del carnet no contiene los espacios para nombre, documento y cargo.");
+        if (!member.photoDataUrl) throw new Error("No se pudo leer la foto para el carnet. Vuelve a seleccionarla e inténtalo de nuevo.");
 
         const documentLabels = { CC: "C.C.", TI: "T.I.", CE: "C.E.", PA: "Pasaporte", RC: "R.C.", PPT: "P.P.T." };
         const documentText = `${documentLabels[member.documentType] || member.documentType} ${member.documentNumber}`;
@@ -2302,7 +2308,7 @@ const TYPES = {
                 renderMembershipPage();
                 return;
               }
-              platform.memberCard = { fullName: String(data.get("fullName")).trim(), memberNumber: result.memberNumber, hasChurchRole: hasRole, churchRole: hasRole ? String(data.get("churchRole")).trim() : "", documentType: hasRole ? String(data.get("documentType")) : "", documentNumber: hasRole ? String(data.get("documentNumber")).trim().toUpperCase() : "", photoDataUrl, photoPreparationWarning, svgUrl: "" };
+              platform.memberCard = { fullName: String(data.get("fullName")).trim(), memberNumber: result.memberNumber, hasChurchRole: hasRole, churchRole: hasRole ? String(data.get("churchRole")).trim() : "", documentType: hasRole ? String(data.get("documentType")) : "", documentNumber: hasRole ? String(data.get("documentNumber")).trim().toUpperCase() : "", photoDataUrl, photoFile: hasRole ? selectedPhoto : null, photoPreparationWarning, svgUrl: "" };
               if (hasRole && photoDataUrl) { try { await prepareMemberCardPreview(platform.memberCard); } catch (error) { platform.memberCard.photoPreparationWarning = "Tu registro sí se guardó. No se pudo mostrar el carnet aquí; la foto quedó almacenada para administración."; console.warn("El carnet se podrá volver a generar desde el botón de descarga.", error); } }
               renderMembershipPage();
             } catch (error) { status.textContent = error.message || "No se pudo enviar el formulario. Inténtalo de nuevo."; submit.disabled = false; }
@@ -4052,6 +4058,42 @@ const TYPES = {
             document.body.append(dialog); dialog.showModal();
           });
         });
+        view().querySelectorAll("[data-member-card]").forEach(button => {
+          button.onclick = runAdminAction(async () => {
+            const member = platform.members.find(item => item.id === button.closest("[data-member-id]")?.dataset.memberId);
+            if (!member?.photo_path || !member.has_church_role) throw new Error("El carnet requiere foto y un cargo registrado.");
+            button.disabled = true;
+            try {
+              const { data, error } = await cloud.storage.from("membership-photos").createSignedUrl(member.photo_path, 600);
+              if (error) throw error;
+              const response = await fetch(data.signedUrl);
+              if (!response.ok) throw new Error("No se pudo leer la foto privada del miembro.");
+              const card = {
+                fullName: member.full_name, memberNumber: member.member_number,
+                churchRole: member.church_role, documentType: member.document_type,
+                documentNumber: member.document_number, photoDataUrl: await prepareMemberCardPhoto(await response.blob())
+              };
+              const svg = await membershipCardSvg(card);
+              let blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+              const format = button.dataset.memberCard;
+              if (format === "png") {
+                const url = URL.createObjectURL(blob);
+                try {
+                  const image = new Image(); image.src = url; await image.decode();
+                  const canvas = document.createElement("canvas"); canvas.width = 624; canvas.height = 964;
+                  const context = canvas.getContext("2d");
+                  if (!context) throw new Error("El navegador no pudo preparar el carnet para impresión.");
+                  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                  blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+                  if (!blob) throw new Error("No se pudo exportar el carnet como imagen.");
+                } finally { URL.revokeObjectURL(url); }
+              }
+              downloadPrivateFile(blob, blob.type, `Carnet-IPUC-${safeFileName(member.full_name)}.${format}`);
+            } finally { button.disabled = false; }
+          });
+        });
+        view().querySelector("[data-export-members-csv]")?.addEventListener("click", runAdminAction(event => exportMemberDirectoryCsv(event.currentTarget)));
+        view().querySelector("[data-export-members-photos]")?.addEventListener("click", runAdminAction(event => exportMemberDirectoryWithPhotos(event.currentTarget)));
         view().querySelectorAll("[data-approve-member-change], [data-reject-member-change]").forEach(button => {
           button.onclick = runAdminAction(async () => {
             const row = button.closest("[data-change-request-id]");
@@ -4973,8 +5015,107 @@ const TYPES = {
               <div class="member-profile-facts"><span><small>Número de miembro</small><strong>${escapeHtml(member.member_number || "Pendiente")}</strong></span><span><small>Correo y teléfono</small><strong>${escapeHtml(member.email || "Sin correo")} · ${escapeHtml(member.phone || "Sin teléfono")}</strong></span>${roleDetails}${member.birth_date ? `<span><small>Fecha de nacimiento</small><strong>${escapeHtml(member.birth_date)}</strong></span>` : ""}${baptismFact ? `<span><small>Bautismo</small><strong>${baptismFact}</strong></span>` : ""}${member.is_baptized !== null && member.is_baptized !== undefined ? `<span><small>Lleno del Espíritu Santo</small><strong>${member.filled_with_holy_spirit ? "Sí" : "No"}</strong></span>` : ""}<span><small>Dirección</small><strong>${escapeHtml(member.address || "Sin dirección")}</strong></span>${member.guardian_consent ? `<span><small>Representante</small><strong>${escapeHtml(member.guardian_full_name || "No indicado")} · consentimiento confirmado</strong></span>` : ""}<span><small>Asistencia registrada</small><strong>${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</strong></span></div>
             </div>
           </div>
-          <div class="member-admin-actions">${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>` : ""}<label class="member-status-control">Estado<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div>
+          <div class="member-admin-actions">${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>${member.has_church_role ? `<button type="button" class="small-action" data-member-card="png">Descargar carnet</button><button type="button" class="small-action" data-member-card="svg">Carnet SVG</button>` : ""}` : ""}<label class="member-status-control">Estado<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div>
         </article>`;
+      }
+
+      function membershipCsvValue(value) {
+        const normalized = String(value ?? "");
+        const safe = /^[\s]*[=+@\-]/.test(normalized) ? `'${normalized}` : normalized;
+        return `"${safe.replace(/"/g, '""')}"`;
+      }
+
+      function downloadPrivateFile(content, mimeType, filename) {
+        const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+        const link = document.createElement("a");
+        link.href = url; link.download = filename;
+        document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+
+      async function memberPhotoThumbnail(blob) {
+        let bitmap;
+        let objectUrl = "";
+        try {
+          if (window.createImageBitmap) bitmap = await createImageBitmap(blob);
+          else {
+            objectUrl = URL.createObjectURL(blob);
+            bitmap = await new Promise((resolve, reject) => {
+              const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = objectUrl;
+            });
+          }
+          const scale = Math.min(1, 360 / Math.max(bitmap.width, bitmap.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+          const context = canvas.getContext("2d");
+          if (!context) throw new Error("El navegador no pudo preparar una foto del listado.");
+          context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+          return canvas.toDataURL("image/jpeg", .68);
+        } finally {
+          if (bitmap?.close) bitmap.close();
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+        }
+      }
+
+      async function membershipPhotoUrls(members) {
+        const paths = [...new Set(members.map(member => member.photo_path).filter(Boolean))];
+        const urls = new Map();
+        for (let index = 0; index < paths.length; index += 100) {
+          const { data, error } = await cloud.storage.from("membership-photos").createSignedUrls(paths.slice(index, index + 100), 600);
+          if (error) throw error;
+          (data || []).forEach(item => { if (item.path && item.signedUrl) urls.set(item.path, item.signedUrl); });
+        }
+        if (paths.some(path => !urls.has(path))) throw new Error("No se pudieron preparar enlaces privados para todas las fotos. Actualiza el panel e inténtalo de nuevo.");
+        return urls;
+      }
+
+      async function exportMemberDirectoryWithPhotos(button) {
+        const members = platform.members || [];
+        if (!members.length) throw new Error("Todavía no hay miembros para exportar.");
+        const status = view().querySelector("[data-member-export-status]");
+        const originalLabel = button.textContent;
+        button.disabled = true;
+        try {
+          const urls = await membershipPhotoUrls(members);
+          const photos = new Map();
+          let completed = 0;
+          for (let index = 0; index < members.length; index += 3) {
+            await Promise.all(members.slice(index, index + 3).map(async member => {
+              if (member.photo_path && urls.has(member.photo_path)) {
+                const response = await fetch(urls.get(member.photo_path));
+                if (!response.ok) throw new Error(`No se pudo cargar la foto privada de ${member.full_name}.`);
+                photos.set(member.id, await memberPhotoThumbnail(await response.blob()));
+              }
+              completed += 1;
+              if (status) status.textContent = `Preparando listado privado: ${completed} de ${members.length}…`;
+            }));
+          }
+          const labels = { CC: "C.C.", TI: "T.I.", CE: "C.E.", PA: "Pasaporte", RC: "R.C.", PPT: "P.P.T." };
+          const rows = members.map(member => {
+            const photo = photos.get(member.id);
+            const committee = memberDirectoryCommittees(member).join(" · ");
+            const fields = [member.member_number, member.full_name, member.status, member.has_church_role ? "Sí" : "No", committee, member.church_role, member.document_number ? `${labels[member.document_type] || member.document_type} ${member.document_number}` : "", member.email, member.phone, member.address, member.birth_date, member.is_baptized === true ? "Sí" : member.is_baptized === false ? "No" : "", member.filled_with_holy_spirit ? "Sí" : "No", member.guardian_full_name, (platform.memberAttendance || []).filter(item => item.member_id === member.id).length, new Date(member.created_at).toLocaleDateString("es-CO")];
+            return `<tr><td>${photo ? `<img class="member-photo" src="${photo}" alt="Foto de ${escapeHtml(member.full_name)}">` : "Sin foto"}</td>${fields.map(value => `<td>${escapeHtml(value || "")}</td>`).join("")}</tr>`;
+          }).join("");
+          const columns = ["Foto", "N.º miembro", "Nombre", "Estado", "Tiene cargo", "Comité(s)", "Cargo(s)", "Documento", "Correo", "Teléfono", "Dirección", "Nacimiento", "Bautizado", "Lleno del Espíritu Santo", "Representante", "Asistencias", "Fecha de registro"];
+          const html = `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Directorio privado de membresía · IPUC Villa del Río</title><style>body{font:14px Arial,sans-serif;color:#172638;margin:24px}h1{color:#00338d;margin-bottom:4px}.note{color:#536578;margin:0 0 18px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{border:1px solid #cbd5df;padding:7px;text-align:left;vertical-align:middle}th{background:#eaf2f8;position:sticky;top:0}.member-photo{width:58px;height:72px;object-fit:cover;border-radius:5px}@media print{body{margin:8mm;font-size:9px}.table-wrap{overflow:visible}th{position:static}tr{break-inside:avoid}}</style><h1>IPUC Villa del Río · Directorio de membresía</h1><p class="note">Documento privado para uso administrativo. Contiene datos personales y fotografías. Generado ${new Date().toLocaleString("es-CO")}.</p><div class="table-wrap"><table><thead><tr>${columns.map(column => `<th>${column}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div></html>`;
+          downloadPrivateFile(html, "text/html;charset=utf-8", "Directorio-privado-membresia-IPUC.html");
+          if (status) status.textContent = `Listado con fotos descargado (${members.length} miembros). Mantén este archivo en un lugar privado.`;
+        } finally {
+          button.disabled = false;
+          if (status && status.textContent.startsWith("Preparando")) status.textContent = "";
+          button.textContent = originalLabel;
+        }
+      }
+
+      function exportMemberDirectoryCsv(button) {
+        const members = platform.members || [];
+        if (!members.length) throw new Error("Todavía no hay miembros para exportar.");
+        const status = view().querySelector("[data-member-export-status]");
+        const columns = ["Número de miembro", "Nombre completo", "Estado", "Tiene cargo", "Comités", "Cargos", "Tipo de documento", "Número de documento", "Correo", "Teléfono", "Dirección", "Fecha de nacimiento", "Bautizado", "Lleno del Espíritu Santo", "Representante", "Asistencias", "Fecha de registro", "Foto incluida en el directorio HTML"];
+        const rows = members.map(member => [member.member_number, member.full_name, member.status, member.has_church_role ? "Sí" : "No", memberDirectoryCommittees(member).join(" | "), member.church_role, member.document_type, member.document_number, member.email, member.phone, member.address, member.birth_date, member.is_baptized === true ? "Sí" : member.is_baptized === false ? "No" : "", member.filled_with_holy_spirit ? "Sí" : "No", member.guardian_full_name, (platform.memberAttendance || []).filter(item => item.member_id === member.id).length, new Date(member.created_at).toLocaleDateString("es-CO"), member.photo_path ? "Sí" : "No"]);
+        downloadPrivateFile(`\ufeff${[columns, ...rows].map(row => row.map(membershipCsvValue).join(",")).join("\r\n")}`, "text/csv;charset=utf-8", "Directorio-privado-membresia-IPUC.csv");
+        if (status) status.textContent = `Listado Excel (CSV) descargado (${members.length} miembros). Para fotos, descarga también el directorio HTML.`;
       }
 
       function renderMembershipAdminModule() {
@@ -4985,6 +5126,7 @@ const TYPES = {
         return `<section class="admin-module" data-admin-module="membresia" ${platform.adminSection === "membresia" ? "" : "hidden"}>
           <article class="content-card admin-card-wide member-admin-module"><div class="section-title"><p class="eyebrow">Datos privados · acceso administrativo</p><h2>Membresía y asistencia</h2><p>Revisa solicitudes, aprueba miembros y registra asistencia por evento. Las fotos se consultan mediante enlaces temporales privados.</p></div>
           <div class="member-admin-stats"><span><strong>${members.length}</strong>Total</span><span><strong>${counts.pendiente}</strong>Pendientes</span><span><strong>${counts.activo}</strong>Activos</span><span><strong>${counts.inactivo}</strong>Inactivos</span></div>
+          <div class="member-export-actions"><div><strong>Directorio administrativo</strong><small>Se actualiza con los registros guardados. La descarga contiene información privada.</small></div><button type="button" class="small-action" data-export-members-csv>Descargar listado para Excel (CSV)</button><button type="button" class="small-action" data-export-members-photos>Descargar directorio con fotos</button><p data-member-export-status role="status" aria-live="polite"></p></div>
           ${renderMemberChangeQueue()}
           <div class="member-directory-tools"><label>Buscar miembro<input type="search" data-member-search placeholder="Nombre, correo, documento o cargo" value="${escapeHtml(platform.memberSearch || "")}"></label><label>Estado<select data-member-filter-status><option value="todos" ${platform.memberStatusFilter === "todos" ? "selected" : ""}>Todos los estados</option><option value="pendiente" ${platform.memberStatusFilter === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${platform.memberStatusFilter === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${platform.memberStatusFilter === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><span data-member-result-count aria-live="polite">${members.length} ${members.length === 1 ? "persona" : "personas"}</span></div>
           <label class="member-event-select">Evento para registrar asistencia<select data-member-event><option value="">Selecciona un evento</option>${events.map(event => `<option value="${escapeHtml(event.id)}">${escapeHtml(formatDateShort(event.date))} · ${escapeHtml(event.title)}</option>`).join("")}</select></label>

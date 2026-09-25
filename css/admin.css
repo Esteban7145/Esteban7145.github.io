@@ -611,6 +611,11 @@ body.platform-body:has(.admin-workspace) .member-admin-module { padding: clamp(1
 body.platform-body:has(.admin-workspace) .member-admin-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 20px 0; }
 body.platform-body:has(.admin-workspace) .member-admin-stats > span { display: grid; gap: 4px; padding: 13px; border-left: 2px solid #22bee5; color: #c3d5e3; background: #173a59; font-size: .8rem; }
 body.platform-body:has(.admin-workspace) .member-admin-stats strong { color: #f7fbff; font-size: 1.3rem; }
+body.platform-body:has(.admin-workspace) .member-export-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 18px 0 4px; padding: 13px; border: 1px solid rgba(156,204,227,.18); border-radius: 10px; background: rgba(6,19,38,.32); }
+body.platform-body:has(.admin-workspace) .member-export-actions > div { display: grid; flex: 1 1 240px; gap: 3px; color: #f7fbff; }
+body.platform-body:has(.admin-workspace) .member-export-actions small,
+body.platform-body:has(.admin-workspace) .member-export-actions p { margin: 0; color: #aab9c9; font-size: .78rem; }
+body.platform-body:has(.admin-workspace) .member-export-actions p { flex-basis: 100%; }
 body.platform-body:has(.admin-workspace) .member-directory-tools { display: grid; grid-template-columns: minmax(220px, 1.2fr) minmax(170px, .7fr) auto; align-items: end; gap: 12px; padding: 16px 0; border-bottom: 1px solid rgba(156,183,212,.16); }
 body.platform-body:has(.admin-workspace) .member-directory-tools label { display: grid; gap: 6px; color: #aab9c9; font-size: .78rem; font-weight: 750; }
 body.platform-body:has(.admin-workspace) .member-directory-tools input,
