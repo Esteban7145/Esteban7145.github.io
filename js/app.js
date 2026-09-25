@@ -4041,6 +4041,28 @@ const TYPES = {
             await loadMembershipAdmin();
           });
         });
+        view().querySelectorAll("[data-member-edit-assignments]").forEach(button => {
+          button.onclick = () => {
+            const editor = button.closest("[data-member-id]")?.querySelector("[data-member-assignment-editor]");
+            if (!editor) return;
+            editor.hidden = !editor.hidden;
+            button.setAttribute("aria-expanded", String(!editor.hidden));
+            if (!editor.hidden) editor.querySelector("input")?.focus();
+          };
+        });
+        view().querySelectorAll("[data-member-save-assignments]").forEach(button => {
+          button.onclick = runAdminAction(async () => {
+            const row = button.closest("[data-member-id]");
+            const committees = row.querySelector("[data-member-committees]").value.split("|").map(value => value.trim().replace(/\s+/g, " "));
+            const roles = row.querySelector("[data-member-roles]").value.split("|").map(value => value.trim().replace(/\s+/g, " "));
+            if (!committees.length || committees.some(value => !value) || !roles.length || roles.some(value => !value)) throw new Error("Escribe un comité y un cargo por cada asignación. Para varios, sepáralos con | y conserva el mismo orden.");
+            if (committees.length !== roles.length) throw new Error("La cantidad de comités y cargos debe coincidir; cada cargo se guarda con su comité en el mismo orden.");
+            if (committees.some(value => value.length > 80) || roles.some(value => value.length > 120)) throw new Error("Cada comité admite hasta 80 caracteres y cada cargo hasta 120.");
+            const { error } = await cloud.db.from("church_members").update({ church_committee: committees.join(" | "), church_role: roles.join(" | "), updated_at: new Date().toISOString() }).eq("id", row.dataset.memberId);
+            if (error) throw error;
+            await loadMembershipAdmin();
+          });
+        });
         view().querySelectorAll("[data-member-attendance]").forEach(button => {
           button.onclick = runAdminAction(async () => {
             const eventId = view().querySelector("[data-member-event]")?.value;
@@ -5042,7 +5064,8 @@ const TYPES = {
               <div class="member-profile-facts"><span><small>Número de miembro</small><strong>${escapeHtml(member.member_number || "Pendiente")}</strong></span><span><small>Correo y teléfono</small><strong>${escapeHtml(member.email || "Sin correo")} · ${escapeHtml(member.phone || "Sin teléfono")}</strong></span>${roleDetails}${member.birth_date ? `<span><small>Fecha de nacimiento</small><strong>${escapeHtml(member.birth_date)}</strong></span>` : ""}${baptismFact ? `<span><small>Bautismo</small><strong>${baptismFact}</strong></span>` : ""}${member.is_baptized !== null && member.is_baptized !== undefined ? `<span><small>Lleno del Espíritu Santo</small><strong>${member.filled_with_holy_spirit ? "Sí" : "No"}</strong></span>` : ""}<span><small>Dirección</small><strong>${escapeHtml(member.address || "Sin dirección")}</strong></span>${member.guardian_consent ? `<span><small>Representante</small><strong>${escapeHtml(member.guardian_full_name || "No indicado")} · consentimiento confirmado</strong></span>` : ""}<span><small>Asistencia registrada</small><strong>${attendanceCount}${member.attendance_consent ? "" : " · sin autorización"}</strong></span></div>
             </div>
           </div>
-          <div class="member-admin-actions">${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>${member.has_church_role ? `<button type="button" class="small-action" data-member-card="png">Descargar carnet</button><button type="button" class="small-action" data-member-card="svg">Carnet SVG</button>` : ""}` : ""}<label class="member-status-control">Estado<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div>
+          <div class="member-admin-actions">${member.photo_path ? `<button type="button" class="small-action" data-member-photo="${escapeHtml(member.photo_path)}">Ver foto</button>${member.has_church_role ? `<button type="button" class="small-action" data-member-card="png">Descargar carnet</button><button type="button" class="small-action" data-member-card="svg">Carnet SVG</button>` : ""}` : ""}${member.has_church_role ? `<button type="button" class="small-action" data-member-edit-assignments aria-expanded="false">${committees.includes("Por clasificar") ? "Clasificar comité" : "Editar comités y cargos"}</button>` : ""}<label class="member-status-control">Estado<select aria-label="Estado de ${escapeHtml(member.full_name)}" data-member-status><option value="pendiente" ${member.status === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${member.status === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${member.status === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><button type="button" class="small-action" data-member-save-status>Guardar estado</button>${member.attendance_consent ? `<button type="button" class="primary-link" data-member-attendance>Registrar asistencia · ${attendanceCount}</button>` : ""}<button type="button" class="small-action danger-action" data-member-delete>Eliminar datos</button></div>
+          ${member.has_church_role ? `<div class="member-admin-assignment-editor" data-member-assignment-editor hidden><p>Asocia cada cargo con su comité. Puedes escribir un comité nuevo; se creará su carpeta automáticamente. Para varias asignaciones usa | y mantén el mismo orden.</p><div class="member-admin-assignment-fields"><label>Comité(s)<input type="text" data-member-committees list="membershipCommitteeOptions" value="${escapeHtml(member.church_committee || "")}" placeholder="Ej. DECOM | Música" maxlength="500"></label><label>Cargo(s)<input type="text" data-member-roles value="${escapeHtml(member.church_role || "")}" placeholder="Ej. Presidente | Director" maxlength="500"></label></div><button type="button" class="primary-link" data-member-save-assignments>Guardar clasificación</button></div>` : ""}
         </article>`;
       }
 
@@ -5158,7 +5181,7 @@ const TYPES = {
           ${renderMemberChangeQueue()}
           <div class="member-directory-tools"><label>Buscar miembro<input type="search" data-member-search placeholder="Nombre, correo, documento o cargo" value="${escapeHtml(platform.memberSearch || "")}"></label><label>Estado<select data-member-filter-status><option value="todos" ${platform.memberStatusFilter === "todos" ? "selected" : ""}>Todos los estados</option><option value="pendiente" ${platform.memberStatusFilter === "pendiente" ? "selected" : ""}>Pendiente</option><option value="activo" ${platform.memberStatusFilter === "activo" ? "selected" : ""}>Activo</option><option value="inactivo" ${platform.memberStatusFilter === "inactivo" ? "selected" : ""}>Inactivo</option></select></label><span data-member-result-count aria-live="polite">${members.length} ${members.length === 1 ? "persona" : "personas"}</span></div>
           <label class="member-event-select">Evento para registrar asistencia<select data-member-event><option value="">Selecciona un evento</option>${events.map(event => `<option value="${escapeHtml(event.id)}">${escapeHtml(formatDateShort(event.date))} · ${escapeHtml(event.title)}</option>`).join("")}</select></label>
-          <div class="member-directory-tree">${(() => {
+          <datalist id="membershipCommitteeOptions">${MEMBERSHIP_COMMITTEES.map(name => `<option value="${escapeHtml(name)}"></option>`).join("")}</datalist><div class="member-directory-tree">${(() => {
             const servers = members.filter(member => member.has_church_role);
             const nonServers = members.filter(member => !member.has_church_role);
           const folderNames = [...MEMBERSHIP_COMMITTEES, ...Array.from(new Set(servers.flatMap(memberDirectoryCommittees).filter(name => name && !MEMBERSHIP_COMMITTEES.includes(name)))).sort((a, b) => a.localeCompare(b, "es"))];

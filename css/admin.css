@@ -685,6 +685,13 @@ body.platform-body:has(.admin-workspace) .member-change-request-details > small 
 body.platform-body:has(.admin-workspace) .member-change-request-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 body.platform-body:has(.admin-workspace) .member-admin-actions { display: flex; flex-wrap: wrap; align-items: end; justify-content: flex-start; gap: 8px; margin: 16px 0 0 110px; padding-top: 14px; border-top: 1px solid rgba(156,204,227,.14); }
 body.platform-body:has(.admin-workspace) .member-admin-actions .primary-link { min-height: 40px; padding: 0 11px; }
+body.platform-body:has(.admin-workspace) .member-admin-assignment-editor { display: grid; gap: 12px; margin: 14px 0 0 110px; padding: 16px; border: 1px solid rgba(34,190,229,.28); border-radius: 12px; background: rgba(6,19,38,.5); }
+body.platform-body:has(.admin-workspace) .member-admin-assignment-editor[hidden] { display: none; }
+body.platform-body:has(.admin-workspace) .member-admin-assignment-editor > p { margin: 0; color: #aab9c9; font-size: .84rem; line-height: 1.5; }
+body.platform-body:has(.admin-workspace) .member-admin-assignment-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+body.platform-body:has(.admin-workspace) .member-admin-assignment-fields label { display: grid; gap: 6px; min-width: 0; color: #dce7f2; font-size: .8rem; font-weight: 700; }
+body.platform-body:has(.admin-workspace) .member-admin-assignment-fields input { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid rgba(156,204,227,.28); border-radius: 9px; color: #f7fbff; background: #061326; }
+body.platform-body:has(.admin-workspace) .member-admin-assignment-editor input:focus-visible { outline: 2px solid #22bee5; outline-offset: 2px; }
 body.platform-body:has(.admin-workspace) .member-status-chip { padding: 5px 9px; border-radius: 999px; color: #f7fbff; background: #284260; font-size: .72rem; text-transform: capitalize; }
 body.platform-body:has(.admin-workspace) .member-status-chip.status-activo { background: #14513f; }
 body.platform-body:has(.admin-workspace) .member-status-chip.status-pendiente { background: #735319; }
@@ -703,6 +710,7 @@ body.platform-body .member-photo-dialog { z-index: 2000; margin: auto; }
   body.platform-body:has(.admin-workspace) .member-change-request-actions { grid-column: 1 / -1; justify-content: flex-start; }
   body.platform-body:has(.admin-workspace) .member-admin-actions { justify-content: flex-start; }
   body.platform-body:has(.admin-workspace) .member-admin-actions > * { flex: 1 1 auto; }
+  body.platform-body:has(.admin-workspace) .member-admin-assignment-editor { margin-left: 89px; }
 }
 
 @media (max-width: 420px) {
@@ -715,6 +723,8 @@ body.platform-body .member-photo-dialog { z-index: 2000; margin: auto; }
   body.platform-body:has(.admin-workspace) .member-profile-heading h3 { font-size: .98rem; }
   body.platform-body:has(.admin-workspace) .member-profile-facts { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   body.platform-body:has(.admin-workspace) .member-admin-actions { margin-left: 0; }
+  body.platform-body:has(.admin-workspace) .member-admin-assignment-editor { margin-left: 0; padding: 12px; }
+  body.platform-body:has(.admin-workspace) .member-admin-assignment-fields { grid-template-columns: minmax(0, 1fr); }
   body.platform-body:has(.admin-workspace) .member-directory-hint { padding-left: 14px; }
 }
 
